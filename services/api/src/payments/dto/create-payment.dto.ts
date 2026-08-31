@@ -1,0 +1,10 @@
+import { IsIn, IsNotEmpty, IsString } from 'class-validator';
+
+export class CreatePaymentDto {
+  @IsString()
+  @IsNotEmpty()
+  orderNumber!: string;
+
+  @IsIn(['MANUAL_TEST', 'STRIPE'])
+  provider!: 'MANUAL_TEST' | 'STRIPE';
+}

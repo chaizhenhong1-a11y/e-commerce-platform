@@ -1,0 +1,16 @@
+{
+  "name": "textshop-workspace",
+  "private": true,
+  "version": "0.2.0",
+  "workspaces": [
+    "apps/storefront",
+    "services/api"
+  ],
+  "scripts": {
+    "dev:web": "npm --workspace @textshop/storefront run dev",
+    "dev:api": "npm --workspace @textshop/api run start:dev",
+    "build:web": "npm --workspace @textshop/storefront run build",
+    "build:api": "npm --workspace @textshop/api run build",
+    "lint:web": "npm --workspace @textshop/storefront run lint"
+  }
+}
