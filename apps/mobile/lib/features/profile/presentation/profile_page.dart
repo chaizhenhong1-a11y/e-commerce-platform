@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../auth/domain/auth_state.dart';
 import '../../auth/presentation/auth_providers.dart';
+import '../../cart/presentation/cart_providers.dart';
+import '../../orders/presentation/order_providers.dart';
+import '../../notifications/presentation/notification_providers.dart';
+import '../../wishlist/presentation/wishlist_providers.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -63,8 +67,7 @@ class ProfilePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
       body: RefreshIndicator(
-        onRefresh: () =>
-            ref.read(authControllerProvider.notifier).refreshUser(),
+        onRefresh: () => ref.read(authControllerProvider.notifier).refreshUser(),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(20),
@@ -73,8 +76,7 @@ class ProfilePage extends ConsumerWidget {
               radius: 38,
               child: Text(
                 user.firstName.isEmpty ? '?' : user.firstName[0].toUpperCase(),
-                style:
-                    const TextStyle(fontSize: 30, fontWeight: FontWeight.w800),
+                style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800),
               ),
             ),
             const SizedBox(height: 16),
@@ -131,6 +133,14 @@ class ProfilePage extends ConsumerWidget {
               child: Column(
                 children: <Widget>[
                   ListTile(
+                    leading: const Icon(Icons.notifications_none_rounded),
+                    title: const Text('Updates'),
+                    subtitle: const Text('Order and delivery notifications'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => context.push('/notifications'),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
                     leading: const Icon(Icons.receipt_long_outlined),
                     title: const Text('My orders'),
                     trailing: const Icon(Icons.chevron_right_rounded),
@@ -149,8 +159,14 @@ class ProfilePage extends ConsumerWidget {
                     leading: const Icon(Icons.logout_rounded),
                     title: const Text('Sign out'),
                     enabled: !auth.isSubmitting,
-                    onTap: () =>
-                        ref.read(authControllerProvider.notifier).logout(),
+                    onTap: () async {
+                      await ref.read(authControllerProvider.notifier).logout();
+                      ref.invalidate(customerCartProvider);
+                      ref.invalidate(wishlistProductIdsProvider);
+                      ref.invalidate(customerOrdersProvider);
+                      ref.invalidate(notificationFeedProvider);
+                      if (context.mounted) context.go('/');
+                    },
                   ),
                 ],
               ),

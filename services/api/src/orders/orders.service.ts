@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PaymentStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { OrderAccessService } from './order-access.service';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly orderAccess: OrderAccessService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async getCustomerOrders(userId: string) {
@@ -21,6 +23,10 @@ export class OrdersService {
       include: {
         items: {
           orderBy: { createdAt: 'asc' },
+        },
+        returnRequests: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
         },
       },
     });
@@ -82,6 +88,9 @@ export class OrdersService {
       currency: order.currency,
       subtotalCents: order.subtotalCents,
       shippingCents: order.shippingCents,
+      discountCents: order.discountCents,
+      couponCode: order.couponCode,
+      couponName: order.couponName,
       totalCents: order.totalCents,
       shippingMethod: order.shippingMethod,
       shipping: {
@@ -92,10 +101,22 @@ export class OrdersService {
       },
       reservationExpiresAt: order.reservationExpiresAt,
       createdAt: order.createdAt,
+      courierName: order.courierName,
+      trackingNumber: order.trackingNumber,
+      shippedAt: order.shippedAt,
+      deliveredAt: order.deliveredAt,
       itemCount: order.items.reduce(
         (total, item) => total + item.quantity,
         0,
       ),
+      returnRequest: order.returnRequests[0]
+        ? {
+            id: order.returnRequests[0].id,
+            status: order.returnRequests[0].status,
+            reason: order.returnRequests[0].reason,
+            requestedAt: order.returnRequests[0].requestedAt,
+          }
+        : null,
       items: order.items.map((item) => {
         const catalog = variantCatalog.get(item.variantId);
 
@@ -110,6 +131,7 @@ export class OrdersService {
           quantity: item.quantity,
           unitPriceCents: item.unitPriceCents,
           lineTotalCents: item.lineTotalCents,
+          discountCents: item.discountCents,
         };
       }),
     }));
@@ -129,6 +151,20 @@ export class OrdersService {
         payments: {
           orderBy: { createdAt: 'desc' },
           take: 1,
+        },
+        refunds: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+        returnRequests: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          include: {
+            items: {
+              include: { orderItem: true },
+              orderBy: { createdAt: 'asc' },
+            },
+          },
         },
       },
     });
@@ -152,9 +188,20 @@ export class OrdersService {
       shippingMethod: order.shippingMethod,
       subtotalCents: order.subtotalCents,
       shippingCents: order.shippingCents,
+      discountCents: order.discountCents,
+      couponCode: order.couponCode,
+      couponName: order.couponName,
       totalCents: order.totalCents,
       reservationExpiresAt: order.reservationExpiresAt,
       createdAt: order.createdAt,
+      fulfillment: {
+        courierName: order.courierName,
+        trackingNumber: order.trackingNumber,
+        trackingUrl: order.trackingUrl,
+        processingAt: order.processingAt,
+        shippedAt: order.shippedAt,
+        deliveredAt: order.deliveredAt,
+      },
       shipping: {
         fullName: order.shippingName,
         phone: order.shippingPhone,
@@ -172,6 +219,41 @@ export class OrdersService {
             status: order.payments[0].status,
           }
         : null,
+      refund: order.refunds[0]
+        ? {
+            id: order.refunds[0].id,
+            status: order.refunds[0].status,
+            reason: order.refunds[0].reason,
+            amountCents: order.refunds[0].amountCents,
+            requestedAt: order.refunds[0].requestedAt,
+            processedAt: order.refunds[0].processedAt,
+          }
+        : null,
+      returnRequest: order.returnRequests[0]
+        ? {
+            id: order.returnRequests[0].id,
+            status: order.returnRequests[0].status,
+            reason: order.returnRequests[0].reason,
+            customerNote: order.returnRequests[0].customerNote,
+            requestedAt: order.returnRequests[0].requestedAt,
+            approvedAt: order.returnRequests[0].approvedAt,
+            receivedAt: order.returnRequests[0].receivedAt,
+            completedAt: order.returnRequests[0].completedAt,
+            staffNote: order.returnRequests[0].staffNote,
+            items: order.returnRequests[0].items.map((returnItem) => ({
+              id: returnItem.id,
+              orderItemId: returnItem.orderItemId,
+              quantity: returnItem.quantity,
+              condition: returnItem.condition,
+              disposition: returnItem.disposition,
+              inspectedAt: returnItem.inspectedAt,
+              restockedAt: returnItem.restockedAt,
+              productName: returnItem.orderItem.productName,
+              variantName: returnItem.orderItem.variantName,
+              sku: returnItem.orderItem.sku,
+            })),
+          }
+        : null,
       items: order.items.map((item) => ({
         id: item.id,
         sku: item.sku,
@@ -180,8 +262,194 @@ export class OrdersService {
         quantity: item.quantity,
         unitPriceCents: item.unitPriceCents,
         lineTotalCents: item.lineTotalCents,
+        discountCents: item.discountCents,
       })),
     };
+  }
+
+  async getStaffCommerceSummary() {
+    const [
+      totalOrders,
+      awaitingPayment,
+      readyToFulfill,
+      fulfilled,
+      activeReturns,
+      refundProcessing,
+      lowStockVariants,
+    ] = await this.prisma.$transaction([
+      this.prisma.order.count(),
+      this.prisma.order.count({ where: { status: 'AWAITING_PAYMENT' } }),
+      this.prisma.order.count({
+        where: { status: 'CONFIRMED', paymentStatus: PaymentStatus.PAID },
+      }),
+      this.prisma.order.count({ where: { status: { in: ['DELIVERED', 'FULFILLED'] } } }),
+      this.prisma.returnRequest.count({
+        where: { status: { in: ['REQUESTED', 'APPROVED', 'IN_TRANSIT', 'RECEIVED'] } },
+      }),
+      this.prisma.refund.count({ where: { status: { in: ['REQUESTED', 'PROCESSING'] } } }),
+      this.prisma.inventory.count({ where: { quantity: { lte: 5 } } }),
+    ]);
+
+    return {
+      totalOrders,
+      awaitingPayment,
+      readyToFulfill,
+      fulfilled,
+      activeReturns,
+      refundProcessing,
+      lowStockVariants,
+    };
+  }
+
+  async getStaffOrders(filters: {
+    status?: string;
+    paymentStatus?: string;
+    query?: string;
+  }) {
+    const status = filters.status?.trim();
+    const paymentStatus = filters.paymentStatus?.trim();
+    const query = filters.query?.trim();
+
+    const validStatuses = ['AWAITING_PAYMENT', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'FULFILLED', 'CANCELLED', 'EXPIRED'];
+    const validPaymentStatuses = ['PENDING', 'PAID', 'FAILED', 'PARTIALLY_REFUNDED', 'REFUNDED'];
+    if (status && !validStatuses.includes(status)) {
+      throw new BadRequestException('Unknown order status filter.');
+    }
+    if (paymentStatus && !validPaymentStatuses.includes(paymentStatus)) {
+      throw new BadRequestException('Unknown payment status filter.');
+    }
+
+    const orders = await this.prisma.order.findMany({
+      where: {
+        ...(status ? { status: status as never } : {}),
+        ...(paymentStatus ? { paymentStatus: paymentStatus as never } : {}),
+        ...(query
+          ? {
+              OR: [
+                { orderNumber: { contains: query, mode: 'insensitive' } },
+                { email: { contains: query, mode: 'insensitive' } },
+                { shippingName: { contains: query, mode: 'insensitive' } },
+                { items: { some: { productName: { contains: query, mode: 'insensitive' } } } },
+                { items: { some: { sku: { contains: query, mode: 'insensitive' } } } },
+              ],
+            }
+          : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      include: {
+        items: { orderBy: { createdAt: 'asc' } },
+        refunds: { orderBy: { createdAt: 'desc' }, take: 1 },
+        returnRequests: { orderBy: { createdAt: 'desc' }, take: 1 },
+      },
+    });
+
+    return orders.map((order) => ({
+      orderNumber: order.orderNumber,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      email: order.email,
+      customerName: order.shippingName,
+      currency: order.currency,
+      totalCents: order.totalCents,
+      createdAt: order.createdAt,
+      courierName: order.courierName,
+      trackingNumber: order.trackingNumber,
+      shippedAt: order.shippedAt,
+      deliveredAt: order.deliveredAt,
+      itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
+      items: order.items.map((item) => ({
+        id: item.id, sku: item.sku, productName: item.productName,
+        variantName: item.variantName, quantity: item.quantity,
+      })),
+      latestRefund: order.refunds[0]
+        ? { status: order.refunds[0].status, amountCents: order.refunds[0].amountCents }
+        : null,
+      latestReturn: order.returnRequests[0]
+        ? { id: order.returnRequests[0].id, status: order.returnRequests[0].status }
+        : null,
+      canProcess: order.status === 'CONFIRMED' && order.paymentStatus === PaymentStatus.PAID,
+      canShip: order.status === 'PROCESSING' && order.paymentStatus === PaymentStatus.PAID,
+      canDeliver: order.status === 'SHIPPED' && order.paymentStatus === PaymentStatus.PAID,
+      canFulfill: false,
+    }));
+  }
+
+  async markProcessingForStaff(orderNumber: string) {
+    const order = await this.prisma.order.findUnique({ where: { orderNumber } });
+    if (!order) throw new NotFoundException('Order not found.');
+    if (order.status === 'PROCESSING') return order;
+    if (order.status !== 'CONFIRMED' || order.paymentStatus !== PaymentStatus.PAID) {
+      throw new BadRequestException('Only paid confirmed orders can enter processing.');
+    }
+    const updated = await this.prisma.order.update({ where: { id: order.id }, data: { status: 'PROCESSING', processingAt: new Date() } });
+    await this.notifications.create({ userId: order.userId, type: 'SHIPPING', title: 'Order is being prepared', message: `Order ${order.orderNumber} is now being prepared for shipment.`, orderNumber: order.orderNumber, actionPath: `/orders/${order.orderNumber}` });
+    return updated;
+  }
+
+  async shipForStaff(
+    orderNumber: string,
+    input: { courierName?: string; trackingNumber?: string; trackingUrl?: string },
+  ) {
+    const courierName = input.courierName?.trim();
+    const trackingNumber = input.trackingNumber?.trim();
+    const trackingUrl = input.trackingUrl?.trim() || null;
+    if (!courierName || !trackingNumber) {
+      throw new BadRequestException('Courier name and tracking number are required.');
+    }
+    if (trackingUrl && !/^https?:\/\//i.test(trackingUrl)) {
+      throw new BadRequestException('Tracking URL must start with http:// or https://.');
+    }
+    const order = await this.prisma.order.findUnique({ where: { orderNumber } });
+    if (!order) throw new NotFoundException('Order not found.');
+    if (order.status !== 'PROCESSING') {
+      throw new BadRequestException('Only processing orders can be shipped.');
+    }
+    if (order.paymentStatus !== PaymentStatus.PAID) {
+      throw new BadRequestException('Only fully paid orders can be shipped.');
+    }
+    const updated = await this.prisma.order.update({
+      where: { id: order.id },
+      data: {
+        status: 'SHIPPED',
+        courierName,
+        trackingNumber,
+        trackingUrl,
+        shippedAt: new Date(),
+      },
+    });
+    await this.notifications.create({ userId: order.userId, type: 'SHIPPING', title: 'Your order has shipped', message: `${courierName} · ${trackingNumber}`, orderNumber: order.orderNumber, actionPath: `/orders/${order.orderNumber}` });
+    return updated;
+  }
+
+  async deliverForStaff(orderNumber: string) {
+    const order = await this.prisma.order.findUnique({ where: { orderNumber } });
+    if (!order) throw new NotFoundException('Order not found.');
+    if (order.status === 'DELIVERED' || order.status === 'FULFILLED') return order;
+    if (order.status !== 'SHIPPED') {
+      throw new BadRequestException('Only shipped orders can be marked delivered.');
+    }
+    const updated = await this.prisma.order.update({ where: { id: order.id }, data: { status: 'DELIVERED', deliveredAt: new Date() } });
+    await this.notifications.create({ userId: order.userId, type: 'SHIPPING', title: 'Order delivered', message: `Order ${order.orderNumber} has been marked delivered.`, orderNumber: order.orderNumber, actionPath: `/orders/${order.orderNumber}` });
+    return updated;
+  }
+
+  async fulfillForStaff(orderNumber: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({ where: { orderNumber } });
+      if (!order) throw new NotFoundException('Order not found.');
+      if (order.status === 'FULFILLED') return order;
+      if (order.status !== 'CONFIRMED' && order.status !== 'DELIVERED') {
+        throw new BadRequestException('Only confirmed or delivered orders can use the legacy fulfilled transition.');
+      }
+      if (order.paymentStatus !== PaymentStatus.PAID) {
+        throw new BadRequestException('Only fully paid orders can be fulfilled.');
+      }
+      return tx.order.update({
+        where: { id: order.id },
+        data: { status: 'FULFILLED' },
+      });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
   async cancelOrder(

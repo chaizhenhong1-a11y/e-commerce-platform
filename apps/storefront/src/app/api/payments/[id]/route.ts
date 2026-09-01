@@ -1,52 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import {
-  applyAuthCookies,
-  callApiWithSession,
-} from "@/features/account/server/auth-proxy";
-import { getGuestOrderAccessToken } from "@/features/orders/server/order-access-cookie";
+import { NextResponse } from "next/server";
+import { applyAuthCookies, callApiWithSession } from "@/features/account/server/auth-proxy";
 
-type RouteContext = {
-  params: Promise<{ id: string }>;
-};
-
-export async function GET(
-  request: NextRequest,
-  context: RouteContext,
-) {
+type RouteContext = { params: Promise<{ id: string }> };
+export async function GET(_request: Request, context: RouteContext) {
   const { id } = await context.params;
-  const orderNumber = request.nextUrl.searchParams.get("order");
-  const guestToken = orderNumber
-    ? await getGuestOrderAccessToken(orderNumber)
-    : null;
-  const headers = new Headers();
-
-  if (guestToken) {
-    headers.set("X-Order-Access-Token", guestToken);
-  }
-
-  const { upstream, refreshedTokens } =
-    await callApiWithSession(
-      `/payments/${encodeURIComponent(id)}`,
-      { headers },
-      { allowGuest: true },
-    );
-
-  if (!upstream) {
-    return NextResponse.json(
-      { message: "Unable to reach payment service." },
-      { status: 503 },
-    );
-  }
-
+  const { upstream, refreshedTokens } = await callApiWithSession(`/payments/${encodeURIComponent(id)}`);
+  if (!upstream) return NextResponse.json({ message: "Sign in to view payment status." }, { status: 401 });
   const payload = await upstream.json().catch(() => null);
-  const response = NextResponse.json(
-    payload ?? { message: "Payment request failed." },
-    { status: upstream.status },
-  );
-
-  if (refreshedTokens) {
-    applyAuthCookies(response, refreshedTokens);
-  }
-
+  const response = NextResponse.json(payload ?? { message: "Payment request failed." }, { status: upstream.status });
+  if (refreshedTokens) applyAuthCookies(response, refreshedTokens);
   return response;
 }

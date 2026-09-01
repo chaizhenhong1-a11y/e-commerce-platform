@@ -6,7 +6,9 @@ import 'auth_providers.dart';
 import 'auth_scaffold.dart';
 
 class SignInPage extends ConsumerStatefulWidget {
-  const SignInPage({super.key});
+  const SignInPage({this.returnTo, super.key});
+
+  final String? returnTo;
 
   @override
   ConsumerState<SignInPage> createState() => _SignInPageState();
@@ -30,7 +32,11 @@ class _SignInPageState extends ConsumerState<SignInPage> {
           email: _emailController.text,
           password: _passwordController.text,
         );
-    if (success && mounted) context.go('/profile');
+    if (success && mounted) {
+      final target = widget.returnTo;
+      context
+          .go(target != null && target.startsWith('/') ? target : '/profile');
+    }
   }
 
   @override

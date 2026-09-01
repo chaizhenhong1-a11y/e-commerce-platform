@@ -1,41 +1,78 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { PublicOrderStatus } from "@/features/orders/domain/order-status";
 import {
   confirmDevelopmentPayment,
   createPayment,
 } from "../data/payment-api";
-import type {
-  Payment,
-  PaymentProvider,
-} from "../domain/payment";
+import type { Payment, PaymentProvider } from "../domain/payment";
 
-const stripeEnabled =
-  process.env.NEXT_PUBLIC_STRIPE_ENABLED === "true";
-const developmentPaymentEnabled =
-  process.env.NODE_ENV !== "production";
+const stripeEnabled = process.env.NEXT_PUBLIC_STRIPE_ENABLED === "true";
+const developmentPaymentEnabled = process.env.NODE_ENV !== "production";
+
+function money(cents: number) {
+  return `RM ${(cents / 100).toFixed(2)}`;
+}
+
+function formatRemaining(milliseconds: number) {
+  if (milliseconds <= 0) return "Expired";
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
 
 export function PaymentView({
-  orderNumber,
+  initialOrder,
 }: {
-  orderNumber: string;
+  initialOrder: PublicOrderStatus;
 }) {
   const [payment, setPayment] = useState<Payment | null>(null);
-  const [busyProvider, setBusyProvider] =
-    useState<PaymentProvider | null>(null);
+  const [busyProvider, setBusyProvider] = useState<PaymentProvider | null>(null);
   const [error, setError] = useState("");
+  const [now, setNow] = useState(() => Date.now());
+
+  const reservationDeadline = useMemo(
+    () =>
+      initialOrder.reservationExpiresAt
+        ? new Date(initialOrder.reservationExpiresAt).getTime()
+        : null,
+    [initialOrder.reservationExpiresAt],
+  );
+
+  useEffect(() => {
+    if (!reservationDeadline) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [reservationDeadline]);
+
+  const reservationExpired =
+    reservationDeadline !== null && reservationDeadline <= now;
+  const paid =
+    ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "FULFILLED"].includes(initialOrder.status) ||
+    initialOrder.paymentStatus === "PAID" ||
+    payment?.status === "PAID";
+  const canPay =
+    initialOrder.status === "AWAITING_PAYMENT" &&
+    initialOrder.paymentStatus === "PENDING" &&
+    !reservationExpired &&
+    !paid;
 
   async function prepare(provider: PaymentProvider) {
-    if (busyProvider) {
-      return;
-    }
+    if (busyProvider || !canPay) return;
 
     setBusyProvider(provider);
     setError("");
 
     try {
-      const created = await createPayment(orderNumber, provider);
+      const created = await createPayment(initialOrder.orderNumber, provider);
+
+      if (created.status === "PAID") {
+        setPayment(created);
+        return;
+      }
 
       if (created.checkoutUrl) {
         window.location.assign(created.checkoutUrl);
@@ -58,7 +95,8 @@ export function PaymentView({
     if (
       !payment ||
       payment.provider !== "MANUAL_TEST" ||
-      busyProvider
+      busyProvider ||
+      !canPay
     ) {
       return;
     }
@@ -68,41 +106,38 @@ export function PaymentView({
 
     try {
       setPayment(
-        await confirmDevelopmentPayment(payment.id, orderNumber),
+        await confirmDevelopmentPayment(
+          payment.id,
+          initialOrder.orderNumber,
+        ),
       );
     } catch (cause) {
       setError(
-        cause instanceof Error
-          ? cause.message
-          : "Payment failed.",
+        cause instanceof Error ? cause.message : "Payment failed.",
       );
     } finally {
       setBusyProvider(null);
     }
   }
 
-  if (payment?.status === "PAID") {
+  if (paid) {
     return (
       <section className="checkout-success">
         <div className="checkout-success__icon">✓</div>
-        <span className="section-kicker">
-          PAYMENT COMPLETE
-        </span>
+        <span className="section-kicker">PAYMENT COMPLETE</span>
         <h2>Order confirmed.</h2>
         <p>
-          Payment is complete and the reserved inventory has
-          been committed to your order.
+          This order is already paid. Starting another payment is blocked by
+          the backend.
         </p>
-
         <div className="checkout-success__number">
           <span>Order number</span>
-          <strong>{orderNumber}</strong>
+          <strong>{initialOrder.orderNumber}</strong>
         </div>
-
         <div className="checkout-success__actions">
           <Link
             className="button button--primary"
-            href={`/orders/${encodeURIComponent(orderNumber)}`}
+            href={`/orders/${encodeURIComponent(initialOrder.orderNumber)}`}
           >
             View order status
           </Link>
@@ -114,15 +149,77 @@ export function PaymentView({
     );
   }
 
+  if (!canPay) {
+    const cancelled = initialOrder.status === "CANCELLED";
+    const expired = initialOrder.status === "EXPIRED" || reservationExpired;
+
+    return (
+      <section className="payment-card payment-card--blocked">
+        <span className="section-kicker">PAYMENT RECOVERY</span>
+        <h1>{cancelled ? "Order cancelled" : expired ? "Payment expired" : "Payment unavailable"}</h1>
+        <p>
+          {cancelled
+            ? "This order was cancelled and cannot accept another payment."
+            : expired
+              ? "The 30-minute inventory reservation ended. A new payment cannot be started for this order."
+              : "This order is not currently eligible for payment."}
+        </p>
+        <div className="payment-recovery-actions">
+          <Link
+            className="button button--primary"
+            href={`/orders/${encodeURIComponent(initialOrder.orderNumber)}`}
+          >
+            View order details
+          </Link>
+          <Link className="button" href="/#shop">
+            Shop again
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="payment-card">
-      <span className="section-kicker">PAYMENT</span>
-      <h1>Choose how to pay</h1>
+      <span className="section-kicker">PAYMENT RECOVERY</span>
+      <h1>Complete your payment</h1>
       <p>
-        TextShop keeps gateway-specific code behind a payment
-        provider boundary. Browser redirects never decide whether
-        an order is paid; the backend verifies the provider result.
+        Continue an existing gateway session when possible. If you switch
+        providers, TextShop closes the previous open session before creating
+        another one.
       </p>
+
+      <div className="payment-recovery-summary">
+        <div>
+          <span>Order</span>
+          <strong>{initialOrder.orderNumber}</strong>
+        </div>
+        <div>
+          <span>Total</span>
+          <strong>{money(initialOrder.totalCents)}</strong>
+        </div>
+        <div>
+          <span>Inventory reservation</span>
+          <strong>
+            {reservationDeadline
+              ? formatRemaining(reservationDeadline - now)
+              : "Active"}
+          </strong>
+        </div>
+      </div>
+
+      {initialOrder.payment ? (
+        <div className="payment-recovery-banner">
+          <strong>Previous payment detected</strong>
+          <span>
+            {initialOrder.payment.provider} · {initialOrder.payment.status}
+          </span>
+          <small>
+            Choosing the same provider resumes the existing session when it is
+            still open.
+          </small>
+        </div>
+      ) : null}
 
       <div className="payment-provider-list">
         {stripeEnabled ? (
@@ -134,50 +231,38 @@ export function PaymentView({
           >
             <div>
               <strong>Stripe Checkout</strong>
-              <span>
-                Hosted secure payment page
-              </span>
+              <span>Resume or open the hosted secure payment page</span>
             </div>
             <strong>
-              {busyProvider === "STRIPE"
-                ? "Preparing…"
-                : "Continue →"}
+              {busyProvider === "STRIPE" ? "Checking…" : "Continue →"}
             </strong>
           </button>
         ) : null}
 
         {developmentPaymentEnabled ? (
           <button
-          className="payment-provider-option"
-          type="button"
-          disabled={Boolean(busyProvider)}
-          onClick={() => prepare("MANUAL_TEST")}
-        >
-          <div>
-            <strong>Development payment</strong>
-            <span>
-              Local testing only · no real money
-            </span>
-          </div>
-          <strong>
-            {busyProvider === "MANUAL_TEST"
-              ? "Preparing…"
-              : "Use test mode"}
-          </strong>
-        </button>
+            className="payment-provider-option"
+            type="button"
+            disabled={Boolean(busyProvider)}
+            onClick={() => prepare("MANUAL_TEST")}
+          >
+            <div>
+              <strong>Development payment</strong>
+              <span>Local testing only · no real money</span>
+            </div>
+            <strong>
+              {busyProvider === "MANUAL_TEST" ? "Checking…" : "Use test mode"}
+            </strong>
+          </button>
         ) : null}
       </div>
 
-      {payment?.provider === "MANUAL_TEST" &&
-      payment.status === "PENDING" ? (
+      {payment?.provider === "MANUAL_TEST" && payment.status === "PENDING" ? (
         <div className="manual-payment-panel">
           <div>
-            <span>Test amount</span>
-            <strong>
-              RM {(payment.amountCents / 100).toFixed(2)}
-            </strong>
+            <span>{payment.resumed ? "Resumed test amount" : "Test amount"}</span>
+            <strong>{money(payment.amountCents)}</strong>
           </div>
-
           <button
             className="button button--checkout"
             type="button"
@@ -193,9 +278,18 @@ export function PaymentView({
 
       {error ? <p className="form-error">{error}</p> : null}
 
+      <div className="payment-recovery-actions">
+        <Link
+          className="button"
+          href={`/orders/${encodeURIComponent(initialOrder.orderNumber)}`}
+        >
+          Back to order
+        </Link>
+      </div>
+
       <small className="payment-card__notice">
-        Test payment controls are available only outside production.
-        Production payment state must come from an approved provider.
+        Payment redirects never mark an order paid. Final payment state remains
+        server-owned and provider-verified.
       </small>
     </section>
   );

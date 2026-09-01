@@ -36,4 +36,24 @@ class OrdersRepository {
       '/orders/$orderNumber/cancel',
     );
   }
+
+  Future<void> requestReturn(
+    String orderNumber,
+    List<Map<String, dynamic>> items,
+  ) async {
+    await _apiClient.dio.post<void>(
+      '/orders/$orderNumber/returns',
+      data: <String, dynamic>{
+        'reason': 'CHANGED_MIND',
+        'items': items,
+      },
+    );
+  }
+
+  Future<void> requestRefund(String orderNumber) async {
+    await _apiClient.dio.post<void>(
+      '/orders/$orderNumber/refunds',
+      data: <String, dynamic>{'reason': 'CHANGED_MIND'},
+    );
+  }
 }

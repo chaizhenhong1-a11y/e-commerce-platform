@@ -5,10 +5,15 @@ export const metadata: Metadata = {
   title: "Sign in",
 };
 
-export default function SignInPage() {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ returnTo?: string }>;
+}) {
+  const params = await searchParams;
   return (
     <div className="account-auth-page shell">
-      <SignInForm />
+      <SignInForm returnTo={params.returnTo} />
     </div>
   );
 }

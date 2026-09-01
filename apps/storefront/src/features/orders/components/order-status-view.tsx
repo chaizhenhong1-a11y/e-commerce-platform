@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { CancelOrderButton } from "./cancel-order-button";
+import { RefundRequestButton } from "./refund-request-button";
+import { ReturnRequestButton } from "./return-request-button";
 import type {
   OrderStatus,
   PublicOrderStatus,
@@ -8,6 +10,9 @@ import type {
 const labels: Record<OrderStatus, string> = {
   AWAITING_PAYMENT: "Awaiting payment",
   CONFIRMED: "Confirmed",
+  PROCESSING: "Processing",
+  SHIPPED: "Shipped",
+  DELIVERED: "Delivered",
   FULFILLED: "Fulfilled",
   CANCELLED: "Cancelled",
   EXPIRED: "Expired",
@@ -23,66 +28,37 @@ type TimelineStep = {
 function buildTimeline(order: PublicOrderStatus): TimelineStep[] {
   if (order.status === "CANCELLED") {
     return [
-      {
-        key: "created",
-        label: "Order created",
-        description: "Your order was received by TextShop.",
-        state: "complete",
-      },
-      {
-        key: "cancelled",
-        label: "Order cancelled",
-        description: "This order will not continue to fulfilment.",
-        state: "stopped",
-      },
+      { key: "created", label: "Order created", description: "Your order was received by TextShop.", state: "complete" },
+      { key: "cancelled", label: "Order cancelled", description: "This order will not continue to fulfilment.", state: "stopped" },
     ];
   }
-
   if (order.status === "EXPIRED") {
     return [
-      {
-        key: "created",
-        label: "Order created",
-        description: "Inventory was reserved while payment was pending.",
-        state: "complete",
-      },
-      {
-        key: "expired",
-        label: "Reservation expired",
-        description:
-          "Payment was not completed within the reservation window and inventory was released.",
-        state: "stopped",
-      },
+      { key: "created", label: "Order created", description: "Inventory was reserved while payment was pending.", state: "complete" },
+      { key: "expired", label: "Reservation expired", description: "Payment was not completed within the reservation window and inventory was released.", state: "stopped" },
     ];
   }
 
+  const rank: Record<OrderStatus, number> = {
+    AWAITING_PAYMENT: 0,
+    CONFIRMED: 1,
+    PROCESSING: 2,
+    SHIPPED: 3,
+    DELIVERED: 4,
+    FULFILLED: 4,
+    CANCELLED: -1,
+    EXPIRED: -1,
+  };
+  const current = rank[order.status];
+  const stateFor = (step: number): TimelineStep["state"] =>
+    current > step ? "complete" : current === step ? "current" : "pending";
+
   return [
-    {
-      key: "created",
-      label: "Order created",
-      description: "Your order was received by TextShop.",
-      state: "complete",
-    },
-    {
-      key: "payment",
-      label: "Payment confirmed",
-      description: "Payment has been accepted and the order is confirmed.",
-      state:
-        order.status === "AWAITING_PAYMENT"
-          ? "current"
-          : "complete",
-    },
-    {
-      key: "fulfilment",
-      label: "Fulfilled",
-      description: "The order has completed fulfilment.",
-      state:
-        order.status === "FULFILLED"
-          ? "complete"
-          : order.status === "CONFIRMED"
-            ? "current"
-            : "pending",
-    },
+    { key: "created", label: "Order created", description: "Your order was received by TextShop.", state: "complete" },
+    { key: "payment", label: "Payment confirmed", description: "Payment has been accepted and the order is confirmed.", state: stateFor(1) },
+    { key: "processing", label: "Processing", description: "Your order is being prepared for dispatch.", state: stateFor(2) },
+    { key: "shipped", label: "Shipped", description: "The parcel has left the warehouse and tracking is available when provided.", state: stateFor(3) },
+    { key: "delivered", label: "Delivered", description: "The parcel has been marked as delivered.", state: current >= 4 ? "complete" : "pending" },
   ];
 }
 
@@ -98,27 +74,41 @@ function formatDate(value: string) {
 }
 
 export function OrderStatusView({ order }: { order: PublicOrderStatus }) {
-  const paid = order.paymentStatus === "PAID";
+  const paid =
+    order.paymentStatus === "PAID" ||
+    order.paymentStatus === "PARTIALLY_REFUNDED";
+  const refunded = order.paymentStatus === "REFUNDED";
   const expired = order.status === "EXPIRED";
   const timeline = buildTimeline(order);
+  const canRefund = order.paymentStatus === "PAID" && order.status === "CONFIRMED" && !order.refund;
+  const returnAllowsRetry =
+    !order.returnRequest ||
+    ["REJECTED", "CANCELLED", "COMPLETED"].includes(order.returnRequest.status);
+  const canReturn =
+    (order.paymentStatus === "PAID" ||
+      order.paymentStatus === "PARTIALLY_REFUNDED") &&
+    ["DELIVERED", "FULFILLED"].includes(order.status) &&
+    returnAllowsRetry;
 
   return (
     <div className="order-detail-layout">
       <section className="order-status-card order-status-card--detail">
         <div
           className={`order-status-card__icon ${
-            paid ? "is-success" : expired ? "is-expired" : ""
+            (paid || refunded) ? "is-success" : expired ? "is-expired" : ""
           }`}
         >
-          {paid ? "✓" : expired ? "!" : "…"}
+          {paid || refunded ? "✓" : expired ? "!" : "…"}
         </div>
 
         <span className="section-kicker">ORDER DETAILS</span>
         <h1>{labels[order.status]}</h1>
         <p>
-          {paid
-            ? "Payment is complete. You can follow the order lifecycle below."
-            : expired
+          {refunded
+            ? "The order payment has been refunded to the original payment method."
+            : paid
+              ? "Payment is complete. You can follow the order lifecycle below."
+              : expired
               ? "This unpaid order expired and its reserved inventory was released."
               : "Your order is waiting for payment before it can be confirmed."}
         </p>
@@ -170,6 +160,13 @@ export function OrderStatusView({ order }: { order: PublicOrderStatus }) {
               <CancelOrderButton orderNumber={order.orderNumber} />
             </>
           ) : null}
+          {canRefund ? <RefundRequestButton orderNumber={order.orderNumber} /> : null}
+          {canReturn ? (
+            <ReturnRequestButton
+              orderNumber={order.orderNumber}
+              items={order.items}
+            />
+          ) : null}
           <Link className="button" href="/#shop">
             Continue shopping
           </Link>
@@ -209,12 +206,68 @@ export function OrderStatusView({ order }: { order: PublicOrderStatus }) {
                   : money(order.shippingCents)}
               </span>
             </div>
+            {order.discountCents > 0 ? (
+              <div className="order-detail-totals__discount">
+                <span>Discount{order.couponCode ? ` (${order.couponCode})` : ""}</span>
+                <span>− {money(order.discountCents)}</span>
+              </div>
+            ) : null}
             <div className="order-detail-totals__grand">
               <strong>Total</strong>
               <strong>{money(order.totalCents)}</strong>
             </div>
           </div>
         </section>
+
+        {order.fulfillment.trackingNumber || order.status === "PROCESSING" || order.status === "SHIPPED" || order.status === "DELIVERED" ? (
+          <section className="order-detail-panel">
+            <span className="section-kicker">DELIVERY</span>
+            <h2>{order.status === "DELIVERED" || order.status === "FULFILLED" ? "Delivered" : order.status === "SHIPPED" ? "On the way" : "Preparing shipment"}</h2>
+            <div className="order-detail-meta">
+              {order.fulfillment.courierName ? <div><span>Courier</span><strong>{order.fulfillment.courierName}</strong></div> : null}
+              {order.fulfillment.trackingNumber ? <div><span>Tracking number</span><strong>{order.fulfillment.trackingNumber}</strong></div> : null}
+              {order.fulfillment.shippedAt ? <div><span>Shipped</span><strong>{formatDate(order.fulfillment.shippedAt)}</strong></div> : null}
+              {order.fulfillment.deliveredAt ? <div><span>Delivered</span><strong>{formatDate(order.fulfillment.deliveredAt)}</strong></div> : null}
+            </div>
+            {order.fulfillment.trackingUrl ? (
+              <a className="button" href={order.fulfillment.trackingUrl} target="_blank" rel="noreferrer">Track parcel</a>
+            ) : null}
+          </section>
+        ) : null}
+
+        {order.refund ? (
+          <section className="order-detail-panel">
+            <span className="section-kicker">REFUND</span>
+            <h2>{order.refund.status === "REFUNDED" ? "Refund completed" : "Refund status"}</h2>
+            <div className="order-detail-meta">
+              <div><span>Status</span><strong>{order.refund.status}</strong></div>
+              <div><span>Amount</span><strong>{money(order.refund.amountCents)}</strong></div>
+            </div>
+            <p>Refunds are financial transactions only. Returned inventory is handled separately.</p>
+          </section>
+        ) : null}
+
+        {order.returnRequest ? (
+          <section className="order-detail-panel">
+            <span className="section-kicker">RETURN</span>
+            <h2>Return status</h2>
+            <div className="order-detail-meta">
+              <div><span>Status</span><strong>{order.returnRequest.status}</strong></div>
+              <div><span>Reason</span><strong>{order.returnRequest.reason}</strong></div>
+            </div>
+            <div className="order-status-items order-status-items--detail">
+              {order.returnRequest.items.map((item) => (
+                <div key={item.id}>
+                  <div>
+                    <strong>{item.productName}</strong>
+                    <span>{item.variantName} · {item.sku} · Qty {item.quantity}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p>Refund and restocking are separate steps. Stock is never restored merely because a return was requested.</p>
+          </section>
+        ) : null}
 
         <section className="order-detail-panel">
           <span className="section-kicker">DELIVERY</span>

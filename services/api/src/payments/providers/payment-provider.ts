@@ -17,6 +17,23 @@ export type PaymentSessionResult = {
   metadata?: Record<string, unknown>;
 };
 
+export type PaymentSessionResumeResult = {
+  state: 'OPEN' | 'PAID' | 'EXPIRED' | 'PROCESSING';
+  checkoutUrl: string | null;
+};
+
+export type PaymentRefundRequest = {
+  refundId: string;
+  paymentProviderRef: string;
+  amountCents: number;
+  currency: string;
+};
+
+export type PaymentRefundResult = {
+  providerRef: string;
+  state: 'PROCESSING' | 'REFUNDED';
+};
+
 export interface PaymentProviderAdapter {
   readonly provider: PaymentProvider;
 
@@ -24,5 +41,11 @@ export interface PaymentProviderAdapter {
     request: PaymentSessionRequest,
   ): Promise<PaymentSessionResult>;
 
-  resumeSession(providerRef: string): Promise<string | null>;
+  resumeSession(
+    providerRef: string,
+  ): Promise<PaymentSessionResumeResult>;
+
+  cancelSession(providerRef: string): Promise<void>;
+
+  refund(request: PaymentRefundRequest): Promise<PaymentRefundResult>;
 }

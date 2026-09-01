@@ -13,6 +13,7 @@ type ApiVariant = {
   compareAtCents: number | null;
   currency: string;
   inventory: ApiInventory | null;
+  optionValues?: Record<string, string> | null;
 };
 
 type ApiImage = {
@@ -57,6 +58,10 @@ function toVariant(variant: ApiVariant): ProductVariant {
     currency: "MYR",
     availableStock,
     inStock: availableStock > 0,
+    optionValues:
+      variant.optionValues && Object.keys(variant.optionValues).length > 0
+        ? variant.optionValues
+        : { Option: variant.name },
   };
 }
 

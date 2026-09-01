@@ -1,29 +1,20 @@
-# Environment / secrets
+# Environment secrets
 .env
 .env.*
 !.env.example
 
 # Node
 node_modules/
-.next/
 dist/
-coverage/
-*.log
+.next/
 
 # Flutter / Dart
 .dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
 build/
 
-# IDE
-.vscode/
-.idea/
-
-# OS
+# OS / editor
 .DS_Store
 Thumbs.db
 
-# IDE project files
-*.iml
+# Runtime product media; stored outside Git and served by the API media adapter.
+services/api/storage/

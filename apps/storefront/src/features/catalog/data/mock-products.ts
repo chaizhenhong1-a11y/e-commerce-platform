@@ -42,6 +42,7 @@ export const mockProducts: Product[] = [
       currency: "MYR",
       availableStock: 999,
       inStock: true,
+      optionValues: { Option: "Default" },
     },
   ],
 },
@@ -85,6 +86,7 @@ export const mockProducts: Product[] = [
       currency: "MYR",
       availableStock: 999,
       inStock: true,
+      optionValues: { Option: "Default" },
     },
   ],
 },
@@ -129,6 +131,7 @@ export const mockProducts: Product[] = [
       currency: "MYR",
       availableStock: 999,
       inStock: true,
+      optionValues: { Option: "Default" },
     },
   ],
 },];

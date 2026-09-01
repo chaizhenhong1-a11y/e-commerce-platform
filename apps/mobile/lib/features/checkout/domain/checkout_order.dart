@@ -7,7 +7,10 @@ class CheckoutOrder {
     required this.currency,
     required this.subtotalCents,
     required this.shippingCents,
+    required this.discountCents,
     required this.totalCents,
+    this.couponCode,
+    this.couponName,
     required this.reservationExpiresAt,
   });
 
@@ -20,7 +23,10 @@ class CheckoutOrder {
       currency: json['currency'] as String? ?? 'MYR',
       subtotalCents: json['subtotalCents'] as int,
       shippingCents: json['shippingCents'] as int,
+      discountCents: json['discountCents'] as int? ?? 0,
       totalCents: json['totalCents'] as int,
+      couponCode: json['couponCode'] as String?,
+      couponName: json['couponName'] as String?,
       reservationExpiresAt:
           DateTime.parse(json['reservationExpiresAt'] as String).toLocal(),
     );
@@ -33,11 +39,15 @@ class CheckoutOrder {
   final String currency;
   final int subtotalCents;
   final int shippingCents;
+  final int discountCents;
   final int totalCents;
+  final String? couponCode;
+  final String? couponName;
   final DateTime reservationExpiresAt;
 
   double get subtotal => subtotalCents / 100;
   double get shipping => shippingCents / 100;
+  double get discount => discountCents / 100;
   double get total => totalCents / 100;
 }
 
@@ -52,6 +62,7 @@ class CheckoutInput {
     required this.state,
     required this.postcode,
     this.addressLine2,
+    this.couponCode,
   });
 
   final String sessionId;
@@ -63,6 +74,7 @@ class CheckoutInput {
   final String city;
   final String state;
   final String postcode;
+  final String? couponCode;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -78,6 +90,8 @@ class CheckoutInput {
       'postcode': postcode.trim(),
       'countryCode': 'MY',
       'shippingMethod': 'STANDARD',
+      if (couponCode?.trim().isNotEmpty ?? false)
+        'couponCode': couponCode!.trim(),
     };
   }
 }
@@ -109,4 +123,43 @@ class PaymentSession {
   final int amountCents;
   final String currency;
   final String? checkoutUrl;
+}
+
+class CouponValidation {
+  const CouponValidation({
+    required this.code,
+    required this.name,
+    required this.discountCents,
+  });
+
+  factory CouponValidation.fromJson(Map<String, dynamic> json) {
+    return CouponValidation(
+      code: json['code'] as String,
+      name: json['name'] as String,
+      discountCents: json['discountCents'] as int,
+    );
+  }
+
+  final String code;
+  final String name;
+  final int discountCents;
+
+  double get discount => discountCents / 100;
+}
+
+class AutomaticPromotionPreview {
+  const AutomaticPromotionPreview(
+      {required this.id, required this.name, required this.discountCents});
+
+  factory AutomaticPromotionPreview.fromJson(Map<String, dynamic> json) =>
+      AutomaticPromotionPreview(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        discountCents: json['discountCents'] as int,
+      );
+
+  final String id;
+  final String name;
+  final int discountCents;
+  double get discount => discountCents / 100;
 }

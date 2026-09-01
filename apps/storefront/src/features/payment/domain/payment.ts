@@ -9,4 +9,5 @@ export type Payment = {
   currency: string;
   providerRef: string | null;
   checkoutUrl: string | null;
+  resumed?: boolean;
 };

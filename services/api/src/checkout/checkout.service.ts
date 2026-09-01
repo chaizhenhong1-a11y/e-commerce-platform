@@ -8,6 +8,7 @@ import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { OrderAccessService } from '../orders/order-access.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { PromotionsService } from '../promotions/promotions.service';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
 
 const FREE_SHIPPING_THRESHOLD_CENTS = 15000;
@@ -20,9 +21,10 @@ export class CheckoutService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly orderAccess: OrderAccessService,
+    private readonly promotions: PromotionsService,
   ) {}
 
-  async createOrder(input: CreateCheckoutDto, userId?: string) {
+  async createOrder(input: CreateCheckoutDto, userId: string) {
     for (let attempt = 1; attempt <= MAX_TRANSACTION_RETRIES; attempt += 1) {
       try {
         return await this.prisma.$transaction(
@@ -46,7 +48,7 @@ export class CheckoutService {
   private async createOrderInTransaction(
     tx: Prisma.TransactionClient,
     input: CreateCheckoutDto,
-    userId?: string,
+    userId: string,
   ) {
     const cart = await tx.cart.findUnique({
       where: { sessionId: input.sessionId },
@@ -67,6 +69,10 @@ export class CheckoutService {
     });
 
     if (!cart) {
+      throw new NotFoundException('Cart not found.');
+    }
+
+    if (cart.userId !== userId) {
       throw new NotFoundException('Cart not found.');
     }
 
@@ -91,6 +97,8 @@ export class CheckoutService {
       unitPriceCents: number;
       quantity: number;
       lineTotalCents: number;
+      discountCents: number;
+      productId: string;
     }> = [];
 
     for (const item of cart.items) {
@@ -128,14 +136,54 @@ export class CheckoutService {
         unitPriceCents: variant.priceCents,
         quantity: item.quantity,
         lineTotalCents,
+        discountCents: 0,
+        productId: variant.product.id,
       });
     }
 
+    const automaticEvaluation = await this.promotions.evaluateBestAutomaticPromotion(
+      tx, cart.items, subtotalCents,
+    );
+    let couponEvaluation:
+      | Awaited<ReturnType<PromotionsService['evaluateCoupon']>>
+      | null = null;
+    if (input.couponCode?.trim()) {
+      couponEvaluation = await this.promotions.evaluateCoupon(
+        tx, this.promotions.normalizeCode(input.couponCode), cart.items, subtotalCents, userId,
+      );
+    }
+
+    // Coupons and automatic promotions do not stack. The customer always receives
+    // the larger eligible discount; a tie favors the explicitly entered coupon.
+    const useCoupon = !!couponEvaluation &&
+      (!automaticEvaluation || couponEvaluation.discountCents >= automaticEvaluation.discountCents);
+    const selectedPromotion = useCoupon ? couponEvaluation : automaticEvaluation;
+
+    if (selectedPromotion) {
+      const eligibleProductIds = new Set(selectedPromotion.eligibleProductIds);
+      const eligibleIndexes = orderItems
+        .map((item, index) => (eligibleProductIds.has(item.productId) ? index : -1))
+        .filter((index) => index >= 0);
+      const eligibleTotal = eligibleIndexes.reduce(
+        (sum, index) => sum + orderItems[index].lineTotalCents, 0,
+      );
+      let allocated = 0;
+      eligibleIndexes.forEach((index, position) => {
+        const item = orderItems[index];
+        const discount = position === eligibleIndexes.length - 1
+          ? selectedPromotion.discountCents - allocated
+          : Math.floor((selectedPromotion.discountCents * item.lineTotalCents) / eligibleTotal);
+        item.discountCents = Math.max(0, discount);
+        allocated += item.discountCents;
+      });
+    }
+
+    const discountCents = selectedPromotion?.discountCents ?? 0;
     const shippingCents =
       subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS
         ? 0
         : STANDARD_SHIPPING_CENTS;
-    const totalCents = subtotalCents + shippingCents;
+    const totalCents = Math.max(0, subtotalCents + shippingCents - discountCents);
 
     for (const item of cart.items) {
       const inventory = item.variant.inventory!;
@@ -154,12 +202,16 @@ export class CheckoutService {
       data: {
         orderNumber: this.createOrderNumber(),
         cartId: cart.id,
-        userId: userId ?? null,
+        userId,
         email: input.email.trim().toLowerCase(),
         shippingMethod: 'STANDARD',
         currency: 'MYR',
         subtotalCents,
         shippingCents,
+        discountCents,
+        couponCode: useCoupon ? couponEvaluation?.code ?? null : null,
+        couponName: useCoupon ? couponEvaluation?.name ?? null : null,
+        automaticPromotionName: !useCoupon ? automaticEvaluation?.name ?? null : null,
         totalCents,
         shippingName: input.fullName.trim(),
         shippingPhone: input.phone.trim(),
@@ -173,10 +225,23 @@ export class CheckoutService {
           Date.now() + RESERVATION_MINUTES * 60 * 1000,
         ),
         items: {
-          create: orderItems,
+          create: orderItems.map(({ productId: _productId, ...item }) => item),
         },
       },
     });
+
+    if (useCoupon && couponEvaluation) {
+      await tx.couponRedemption.create({
+        data: {
+          couponId: couponEvaluation.id,
+          orderId: order.id,
+          userId,
+          codeSnapshot: couponEvaluation.code,
+          nameSnapshot: couponEvaluation.name,
+          discountCents: couponEvaluation.discountCents,
+        },
+      });
+    }
 
     await tx.cart.update({
       where: { id: cart.id },
@@ -210,6 +275,10 @@ export class CheckoutService {
       currency: order.currency,
       subtotalCents: order.subtotalCents,
       shippingCents: order.shippingCents,
+      discountCents: order.discountCents,
+      couponCode: order.couponCode,
+      couponName: order.couponName,
+      automaticPromotionName: order.automaticPromotionName,
       totalCents: order.totalCents,
       reservationExpiresAt: order.reservationExpiresAt,
       orderAccessToken: this.orderAccess.issueGuestToken(order),
@@ -233,6 +302,7 @@ export class CheckoutService {
         quantity: item.quantity,
         unitPriceCents: item.unitPriceCents,
         lineTotalCents: item.lineTotalCents,
+        discountCents: item.discountCents,
       })),
     };
   }

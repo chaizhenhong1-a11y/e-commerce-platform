@@ -2,59 +2,55 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   Param,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import type { AuthenticatedUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentsService } from './payments.service';
 
 @Controller('payments')
-@UseGuards(OptionalJwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post()
   create(
     @Body() body: CreatePaymentDto,
-    @CurrentUser() user?: AuthenticatedUser,
-    @Headers('x-order-access-token') guestToken?: string,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.paymentsService.create(
       body.orderNumber,
       body.provider,
-      user?.id,
-      guestToken,
+      user.id,
+      undefined,
     );
   }
 
   @Get(':id')
   findOne(
     @Param('id') id: string,
-    @CurrentUser() user?: AuthenticatedUser,
-    @Headers('x-order-access-token') guestToken?: string,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.paymentsService.findOne(
       id,
-      user?.id,
-      guestToken,
+      user.id,
+      undefined,
     );
   }
 
   @Post(':id/dev-confirm')
   confirmDevelopmentPayment(
     @Param('id') id: string,
-    @CurrentUser() user?: AuthenticatedUser,
-    @Headers('x-order-access-token') guestToken?: string,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.paymentsService.confirmDevelopmentPayment(
       id,
-      user?.id,
-      guestToken,
+      user.id,
+      undefined,
     );
   }
 }

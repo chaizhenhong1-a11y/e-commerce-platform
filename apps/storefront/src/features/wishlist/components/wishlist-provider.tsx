@@ -91,6 +91,17 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   }, [sync]);
 
   useEffect(() => {
+    const handleSignedOut = () => {
+      setProductIds(new Set());
+      setAuthenticated(false);
+      setLoading(false);
+    };
+
+    window.addEventListener("textshop:auth-signed-out", handleSignedOut);
+    return () => window.removeEventListener("textshop:auth-signed-out", handleSignedOut);
+  }, []);
+
+  useEffect(() => {
     const refreshInBackground = () => {
       if (document.visibilityState !== "visible") {
         return;

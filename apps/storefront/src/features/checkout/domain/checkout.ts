@@ -10,6 +10,7 @@ export type CheckoutPayload = {
   postcode: string;
   countryCode: "MY";
   shippingMethod: "STANDARD";
+  couponCode?: string;
 };
 
 export type CheckoutOrderItem = {
@@ -21,6 +22,7 @@ export type CheckoutOrderItem = {
   quantity: number;
   unitPriceCents: number;
   lineTotalCents: number;
+  discountCents: number;
 };
 
 export type CheckoutOrder = {
@@ -31,6 +33,9 @@ export type CheckoutOrder = {
   currency: string;
   subtotalCents: number;
   shippingCents: number;
+  discountCents: number;
+  couponCode: string | null;
+  couponName: string | null;
   totalCents: number;
   reservationExpiresAt: string | null;
   email: string;
@@ -45,4 +50,22 @@ export type CheckoutOrder = {
     countryCode: string;
   };
   items: CheckoutOrderItem[];
+};
+
+export type CouponValidation = {
+  id: string;
+  code: string;
+  name: string;
+  discountType: "PERCENTAGE" | "FIXED_AMOUNT";
+  value: number;
+  discountCents: number;
+  eligibleSubtotalCents: number;
+  minSubtotalCents: number;
+  maxDiscountCents: number | null;
+};
+
+export type AutomaticPromotionPreview = {
+  id: string;
+  name: string;
+  discountCents: number;
 };

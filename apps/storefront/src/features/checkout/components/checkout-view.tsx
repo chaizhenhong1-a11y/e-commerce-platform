@@ -13,8 +13,8 @@ import {
   resetCartSession,
 } from "@/features/cart/data/cart-session";
 import type { Cart } from "@/features/cart/domain/cart";
-import { createCheckoutOrder } from "../data/checkout-api";
-import type { CheckoutOrder } from "../domain/checkout";
+import { createCheckoutOrder, previewAutomaticPromotion, validateCoupon } from "../data/checkout-api";
+import type { AutomaticPromotionPreview, CheckoutOrder, CouponValidation } from "../domain/checkout";
 
 type CheckoutForm = {
   email: string;
@@ -60,10 +60,16 @@ export function CheckoutView() {
   const [savedAddresses, setSavedAddresses] = useState<CustomerAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [signedIn, setSignedIn] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [order, setOrder] = useState<CheckoutOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [coupon, setCoupon] = useState<CouponValidation | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [couponError, setCouponError] = useState("");
+  const [automaticPromotion, setAutomaticPromotion] = useState<AutomaticPromotionPreview | null>(null);
 
   useEffect(() => {
     const sessionId = getCartSessionId();
@@ -80,10 +86,12 @@ export function CheckoutView() {
     getCurrentCustomer()
       .then(async (customer) => {
         if (!customer) {
+          setAuthChecked(true);
           return;
         }
 
         setSignedIn(true);
+        setAuthChecked(true);
         const addresses = await getCustomerAddresses().catch(() => []);
         setSavedAddresses(addresses);
 
@@ -107,10 +115,20 @@ export function CheckoutView() {
             : withCustomer;
         });
       })
-      .catch(() => {
-        // Guest checkout remains available when no account session exists.
-      });
+      .catch(() => setAuthChecked(true));
   }, []);
+
+  useEffect(() => {
+    if (!cart?.sessionId) {
+      setAutomaticPromotion(null);
+      return;
+    }
+    let cancelled = false;
+    previewAutomaticPromotion(cart.sessionId).then((promotion) => {
+      if (!cancelled) setAutomaticPromotion(promotion);
+    });
+    return () => { cancelled = true; };
+  }, [cart?.sessionId, cart?.subtotal]);
 
   function updateField(field: keyof CheckoutForm, value: string) {
     setSelectedAddressId("");
@@ -126,6 +144,28 @@ export function CheckoutView() {
 
     setSelectedAddressId(address.id);
     setForm((current) => applyAddress(current, address));
+  }
+
+  async function applyCoupon() {
+    if (!cart || !couponCode.trim() || couponBusy) return;
+    setCouponBusy(true);
+    setCouponError("");
+    try {
+      const validated = await validateCoupon(cart.sessionId, couponCode.trim());
+      setCoupon(validated);
+      setCouponCode(validated.code);
+    } catch (cause) {
+      setCoupon(null);
+      setCouponError(cause instanceof Error ? cause.message : "Coupon could not be applied.");
+    } finally {
+      setCouponBusy(false);
+    }
+  }
+
+  function removeCoupon() {
+    setCoupon(null);
+    setCouponCode("");
+    setCouponError("");
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -156,6 +196,7 @@ export function CheckoutView() {
         postcode: form.postcode.trim(),
         countryCode: "MY",
         shippingMethod: "STANDARD",
+        couponCode: coupon?.code,
       });
 
       setOrder(created);
@@ -170,6 +211,17 @@ export function CheckoutView() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (authChecked && !signedIn) {
+    return (
+      <div className="checkout-empty-state">
+        <span className="section-kicker">ACCOUNT REQUIRED</span>
+        <h2>Sign in to checkout</h2>
+        <p>Purchases, payment, delivery addresses, orders, returns, and refunds are tied to your account.</p>
+        <Link className="button button--checkout" href="/account/sign-in?returnTo=%2Fcheckout">Sign in to continue</Link>
+      </div>
+    );
   }
 
   if (loading) {
@@ -264,7 +316,13 @@ export function CheckoutView() {
   }
 
   const estimatedShipping = cart.subtotal >= 150 ? 0 : 10;
-  const estimatedTotal = cart.subtotal + estimatedShipping;
+  const selectedDiscount = coupon && (!automaticPromotion || coupon.discountCents >= automaticPromotion.discountCents)
+    ? { label: `Coupon ${coupon.code}`, cents: coupon.discountCents, automatic: false }
+    : automaticPromotion
+      ? { label: automaticPromotion.name, cents: automaticPromotion.discountCents, automatic: true }
+      : null;
+  const estimatedDiscount = (selectedDiscount?.cents ?? 0) / 100;
+  const estimatedTotal = Math.max(0, cart.subtotal + estimatedShipping - estimatedDiscount);
 
   return (
     <form className="checkout-layout" onSubmit={submit}>
@@ -510,6 +568,38 @@ export function CheckoutView() {
           ))}
         </div>
 
+        {automaticPromotion ? (
+          <div className="checkout-coupon__success">
+            <strong>Automatic discount applied</strong> · {automaticPromotion.name} · RM {(automaticPromotion.discountCents / 100).toFixed(2)} off. No coupon code required.
+          </div>
+        ) : null}
+
+        <div className="checkout-coupon">
+          <label htmlFor="checkout-coupon-code">Coupon code</label>
+          <div className="checkout-coupon__row">
+            <input
+              id="checkout-coupon-code"
+              value={couponCode}
+              disabled={couponBusy}
+              onChange={(event) => {
+                setCouponCode(event.target.value.toUpperCase());
+                if (coupon) setCoupon(null);
+                setCouponError("");
+              }}
+              placeholder="WELCOME10"
+            />
+            {coupon ? (
+              <button type="button" onClick={removeCoupon}>Remove</button>
+            ) : (
+              <button type="button" disabled={!couponCode.trim() || couponBusy} onClick={() => void applyCoupon()}>
+                {couponBusy ? "Checking…" : "Apply"}
+              </button>
+            )}
+          </div>
+          {coupon ? <p className="checkout-coupon__success"><strong>{coupon.code}</strong> applied · RM {(coupon.discountCents / 100).toFixed(2)} off</p> : null}
+          {couponError ? <p className="checkout-coupon__error">{couponError}</p> : null}
+        </div>
+
         <div className="checkout-order-totals">
           <div>
             <span>Subtotal</span>
@@ -523,6 +613,12 @@ export function CheckoutView() {
                 : `RM ${estimatedShipping.toFixed(2)}`}
             </span>
           </div>
+          {selectedDiscount ? (
+            <div className="checkout-order-totals__discount">
+              <span>{selectedDiscount.automatic ? "Automatic promotion" : "Discount"} ({selectedDiscount.label})</span>
+              <span>− RM {estimatedDiscount.toFixed(2)}</span>
+            </div>
+          ) : null}
           <div className="checkout-order-totals__grand">
             <strong>Total</strong>
             <strong>RM {estimatedTotal.toFixed(2)}</strong>

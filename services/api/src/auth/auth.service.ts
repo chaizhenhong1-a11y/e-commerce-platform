@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { AccountTokenType, UserStatus } from '@prisma/client';
+import { AccountTokenType, UserRole, UserStatus } from '@prisma/client';
 import { compare, hash } from 'bcryptjs';
 import { createHash, randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -339,6 +339,7 @@ export class AuthService {
       firstName: string;
       lastName: string | null;
       emailVerifiedAt?: Date | null;
+      role: UserRole;
     },
     userAgent?: string,
   ) {
@@ -392,6 +393,7 @@ export class AuthService {
     firstName: string;
     lastName: string | null;
     emailVerifiedAt?: Date | null;
+    role: UserRole;
   }): AuthenticatedUser {
     return {
       id: user.id,
@@ -399,6 +401,7 @@ export class AuthService {
       firstName: user.firstName,
       lastName: user.lastName,
       emailVerified: Boolean(user.emailVerifiedAt),
+      role: user.role,
     };
   }
 }

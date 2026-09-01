@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/presentation/auth_providers.dart';
 import '../../products/presentation/product_providers.dart';
 import '../../products/presentation/widgets/product_card.dart';
 import 'wishlist_providers.dart';
@@ -31,6 +32,32 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = ref.watch(authControllerProvider);
+    if (!auth.isAuthenticated) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Wishlist')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Icon(Icons.lock_outline_rounded, size: 56),
+                const SizedBox(height: 16),
+                const Text('Sign in to view your wishlist',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+                const SizedBox(height: 18),
+                FilledButton(
+                    onPressed: () =>
+                        context.push('/sign-in?returnTo=%2Fwishlist'),
+                    child: const Text('Sign in')),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     final wishlist = ref.watch(wishlistProductIdsProvider);
     final products = ref.watch(productsProvider);
 

@@ -4,6 +4,7 @@ export type Customer = {
   firstName: string;
   lastName: string | null;
   emailVerified: boolean;
+  role: "CUSTOMER" | "STAFF" | "ADMIN";
 };
 
 export type CustomerOrder = {
@@ -11,13 +12,19 @@ export type CustomerOrder = {
   status:
     | "AWAITING_PAYMENT"
     | "CONFIRMED"
+    | "PROCESSING"
+    | "SHIPPED"
+    | "DELIVERED"
     | "FULFILLED"
     | "CANCELLED"
     | "EXPIRED";
-  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+  paymentStatus: "PENDING" | "PAID" | "FAILED" | "PARTIALLY_REFUNDED" | "REFUNDED";
   currency: string;
   subtotalCents: number;
   shippingCents: number;
+  discountCents: number;
+  couponCode: string | null;
+  couponName: string | null;
   totalCents: number;
   shippingMethod: "STANDARD";
   shipping: {
@@ -40,6 +47,7 @@ export type CustomerOrder = {
     quantity: number;
     unitPriceCents: number;
     lineTotalCents: number;
+    discountCents: number;
   }>;
 };
 

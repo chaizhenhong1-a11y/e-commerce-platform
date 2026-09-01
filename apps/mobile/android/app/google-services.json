@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "250370743243",
+    "project_id": "honggeaixuexidaima",
+    "storage_bucket": "honggeaixuexidaima.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:250370743243:android:4ac2b473e8b8fec978744e",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_3"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrlVOHyfKMREUK_Whhl8sPQ_DvbHoDsH4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:250370743243:android:8927d1c89ead05e078744e",
+        "android_client_info": {
+          "package_name": "com.example.textshop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrlVOHyfKMREUK_Whhl8sPQ_DvbHoDsH4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

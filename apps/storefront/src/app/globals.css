@@ -4025,3 +4025,72 @@ a {
     grid-column: auto;
   }
 }
+
+/* Phase 037 payment recovery */
+.payment-recovery-summary {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr 1fr;
+  gap: 1px;
+  margin: 24px 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--line);
+}
+
+.payment-recovery-summary > div {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  background: #fff;
+}
+
+.payment-recovery-summary span,
+.payment-recovery-banner span,
+.payment-recovery-banner small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.payment-recovery-summary strong {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.payment-recovery-banner {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 18px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--soft);
+}
+
+.payment-recovery-banner strong {
+  font-size: 13px;
+}
+
+.payment-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.payment-card--blocked {
+  text-align: left;
+}
+
+@media (max-width: 620px) {
+  .payment-recovery-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-provider-option {
+    align-items: flex-start;
+  }
+}
+.checkout-coupon{border-top:1px solid #e4e7ec;border-bottom:1px solid #e4e7ec;padding:18px 0;margin:18px 0}.checkout-coupon>label{display:block;font-size:13px;font-weight:800;margin-bottom:8px}.checkout-coupon__row{display:grid;grid-template-columns:1fr auto;gap:8px}.checkout-coupon__row input{min-width:0;border:1px solid #d0d5dd;border-radius:10px;padding:11px 12px;font:inherit;text-transform:uppercase}.checkout-coupon__row button{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}.checkout-coupon__row button:disabled{opacity:.55;cursor:not-allowed}.checkout-coupon__success,.checkout-coupon__error{margin:8px 0 0;font-size:13px}.checkout-coupon__success{color:#027a48}.checkout-coupon__error{color:#b42318}.checkout-order-totals__discount{color:#027a48}
+.order-detail-totals__discount{color:#027a48}
+
+.notification-bell{position:relative;font-size:24px}.notification-bell b{position:absolute;right:-8px;top:-7px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:currentColor;color:Canvas;font-size:10px;display:grid;place-items:center}.notification-center{padding-block:48px 80px}.notification-center__head{display:flex;justify-content:space-between;gap:24px;align-items:end;margin-bottom:24px}.notification-list{display:grid;gap:12px}.notification-card{display:flex;justify-content:space-between;gap:24px;padding:20px;border:1px solid var(--border, #ddd);border-radius:18px;background:#fff}.notification-card--unread{border-width:2px}.notification-card h2{font-size:1rem;margin:6px 0}.notification-card p,.notification-card small{color:#666}.notification-card__actions{display:flex;gap:8px;align-items:center}.notification-empty{padding:40px;border:1px dashed #ccc;border-radius:18px;text-align:center}@media(max-width:720px){.notification-card,.notification-center__head{align-items:stretch;flex-direction:column}.notification-card__actions{justify-content:flex-start}}

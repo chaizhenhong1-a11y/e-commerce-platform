@@ -10,6 +10,7 @@ import {
   PaymentStatus,
   Prisma,
 } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 import { OrderAccessService } from '../orders/order-access.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentProviderRegistry } from './providers/payment-provider.registry';
@@ -21,6 +22,7 @@ export class PaymentsService {
     private readonly providers: PaymentProviderRegistry,
     private readonly configService: ConfigService,
     private readonly orderAccess: OrderAccessService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async create(
@@ -34,8 +36,8 @@ export class PaymentsService {
       where: { orderNumber },
       include: {
         payments: {
+          where: { status: PaymentStatus.PENDING },
           orderBy: { createdAt: 'desc' },
-          take: 1,
         },
       },
     });
@@ -66,19 +68,52 @@ export class PaymentsService {
       );
     }
 
-    const latest = order.payments[0];
+    for (const pending of order.payments) {
+      if (!pending.providerRef) {
+        throw new BadRequestException(
+          'A payment setup is already in progress. Please try again shortly.',
+        );
+      }
 
-    if (latest?.status === 'PENDING' && latest.provider === provider) {
-      const checkoutUrl = latest.providerRef
-        ? await this.providers
-            .get(provider)
-            .resumeSession(latest.providerRef)
-        : null;
+      const adapter = this.providers.get(pending.provider);
+      const session = await adapter.resumeSession(pending.providerRef);
 
-      return {
-        ...this.toResponse(latest),
-        checkoutUrl,
-      };
+      if (session.state === 'PAID') {
+        return this.confirmProviderPayment(
+          pending.id,
+          pending.providerRef,
+        );
+      }
+
+      if (session.state === 'PROCESSING') {
+        throw new BadRequestException(
+          'A payment is still being processed. Refresh the order before starting another payment.',
+        );
+      }
+
+      if (session.state === 'EXPIRED') {
+        await this.markPaymentFailed(
+          pending.id,
+          'PROVIDER_SESSION_EXPIRED',
+          'The previous payment session expired before completion.',
+        );
+        continue;
+      }
+
+      if (pending.provider === provider) {
+        return {
+          ...this.toResponse(pending),
+          checkoutUrl: session.checkoutUrl,
+          resumed: true,
+        };
+      }
+
+      await adapter.cancelSession(pending.providerRef);
+      await this.markPaymentFailed(
+        pending.id,
+        'PAYMENT_PROVIDER_SWITCHED',
+        `Payment provider changed from ${pending.provider} to ${provider}.`,
+      );
     }
 
     const payment = await this.prisma.payment.create({
@@ -119,20 +154,6 @@ export class PaymentsService {
         },
       });
 
-      if (
-        session.reservationExpiresAt &&
-        (!order.reservationExpiresAt ||
-          session.reservationExpiresAt > order.reservationExpiresAt)
-      ) {
-        await this.prisma.order.update({
-          where: { id: order.id },
-          data: {
-            reservationExpiresAt:
-              session.reservationExpiresAt,
-          },
-        });
-      }
-
       if (payment.attempts[0]) {
         await this.prisma.paymentAttempt.update({
           where: { id: payment.attempts[0].id },
@@ -149,6 +170,7 @@ export class PaymentsService {
       return {
         ...this.toResponse(updated),
         checkoutUrl: session.checkoutUrl,
+        resumed: false,
       };
     } catch (error) {
       await this.markPaymentFailed(
@@ -226,7 +248,7 @@ export class PaymentsService {
     paymentId: string,
     providerRef: string | null,
   ) {
-    return this.prisma.$transaction(
+    const result = await this.prisma.$transaction(
       async (tx) => {
         const payment = await tx.payment.findUnique({
           where: { id: paymentId },
@@ -355,6 +377,22 @@ export class PaymentsService {
           Prisma.TransactionIsolationLevel.Serializable,
       },
     );
+    const confirmedPayment = await this.prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: { order: true },
+    });
+    if (confirmedPayment?.status === PaymentStatus.PAID) {
+      await this.notifications.create({
+        userId: confirmedPayment.order.userId,
+        type: 'PAYMENT',
+        title: 'Payment confirmed',
+        message: `Payment for order ${confirmedPayment.order.orderNumber} was confirmed successfully.`,
+        orderNumber: confirmedPayment.order.orderNumber,
+        actionPath: `/orders/${confirmedPayment.order.orderNumber}`,
+        eventKey: `payment-confirmed:${confirmedPayment.order.id}`,
+      });
+    }
+    return result;
   }
 
   async failProviderPayment(

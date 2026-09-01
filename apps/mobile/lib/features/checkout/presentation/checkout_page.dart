@@ -31,11 +31,17 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   final _city = TextEditingController();
   final _state = TextEditingController();
   final _postcode = TextEditingController();
+  final _couponCode = TextEditingController();
 
   String? _selectedAddressId;
   String _provider = kDebugMode ? 'MANUAL_TEST' : 'STRIPE';
   bool _initialized = false;
   bool _submitting = false;
+  bool _couponBusy = false;
+  CouponValidation? _coupon;
+  AutomaticPromotionPreview? _automaticPromotion;
+  String? _promotionSessionId;
+  String? _couponError;
   String? _error;
 
   @override
@@ -48,6 +54,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     _city.dispose();
     _state.dispose();
     _postcode.dispose();
+    _couponCode.dispose();
     super.dispose();
   }
 
@@ -75,6 +82,53 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     });
   }
 
+  Future<void> _loadAutomaticPromotion(CustomerCart cart) async {
+    if (_promotionSessionId == cart.sessionId) return;
+    _promotionSessionId = cart.sessionId;
+    try {
+      final promotion =
+          await ref.read(checkoutRepositoryProvider).previewAutomaticPromotion(
+                sessionId: cart.sessionId,
+              );
+      if (mounted) setState(() => _automaticPromotion = promotion);
+    } catch (_) {
+      if (mounted) setState(() => _automaticPromotion = null);
+    }
+  }
+
+  Future<void> _applyCoupon(CustomerCart cart) async {
+    if (_couponBusy || _couponCode.text.trim().isEmpty) return;
+    setState(() {
+      _couponBusy = true;
+      _couponError = null;
+    });
+    try {
+      final result = await ref.read(checkoutRepositoryProvider).validateCoupon(
+            sessionId: cart.sessionId,
+            couponCode: _couponCode.text.trim(),
+          );
+      if (!mounted) return;
+      setState(() {
+        _coupon = result;
+        _couponCode.text = result.code;
+      });
+    } on DioException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _coupon = null;
+        _couponError = _messageFrom(error, 'Coupon could not be applied.');
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _coupon = null;
+        _couponError = 'Coupon could not be applied.';
+      });
+    } finally {
+      if (mounted) setState(() => _couponBusy = false);
+    }
+  }
+
   Future<void> _submit(CustomerCart cart) async {
     if (_submitting || !_formKey.currentState!.validate()) return;
 
@@ -83,9 +137,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       _error = null;
     });
 
+    CheckoutOrder? createdOrder;
     try {
       final repository = ref.read(checkoutRepositoryProvider);
-      final order = await repository.createOrder(
+      createdOrder = await repository.createOrder(
         CheckoutInput(
           sessionId: cart.sessionId,
           email: _email.text,
@@ -96,20 +151,33 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           city: _city.text,
           state: _state.text,
           postcode: _postcode.text,
+          couponCode: _coupon?.code,
         ),
       );
 
+      // From this point onward the order already exists and owns the
+      // 30-minute reservation. Never submit Checkout again to recover a
+      // payment failure; recovery belongs to the order details screen.
+      ref.invalidate(customerCartProvider);
+      ref.invalidate(customerOrdersProvider);
+
       final payment = await repository.createPayment(
-        orderNumber: order.orderNumber,
+        orderNumber: createdOrder.orderNumber,
         provider: _provider,
       );
+      _verifyPaymentAmount(createdOrder, payment);
 
-      if (_provider == 'MANUAL_TEST') {
+      if (payment.status == 'PAID') {
+        if (!mounted) return;
+        await _showCompleted(createdOrder);
+        return;
+      }
+
+      if (payment.provider == 'MANUAL_TEST') {
         await repository.confirmDevelopmentPayment(payment.id);
-        ref.invalidate(customerCartProvider);
         ref.invalidate(customerOrdersProvider);
         if (!mounted) return;
-        await _showCompleted(order);
+        await _showCompleted(createdOrder);
         return;
       }
 
@@ -126,24 +194,74 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         throw StateError('Unable to open the payment page.');
       }
 
-      ref.invalidate(customerCartProvider);
-      ref.invalidate(customerOrdersProvider);
       if (!mounted) return;
-      await _showStripeOpened(order);
+      // Order details observes app resume and refreshes the trusted payment
+      // state after the customer returns from Stripe.
+      context.go('/orders/${createdOrder.orderNumber}');
     } on DioException catch (error) {
       if (!mounted) return;
+      if (createdOrder != null) {
+        await _showPaymentRecovery(
+          createdOrder,
+          _messageFrom(error, 'Payment could not be started.'),
+        );
+        return;
+      }
       setState(() {
         _error = _messageFrom(error, 'Checkout could not be completed.');
         _submitting = false;
       });
     } catch (error) {
       if (!mounted) return;
+      final message = error is StateError
+          ? error.message
+          : 'Checkout could not be completed.';
+      if (createdOrder != null) {
+        await _showPaymentRecovery(createdOrder, message);
+        return;
+      }
       setState(() {
-        _error = error is StateError
-            ? error.message
-            : 'Checkout could not be completed.';
+        _error = message;
         _submitting = false;
       });
+    }
+  }
+
+  void _verifyPaymentAmount(CheckoutOrder order, PaymentSession payment) {
+    if (payment.currency != order.currency ||
+        payment.amountCents != order.totalCents) {
+      throw StateError(
+        'Payment amount does not match the server-confirmed order total. '
+        'Open the order to retry safely.',
+      );
+    }
+  }
+
+  Future<void> _showPaymentRecovery(
+    CheckoutOrder order,
+    String message,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.payment_rounded, size: 44),
+        title: const Text('Order created — payment pending'),
+        content: Text(
+          '$message\n\nOrder ${order.orderNumber} is already reserved. '
+          'Continue payment from Order details instead of placing another order.',
+          textAlign: TextAlign.center,
+        ),
+        actions: <Widget>[
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Open order'),
+          ),
+        ],
+      ),
+    );
+    if (mounted) {
+      context.go('/orders/${order.orderNumber}');
     }
   }
 
@@ -162,29 +280,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           FilledButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('View orders'),
-          ),
-        ],
-      ),
-    );
-
-    if (mounted) {
-      context.go('/orders');
-    }
-  }
-
-  Future<void> _showStripeOpened(CheckoutOrder order) async {
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Payment page opened'),
-        content: Text(
-          'Complete payment for ${order.orderNumber}, then return to TextShop '
-          'and refresh Orders. Inventory remains reserved for 30 minutes.',
-        ),
-        actions: <Widget>[
-          FilledButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Go to orders'),
           ),
         ],
       ),
@@ -218,6 +313,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           ),
         ),
         data: (value) {
+          if (_promotionSessionId != value.sessionId) {
+            WidgetsBinding.instance
+                .addPostFrameCallback((_) => _loadAutomaticPromotion(value));
+          }
           if (value.items.isEmpty) {
             return const Center(child: Text('Your cart is empty.'));
           }
@@ -335,6 +434,83 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   ),
                 ),
                 const SizedBox(height: 14),
+                if (_automaticPromotion != null) ...<Widget>[
+                  _SectionCard(
+                    title: 'Automatic promotion',
+                    child: Text(
+                      '${_automaticPromotion!.name} · RM ${_automaticPromotion!.discount.toStringAsFixed(2)} off\nApplied automatically — no coupon code required.',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
+                _SectionCard(
+                  title: 'Coupon',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: TextField(
+                              controller: _couponCode,
+                              textCapitalization: TextCapitalization.characters,
+                              enabled: !_couponBusy,
+                              decoration: const InputDecoration(
+                                labelText: 'Coupon code',
+                                hintText: 'WELCOME10',
+                              ),
+                              onChanged: (_) {
+                                if (_coupon != null) {
+                                  setState(() => _coupon = null);
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          FilledButton.tonal(
+                            onPressed: _couponBusy
+                                ? null
+                                : _coupon != null
+                                    ? () => setState(() {
+                                          _coupon = null;
+                                          _couponCode.clear();
+                                          _couponError = null;
+                                        })
+                                    : () => _applyCoupon(value),
+                            child: Text(
+                              _couponBusy
+                                  ? 'Checking…'
+                                  : _coupon != null
+                                      ? 'Remove'
+                                      : 'Apply',
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_coupon != null) ...<Widget>[
+                        const SizedBox(height: 8),
+                        Text(
+                          '${_coupon!.code} applied · RM ${_coupon!.discount.toStringAsFixed(2)} off',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                      if (_couponError != null) ...<Widget>[
+                        const SizedBox(height: 8),
+                        Text(
+                          _couponError!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
                 _SectionCard(
                   title: 'Payment',
                   child: RadioGroup<String>(
@@ -367,7 +543,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                _OrderSummary(cart: value),
+                _OrderSummary(
+                    cart: value,
+                    coupon: _coupon,
+                    automaticPromotion: _automaticPromotion),
                 if (_error != null) ...<Widget>[
                   const SizedBox(height: 14),
                   Text(
@@ -584,14 +763,23 @@ class _SavedAddressPicker extends StatelessWidget {
 }
 
 class _OrderSummary extends StatelessWidget {
-  const _OrderSummary({required this.cart});
+  const _OrderSummary(
+      {required this.cart, this.coupon, this.automaticPromotion});
 
   final CustomerCart cart;
+  final CouponValidation? coupon;
+  final AutomaticPromotionPreview? automaticPromotion;
 
   @override
   Widget build(BuildContext context) {
     final shipping = cart.subtotal >= 150 ? 0.0 : 10.0;
-    final total = cart.subtotal + shipping;
+    final couponWins = coupon != null &&
+        (automaticPromotion == null ||
+            coupon!.discountCents >= automaticPromotion!.discountCents);
+    final discount =
+        couponWins ? coupon!.discount : automaticPromotion?.discount ?? 0.0;
+    final total =
+        (cart.subtotal + shipping - discount).clamp(0.0, double.infinity);
 
     return _SectionCard(
       title: 'Order review',
@@ -654,6 +842,15 @@ class _OrderSummary extends StatelessWidget {
             'Shipping',
             shipping == 0 ? 'FREE' : 'RM ${shipping.toStringAsFixed(2)}',
           ),
+          if (discount > 0) ...<Widget>[
+            const SizedBox(height: 8),
+            _row(
+              couponWins
+                  ? 'Discount (${coupon!.code})'
+                  : 'Automatic promotion (${automaticPromotion!.name})',
+              '- RM ${discount.toStringAsFixed(2)}',
+            ),
+          ],
           const Divider(height: 26),
           _row(
             'Total',

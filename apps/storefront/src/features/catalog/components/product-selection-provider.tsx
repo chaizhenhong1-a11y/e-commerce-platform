@@ -12,6 +12,7 @@ import type { ProductVariant } from "../domain/product";
 type ProductSelectionContextValue = {
   selectedVariant: ProductVariant | null;
   selectVariant: (variantId: string) => void;
+  selectOption: (optionName: string, value: string) => void;
 };
 
 const ProductSelectionContext =
@@ -37,8 +38,25 @@ export function ProductSelectionProvider({
     () => ({
       selectedVariant,
       selectVariant: setSelectedVariantId,
+      selectOption: (optionName: string, optionValue: string) => {
+        const current = selectedVariant?.optionValues ?? {};
+        const exact = variants.find((variant) => {
+          if (variant.optionValues[optionName] !== optionValue) return false;
+          return Object.entries(current).every(([name, value]) =>
+            name === optionName ? true : variant.optionValues[name] === value,
+          );
+        });
+        const fallback = variants.find(
+          (variant) =>
+            variant.optionValues[optionName] === optionValue && variant.inStock,
+        );
+        const candidate = exact ?? fallback ?? variants.find(
+          (variant) => variant.optionValues[optionName] === optionValue,
+        );
+        if (candidate) setSelectedVariantId(candidate.id);
+      },
     }),
-    [selectedVariant],
+    [selectedVariant, variants],
   );
 
   return (

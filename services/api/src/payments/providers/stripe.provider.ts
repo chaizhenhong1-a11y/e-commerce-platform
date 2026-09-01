@@ -9,6 +9,9 @@ import {
   PaymentProviderAdapter,
   PaymentSessionRequest,
   PaymentSessionResult,
+  PaymentSessionResumeResult,
+  PaymentRefundRequest,
+  PaymentRefundResult,
 } from './payment-provider';
 
 @Injectable()
@@ -78,12 +81,69 @@ export class StripePaymentProvider implements PaymentProviderAdapter {
     };
   }
 
-  async resumeSession(providerRef: string): Promise<string | null> {
+  async resumeSession(
+    providerRef: string,
+  ): Promise<PaymentSessionResumeResult> {
     const session = await this.getClient().checkout.sessions.retrieve(
       providerRef,
     );
 
-    return session.url ?? null;
+    if (session.payment_status === 'paid') {
+      return { state: 'PAID', checkoutUrl: null };
+    }
+
+    if (session.status === 'expired') {
+      return { state: 'EXPIRED', checkoutUrl: null };
+    }
+
+    if (session.status === 'open') {
+      return {
+        state: 'OPEN',
+        checkoutUrl: session.url ?? null,
+      };
+    }
+
+    return { state: 'PROCESSING', checkoutUrl: null };
+  }
+
+  async cancelSession(providerRef: string): Promise<void> {
+    const stripe = this.getClient();
+    const session = await stripe.checkout.sessions.retrieve(providerRef);
+
+    if (session.status === 'open') {
+      await stripe.checkout.sessions.expire(providerRef);
+    }
+  }
+
+  async refund(
+    request: PaymentRefundRequest,
+  ): Promise<PaymentRefundResult> {
+    const stripe = this.getClient();
+    const session = await stripe.checkout.sessions.retrieve(
+      request.paymentProviderRef,
+    );
+    const paymentIntent = session.payment_intent;
+    const paymentIntentId =
+      typeof paymentIntent === 'string'
+        ? paymentIntent
+        : paymentIntent?.id;
+
+    if (!paymentIntentId) {
+      throw new ServiceUnavailableException(
+        'Stripe payment intent is unavailable for this order.',
+      );
+    }
+
+    const refund = await stripe.refunds.create({
+      payment_intent: paymentIntentId,
+      amount: request.amountCents,
+      metadata: { refundId: request.refundId },
+    });
+
+    return {
+      providerRef: refund.id,
+      state: refund.status === 'succeeded' ? 'REFUNDED' : 'PROCESSING',
+    };
   }
 
   getWebhookClient(): Stripe {

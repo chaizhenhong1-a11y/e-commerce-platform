@@ -71,6 +71,11 @@ export async function logoutCustomer() {
   await fetch("/api/auth/logout", {
     method: "POST",
   });
+
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem("textshop.cart.session");
+    window.dispatchEvent(new CustomEvent("textshop:auth-signed-out"));
+  }
 }
 
 export async function getCurrentCustomer() {

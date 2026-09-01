@@ -58,4 +58,10 @@ export class CreateCheckoutDto {
 
   @IsIn(['STANDARD'])
   shippingMethod!: 'STANDARD';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  couponCode?: string;
+
 }

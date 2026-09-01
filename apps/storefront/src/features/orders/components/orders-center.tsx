@@ -14,6 +14,9 @@ type OrderFilter =
   | "ALL"
   | "AWAITING_PAYMENT"
   | "CONFIRMED"
+  | "PROCESSING"
+  | "SHIPPED"
+  | "DELIVERED"
   | "FULFILLED"
   | "CANCELLED"
   | "EXPIRED";
@@ -22,7 +25,10 @@ const filters: Array<{ value: OrderFilter; label: string }> = [
   { value: "ALL", label: "All" },
   { value: "AWAITING_PAYMENT", label: "Awaiting payment" },
   { value: "CONFIRMED", label: "Confirmed" },
-  { value: "FULFILLED", label: "Fulfilled" },
+  { value: "PROCESSING", label: "Processing" },
+  { value: "SHIPPED", label: "Shipped" },
+  { value: "DELIVERED", label: "Delivered" },
+  { value: "FULFILLED", label: "Fulfilled (legacy)" },
   { value: "CANCELLED", label: "Cancelled" },
   { value: "EXPIRED", label: "Expired" },
 ];
@@ -30,6 +36,9 @@ const filters: Array<{ value: OrderFilter; label: string }> = [
 const statusLabels: Record<CustomerOrder["status"], string> = {
   AWAITING_PAYMENT: "Awaiting payment",
   CONFIRMED: "Confirmed",
+  PROCESSING: "Processing",
+  SHIPPED: "Shipped",
+  DELIVERED: "Delivered",
   FULFILLED: "Fulfilled",
   CANCELLED: "Cancelled",
   EXPIRED: "Expired",

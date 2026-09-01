@@ -9,6 +9,9 @@ import {
   PaymentProviderAdapter,
   PaymentSessionRequest,
   PaymentSessionResult,
+  PaymentSessionResumeResult,
+  PaymentRefundRequest,
+  PaymentRefundResult,
 } from './payment-provider';
 
 @Injectable()
@@ -39,7 +42,26 @@ export class ManualTestPaymentProvider implements PaymentProviderAdapter {
     };
   }
 
-  async resumeSession(): Promise<null> {
-    return null;
+  async resumeSession(): Promise<PaymentSessionResumeResult> {
+    return { state: 'OPEN', checkoutUrl: null };
+  }
+
+  async cancelSession(): Promise<void> {
+    return;
+  }
+
+  async refund(
+    _request: PaymentRefundRequest,
+  ): Promise<PaymentRefundResult> {
+    if (this.configService.get<string>('NODE_ENV') === 'production') {
+      throw new ForbiddenException(
+        'Development refunds are disabled in production.',
+      );
+    }
+
+    return {
+      providerRef: `DEV-REFUND-${randomUUID()}`,
+      state: 'REFUNDED',
+    };
   }
 }

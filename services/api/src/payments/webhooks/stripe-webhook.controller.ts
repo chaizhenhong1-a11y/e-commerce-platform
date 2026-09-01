@@ -10,12 +10,14 @@ import type { Request } from 'express';
 import Stripe from 'stripe';
 import { PaymentsService } from '../payments.service';
 import { StripePaymentProvider } from '../providers/stripe.provider';
+import { RefundsService } from '../refunds/refunds.service';
 
 @Controller('webhooks/stripe')
 export class StripeWebhookController {
   constructor(
     private readonly stripeProvider: StripePaymentProvider,
     private readonly paymentsService: PaymentsService,
+    private readonly refundsService: RefundsService,
   ) {}
 
   @Post()
@@ -61,6 +63,20 @@ export class StripeWebhookController {
         await this.paymentsService.confirmProviderPayment(
           paymentId,
           session.id,
+        );
+      }
+    }
+
+    if (event.type === 'refund.updated') {
+      const refund = event.data.object as Stripe.Refund;
+      const refundId = refund.metadata?.refundId;
+
+      if (refundId) {
+        await this.refundsService.syncStripeRefund(
+          refundId,
+          refund.id,
+          refund.status,
+          refund.failure_reason ?? null,
         );
       }
     }

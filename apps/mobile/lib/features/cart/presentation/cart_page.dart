@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/presentation/auth_providers.dart';
 import '../domain/customer_cart.dart';
 import 'cart_providers.dart';
 
@@ -11,6 +12,34 @@ class CartPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authControllerProvider);
+    if (!auth.isAuthenticated) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Cart')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Icon(Icons.lock_outline_rounded, size: 56),
+                const SizedBox(height: 16),
+                const Text('Sign in to use your cart',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+                const SizedBox(height: 8),
+                const Text('Your cart is private and belongs to your account.',
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 18),
+                FilledButton(
+                    onPressed: () => context.push('/sign-in?returnTo=%2Fcart'),
+                    child: const Text('Sign in')),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     final cart = ref.watch(customerCartProvider);
 
     return Scaffold(

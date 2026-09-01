@@ -5,6 +5,7 @@ const SECRET_MIN_LENGTH = 32;
 const VALID_NODE_ENVS = new Set(['development', 'test', 'production']);
 const VALID_PAYMENT_PROVIDERS = new Set(['MANUAL_TEST', 'STRIPE']);
 const VALID_EMAIL_DELIVERY_MODES = new Set(['CONSOLE', 'SMTP']);
+const VALID_PUSH_DELIVERY_MODES = new Set(['CONSOLE', 'FCM']);
 
 function readString(
   config: Record<string, unknown>,
@@ -112,6 +113,11 @@ export function validateEnvironment(config: Record<string, unknown>) {
     readString(config, 'STOREFRONT_URL') || 'http://localhost:3000';
   assertUrl(storefrontUrl, 'STOREFRONT_URL');
 
+  const mediaPublicBaseUrl =
+    readString(config, 'MEDIA_PUBLIC_BASE_URL') || `http://localhost:${port}`;
+  assertUrl(mediaPublicBaseUrl, 'MEDIA_PUBLIC_BASE_URL');
+  const mediaLocalRoot = readString(config, 'MEDIA_LOCAL_ROOT');
+
   const paymentProvider =
     readString(config, 'PAYMENT_PROVIDER') || 'MANUAL_TEST';
   if (!VALID_PAYMENT_PROVIDERS.has(paymentProvider)) {
@@ -131,6 +137,27 @@ export function validateEnvironment(config: Record<string, unknown>) {
   if (!VALID_EMAIL_DELIVERY_MODES.has(emailDeliveryMode)) {
     throw new Error(
       '[config] EMAIL_DELIVERY_MODE must currently be CONSOLE or SMTP.',
+    );
+  }
+
+  const pushEnabledRaw = readString(config, 'PUSH_ENABLED') || 'false';
+  if (!['true', 'false'].includes(pushEnabledRaw.toLowerCase())) {
+    throw new Error('[config] PUSH_ENABLED must be true or false.');
+  }
+  const pushEnabled = pushEnabledRaw.toLowerCase() === 'true';
+
+  const pushDeliveryMode =
+    (readString(config, 'PUSH_DELIVERY_MODE') || 'CONSOLE').toUpperCase();
+  if (!VALID_PUSH_DELIVERY_MODES.has(pushDeliveryMode)) {
+    throw new Error(
+      '[config] PUSH_DELIVERY_MODE must currently be CONSOLE or FCM.',
+    );
+  }
+
+  const fcmProjectId = readString(config, 'FCM_PROJECT_ID');
+  if (pushEnabled && pushDeliveryMode === 'FCM' && !fcmProjectId) {
+    throw new Error(
+      '[config] FCM_PROJECT_ID is required when PUSH_ENABLED=true and PUSH_DELIVERY_MODE=FCM.',
     );
   }
 
@@ -175,6 +202,12 @@ export function validateEnvironment(config: Record<string, unknown>) {
       );
     }
 
+    if (pushEnabled && pushDeliveryMode === 'CONSOLE') {
+      throw new Error(
+        '[config] CONSOLE push delivery is disabled when NODE_ENV=production and PUSH_ENABLED=true.',
+      );
+    }
+
     if (paymentProvider === 'STRIPE') {
       if (!stripeSecretKey) {
         throw new Error(
@@ -198,6 +231,8 @@ export function validateEnvironment(config: Record<string, unknown>) {
     NODE_ENV: nodeEnv,
     PORT: port,
     STOREFRONT_URL: storefrontUrl,
+    MEDIA_PUBLIC_BASE_URL: mediaPublicBaseUrl,
+    MEDIA_LOCAL_ROOT: mediaLocalRoot,
     PAYMENT_PROVIDER: paymentProvider,
     STRIPE_SECRET_KEY: stripeSecretKey,
     STRIPE_WEBHOOK_SECRET: stripeWebhookSecret,
@@ -208,5 +243,8 @@ export function validateEnvironment(config: Record<string, unknown>) {
     SMTP_SECURE: smtpSecureRaw.toLowerCase() === 'true',
     SMTP_USER: smtpUser,
     SMTP_PASSWORD: smtpPassword,
+    PUSH_ENABLED: pushEnabled,
+    PUSH_DELIVERY_MODE: pushDeliveryMode,
+    FCM_PROJECT_ID: fcmProjectId,
   };
 }

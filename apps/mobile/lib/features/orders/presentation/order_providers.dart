@@ -21,5 +21,9 @@ final customerOrdersProvider =
 
 final orderDetailsProvider =
     FutureProvider.family<OrderDetails, String>((ref, orderNumber) {
+  final auth = ref.watch(authControllerProvider);
+  if (!auth.isAuthenticated) {
+    throw StateError('Sign in to view order details.');
+  }
   return ref.watch(ordersRepositoryProvider).getOrderDetails(orderNumber);
 });

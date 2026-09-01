@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../auth/presentation/auth_providers.dart';
 import '../../cart/presentation/cart_providers.dart';
+import 'package:go_router/go_router.dart';
 import '../../wishlist/presentation/wishlist_providers.dart';
 import '../../reviews/presentation/product_reviews_section.dart';
 import '../domain/product.dart';
@@ -14,7 +16,8 @@ class ProductDetailsPage extends ConsumerStatefulWidget {
   final String productId;
 
   @override
-  ConsumerState<ProductDetailsPage> createState() => _ProductDetailsPageState();
+  ConsumerState<ProductDetailsPage> createState() =>
+      _ProductDetailsPageState();
 }
 
 class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
@@ -34,6 +37,10 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
 
   Future<void> _addToCart(Product product, ProductVariant variant) async {
     if (_adding || !variant.inStock) return;
+    if (!ref.read(authControllerProvider).isAuthenticated) {
+      context.push('/sign-in?returnTo=${Uri.encodeComponent('/products/${widget.productId}')}');
+      return;
+    }
 
     setState(() => _adding = true);
     try {
@@ -54,7 +61,8 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
     } on DioException catch (error) {
       if (!mounted) return;
       final data = error.response?.data;
-      final message = data is Map<String, dynamic> && data['message'] is String
+      final message = data is Map<String, dynamic> &&
+              data['message'] is String
           ? data['message'] as String
           : 'Unable to add item.';
       ScaffoldMessenger.of(context)
@@ -71,6 +79,10 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
   }
 
   Future<void> _toggleWishlist(String productId) async {
+    if (!ref.read(authControllerProvider).isAuthenticated) {
+      context.push('/sign-in?returnTo=${Uri.encodeComponent('/products/${widget.productId}')}');
+      return;
+    }
     try {
       await ref.read(wishlistProductIdsProvider.notifier).toggle(productId);
     } on StateError {
@@ -142,7 +154,8 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
                                       _selectedImageId = null;
                                     });
                                   },
-                                  onWishlistTap: () => _toggleWishlist(item.id),
+                                  onWishlistTap: () =>
+                                      _toggleWishlist(item.id),
                                   onAdd: () =>
                                       _addToCart(item, selectedVariant),
                                 ),
@@ -256,7 +269,8 @@ class _ProductVisual extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: images.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 10),
+              separatorBuilder: (context, index) =>
+                  const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 final image = images[index];
                 final selected = image.id == selectedImage?.id;
@@ -273,7 +287,9 @@ class _ProductVisual extends StatelessWidget {
                       border: Border.all(
                         color: selected
                             ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.outlineVariant,
+                            : Theme.of(context)
+                                .colorScheme
+                                .outlineVariant,
                         width: selected ? 2 : 1,
                       ),
                     ),
@@ -365,8 +381,9 @@ class _ProductInformation extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             IconButton.filledTonal(
-              tooltip:
-                  isWishlisted ? 'Remove from wishlist' : 'Save to wishlist',
+              tooltip: isWishlisted
+                  ? 'Remove from wishlist'
+                  : 'Save to wishlist',
               onPressed: onWishlistTap,
               icon: Icon(
                 isWishlisted
@@ -467,7 +484,8 @@ class _ProductInformation extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: adding || !selectedVariant.inStock ? null : onAdd,
+            onPressed:
+                adding || !selectedVariant.inStock ? null : onAdd,
             icon: adding
                 ? const SizedBox(
                     width: 18,
@@ -506,65 +524,92 @@ class _VariantSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final optionNames = <String>[];
+    for (final variant in variants) {
+      for (final name in variant.optionValues.keys) {
+        if (!optionNames.contains(name)) optionNames.add(name);
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            Text(
-              variants.length > 1 ? 'Choose option' : 'Option',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              selectedVariant.name,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: variants.map((variant) {
-            final selected = variant.id == selectedVariant.id;
+      children: optionNames.asMap().entries.map((optionEntry) {
+        final optionIndex = optionEntry.key;
+        final optionName = optionEntry.value;
+        final values = <String>[];
+        for (final variant in variants) {
+          final value = variant.optionValues[optionName];
+          if (value != null && !values.contains(value)) values.add(value);
+        }
 
-            return ChoiceChip(
-              selected: selected,
-              onSelected: variant.inStock ? (_) => onSelected(variant) : null,
-              label: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
                 children: <Widget>[
                   Text(
-                    variant.name,
-                    style: TextStyle(
-                      fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+                    optionName,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
+                  const Spacer(),
                   Text(
-                    variant.inStock
-                        ? 'RM ${variant.price.toStringAsFixed(2)} · '
-                            '${variant.availableStock} left'
-                        : 'Out of stock',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: variant.inStock
-                          ? theme.colorScheme.onSurfaceVariant
-                          : theme.colorScheme.error,
+                    selectedVariant.optionValues[optionName] ?? '',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
               ),
-            );
-          }).toList(growable: false),
-        ),
-      ],
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: values.map((value) {
+                  final selected =
+                      selectedVariant.optionValues[optionName] == value;
+                  final candidates = variants.where((variant) {
+                    if (!variant.inStock ||
+                        variant.optionValues[optionName] != value) {
+                      return false;
+                    }
+                    for (final previousName
+                        in optionNames.take(optionIndex)) {
+                      if (variant.optionValues[previousName] !=
+                          selectedVariant.optionValues[previousName]) {
+                        return false;
+                      }
+                    }
+                    return true;
+                  }).toList(growable: false);
+                  final available = candidates.isNotEmpty;
+
+                  return ChoiceChip(
+                    selected: selected,
+                    onSelected: available
+                        ? (_) {
+                            final exact = candidates.first;
+                            onSelected(exact);
+                          }
+                        : null,
+                    label: Text(
+                      value,
+                      style: TextStyle(
+                        fontWeight:
+                            selected ? FontWeight.w900 : FontWeight.w700,
+                      ),
+                    ),
+                  );
+                }).toList(growable: false),
+              ),
+            ],
+          ),
+        );
+      }).toList(growable: false),
     );
   }
 }

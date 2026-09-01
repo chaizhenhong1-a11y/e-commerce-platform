@@ -13,6 +13,7 @@ type TokenResponse = {
     firstName: string;
     lastName: string | null;
     emailVerified: boolean;
+    role: "CUSTOMER" | "STAFF" | "ADMIN";
   };
   accessToken: string;
   refreshToken: string;
@@ -97,7 +98,9 @@ export async function callApiWithSession(
 
   async function call(token?: string) {
     const headers = new Headers(init?.headers);
-    headers.set("Content-Type", "application/json");
+    if (!headers.has("Content-Type") && typeof init?.body === "string") {
+      headers.set("Content-Type", "application/json");
+    }
 
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);

@@ -95,6 +95,11 @@ class CustomerCart {
     required this.items,
   });
 
+  factory CustomerCart.empty() {
+    return const CustomerCart(
+        id: 'signed-out', sessionId: 'signed-out', items: <CustomerCartItem>[]);
+  }
+
   factory CustomerCart.fromJson(Map<String, dynamic> json) {
     final rawItems = json['items'] as List<dynamic>? ?? const <dynamic>[];
     return CustomerCart(

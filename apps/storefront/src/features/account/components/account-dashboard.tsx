@@ -216,7 +216,12 @@ export function AccountDashboard() {
           <h1>Hello, {customer.firstName}</h1>
           <p>{customer.email}</p>
         </div>
-        <button className="button" type="button" onClick={signOut}>Sign out</button>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {customer.role === "STAFF" || customer.role === "ADMIN" ? (
+            <Link className="button button--primary" href="/staff/returns">Returns operations</Link>
+          ) : null}
+          <button className="button" type="button" onClick={signOut}>Sign out</button>
+        </div>
       </div>
 
       {!customer.emailVerified ? (

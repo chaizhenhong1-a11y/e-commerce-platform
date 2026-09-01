@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Headers,
   Param,
   Post,
   UseGuards,
@@ -9,7 +8,6 @@ import {
 import type { AuthenticatedUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { OrdersService } from './orders.service';
 
 @Controller('orders')
@@ -28,30 +26,28 @@ export class OrdersController {
 
 
   @Post(':orderNumber/cancel')
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   cancel(
     @Param('orderNumber') orderNumber: string,
-    @CurrentUser() user?: AuthenticatedUser,
-    @Headers('x-order-access-token') guestToken?: string,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.ordersService.cancelOrder(
       orderNumber,
-      user?.id,
-      guestToken,
+      user.id,
+      undefined,
     );
   }
 
   @Get(':orderNumber/status')
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   status(
     @Param('orderNumber') orderNumber: string,
-    @CurrentUser() user?: AuthenticatedUser,
-    @Headers('x-order-access-token') guestToken?: string,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.ordersService.getStatus(
       orderNumber,
-      user?.id,
-      guestToken,
+      user.id,
+      undefined,
     );
   }
 }

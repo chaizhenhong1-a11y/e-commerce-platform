@@ -242,14 +242,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       .toggle(product.id);
                                 } on StateError {
                                   if (!context.mounted) return;
-                                  ScaffoldMessenger.of(context)
-                                    ..hideCurrentSnackBar()
-                                    ..showSnackBar(
-                                      const SnackBar(
-                                        content:
-                                            Text('Sign in to save products.'),
-                                      ),
-                                    );
+                                  context.push('/sign-in?returnTo=%2F');
                                 }
                               },
                               onTap: () => context.push(

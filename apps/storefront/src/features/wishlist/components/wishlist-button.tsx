@@ -27,7 +27,8 @@ export function WishlistButton({
     try {
       const result = await toggle(productId);
       if (result === "sign-in") {
-        router.push("/account/sign-in");
+        const returnTo = `${window.location.pathname}${window.location.search}`;
+        router.push(`/account/sign-in?returnTo=${encodeURIComponent(returnTo)}`);
       }
     } catch (error) {
       console.error(error);

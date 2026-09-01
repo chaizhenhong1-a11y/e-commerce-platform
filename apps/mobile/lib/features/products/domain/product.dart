@@ -31,6 +31,7 @@ class ProductVariant {
     required this.name,
     required this.price,
     required this.availableStock,
+    required this.optionValues,
     this.compareAtPrice,
   });
 
@@ -39,6 +40,11 @@ class ProductVariant {
     final quantity = inventory?['quantity'] as int? ?? 0;
     final reserved = inventory?['reserved'] as int? ?? 0;
     final availableStock = quantity - reserved;
+
+    final rawOptionValues = json['optionValues'];
+    final optionValues = rawOptionValues is Map<String, dynamic>
+        ? rawOptionValues.map((key, value) => MapEntry(key, value.toString()))
+        : <String, String>{'Option': json['name'] as String? ?? 'Default'};
 
     return ProductVariant(
       id: json['id'] as String,
@@ -49,6 +55,9 @@ class ProductVariant {
           ? (json['compareAtCents'] as int) / 100
           : null,
       availableStock: availableStock < 0 ? 0 : availableStock,
+      optionValues: optionValues.isEmpty
+          ? <String, String>{'Option': json['name'] as String? ?? 'Default'}
+          : optionValues,
     );
   }
 
@@ -58,6 +67,7 @@ class ProductVariant {
   final double price;
   final double? compareAtPrice;
   final int availableStock;
+  final Map<String, String> optionValues;
 
   bool get inStock => availableStock > 0;
 }
@@ -75,14 +85,16 @@ class Product {
 
   factory Product.fromJson(Map<String, dynamic> json) {
     final category = json['category'] as Map<String, dynamic>?;
-    final rawVariants = json['variants'] as List<dynamic>? ?? const <dynamic>[];
+    final rawVariants =
+        json['variants'] as List<dynamic>? ?? const <dynamic>[];
     if (rawVariants.isEmpty) {
       throw const FormatException('Product has no active variants.');
     }
 
     final variants = rawVariants
         .map(
-          (item) => ProductVariant.fromJson(item as Map<String, dynamic>),
+          (item) =>
+              ProductVariant.fromJson(item as Map<String, dynamic>),
         )
         .toList(growable: false);
 

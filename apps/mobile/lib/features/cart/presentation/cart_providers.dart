@@ -10,6 +10,9 @@ final cartRepositoryProvider = Provider<CartRepository>((ref) {
 
 final customerCartProvider =
     FutureProvider.autoDispose<CustomerCart>((ref) async {
-  ref.watch(authControllerProvider);
+  final auth = ref.watch(authControllerProvider);
+  if (!auth.isAuthenticated) {
+    return CustomerCart.empty();
+  }
   return ref.watch(cartRepositoryProvider).getCart();
 });

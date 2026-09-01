@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { getCurrentCustomer } from "@/features/account/data/account-api";
 import {
   getCart,
   removeCartItem,
@@ -14,17 +15,26 @@ export function CartView() {
   const [cart, setCart] = useState<Cart | null>(null);
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [signedOut, setSignedOut] = useState(false);
 
   useEffect(() => {
-    const sessionId = getCartSessionId();
-
-    getCart(sessionId)
-      .then(setCart)
-      .catch((cause) => {
-        setError(
-          cause instanceof Error ? cause.message : "Unable to load cart.",
-        );
-      });
+    let active = true;
+    void (async () => {
+      const customer = await getCurrentCustomer().catch(() => null);
+      if (!active) return;
+      if (!customer) {
+        setSignedOut(true);
+        return;
+      }
+      const sessionId = getCartSessionId();
+      try {
+        const next = await getCart(sessionId);
+        if (active) setCart(next);
+      } catch (cause) {
+        if (active) setError(cause instanceof Error ? cause.message : "Unable to load cart.");
+      }
+    })();
+    return () => { active = false; };
   }, []);
 
   async function changeQuantity(itemId: string, quantity: number) {
@@ -59,6 +69,17 @@ export function CartView() {
     } finally {
       setBusyItemId(null);
     }
+  }
+
+  if (signedOut) {
+    return (
+      <div className="empty-cart-card">
+        <span className="empty-cart-card__icon">🔒</span>
+        <h2>Sign in to use your cart</h2>
+        <p>Your cart belongs to your TextShop account and stays private across devices.</p>
+        <Link className="button button--primary" href="/account/sign-in?returnTo=%2Fcart">Sign in</Link>
+      </div>
+    );
   }
 
   if (!cart && !error) {

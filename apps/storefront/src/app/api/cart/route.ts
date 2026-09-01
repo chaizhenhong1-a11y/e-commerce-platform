@@ -46,13 +46,12 @@ async function proxy(
         method,
         body,
       },
-      { allowGuest: true },
     );
 
   if (!upstream) {
     return NextResponse.json(
-      { message: "Unable to reach cart service." },
-      { status: 503 },
+      { message: "Sign in to use your cart." },
+      { status: 401 },
     );
   }
 

@@ -15,6 +15,7 @@ export type ProductVariant = {
   currency: "MYR";
   availableStock: number;
   inStock: boolean;
+  optionValues: Record<string, string>;
 };
 
 export type Product = {

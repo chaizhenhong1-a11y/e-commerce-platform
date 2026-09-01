@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import type { AuthenticatedUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CartService } from './cart.service';
 
 type AddCartItemBody = {
@@ -23,29 +23,29 @@ type UpdateCartItemBody = {
 };
 
 @Controller('cart')
-@UseGuards(OptionalJwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
   @Get(':sessionId')
   getCart(
     @Param('sessionId') sessionId: string,
-    @CurrentUser() user?: AuthenticatedUser,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.cartService.getOrCreate(sessionId, user?.id);
+    return this.cartService.getOrCreate(sessionId, user.id);
   }
 
   @Post(':sessionId/items')
   addItem(
     @Param('sessionId') sessionId: string,
     @Body() body: AddCartItemBody,
-    @CurrentUser() user?: AuthenticatedUser,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.cartService.addItem(
       sessionId,
       body.variantId,
       body.quantity,
-      user?.id,
+      user.id,
     );
   }
 
@@ -54,13 +54,13 @@ export class CartController {
     @Param('sessionId') sessionId: string,
     @Param('itemId') itemId: string,
     @Body() body: UpdateCartItemBody,
-    @CurrentUser() user?: AuthenticatedUser,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.cartService.updateItem(
       sessionId,
       itemId,
       body.quantity,
-      user?.id,
+      user.id,
     );
   }
 
@@ -68,12 +68,12 @@ export class CartController {
   removeItem(
     @Param('sessionId') sessionId: string,
     @Param('itemId') itemId: string,
-    @CurrentUser() user?: AuthenticatedUser,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.cartService.removeItem(
       sessionId,
       itemId,
-      user?.id,
+      user.id,
     );
   }
 }

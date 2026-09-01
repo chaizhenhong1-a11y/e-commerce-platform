@@ -1,0 +1,16 @@
+import { NextRequest, NextResponse } from "next/server";
+import { applyAuthCookies, callApiWithSession } from "@/features/account/server/auth-proxy";
+
+export async function POST(request: NextRequest) {
+  const body = await request.text();
+  const { upstream, refreshedTokens } = await callApiWithSession(
+    "/promotions/preview",
+    { method: "POST", body },
+    { allowGuest: true },
+  );
+  if (!upstream) return NextResponse.json({ message: "Unable to preview promotions." }, { status: 503 });
+  const payload = await upstream.json().catch(() => null);
+  const response = NextResponse.json(payload ?? { automaticPromotion: null }, { status: upstream.status });
+  if (refreshedTokens) applyAuthCookies(response, refreshedTokens);
+  return response;
+}

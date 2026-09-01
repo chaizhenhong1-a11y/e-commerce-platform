@@ -11,6 +11,10 @@
     "dev:api": "npm --workspace @textshop/api run start:dev",
     "build:web": "npm --workspace @textshop/storefront run build",
     "build:api": "npm --workspace @textshop/api run build",
-    "lint:web": "npm --workspace @textshop/storefront run lint"
+    "lint:web": "npm --workspace @textshop/storefront run lint",
+    "test:api": "npm --workspace @textshop/api run test",
+    "verify:server": "npm run test:api && npm run build:api && npm run build:web",
+    "verify:flutter": "cd apps/mobile && flutter analyze",
+    "verify": "npm run verify:server && npm run verify:flutter"
   }
 }

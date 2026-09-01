@@ -6,6 +6,7 @@ import { WishlistHeaderLink } from "@/features/wishlist/components/wishlist-head
 import { WishlistProvider } from "@/features/wishlist/components/wishlist-provider";
 import { OrdersHeaderLink } from "@/features/orders/components/orders-header-link";
 import { HeaderActionIcon } from "@/shared/components/header-action-icon";
+import { NotificationHeaderLink } from "@/features/notifications/components/notification-header-link";
 
 export const metadata: Metadata = {
   title: {
@@ -59,6 +60,7 @@ export default function RootLayout({
             </form>
 
             <nav className="header-actions" aria-label="Account navigation">
+              <NotificationHeaderLink />
               <WishlistHeaderLink />
               <Link href="/account" className="header-action">
                 <span className="header-action__icon" aria-hidden="true"><HeaderActionIcon name="account" /></span>

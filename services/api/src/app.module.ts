@@ -11,10 +11,13 @@ import {
 } from './config/environment';
 import { CustomersModule } from './customers/customers.module';
 import { HealthModule } from './health/health.module';
+import { MediaModule } from './media/media.module';
 import { OrdersModule } from './orders/orders.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
+import { PromotionsModule } from './promotions/promotions.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 
@@ -27,9 +30,12 @@ import { WishlistModule } from './wishlist/wishlist.module';
     }),
     PrismaModule,
     AuthModule,
+    NotificationsModule,
     HealthModule,
+    MediaModule,
     ProductsModule,
     CategoriesModule,
+    PromotionsModule,
     CartModule,
     CustomersModule,
     CheckoutModule,

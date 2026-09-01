@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getCurrentCustomer } from "@/features/account/data/account-api";
 import { addCartItem } from "../data/cart-api";
 import { getCartSessionId } from "../data/cart-session";
 
@@ -29,6 +30,13 @@ export function AddToCartButton({
     setError("");
 
     try {
+      const customer = await getCurrentCustomer();
+      if (!customer) {
+        const returnTo = `${window.location.pathname}${window.location.search}`;
+        router.push(`/account/sign-in?returnTo=${encodeURIComponent(returnTo)}`);
+        setState("idle");
+        return;
+      }
       const sessionId = getCartSessionId();
       await addCartItem(sessionId, variantId, 1);
       setState("added");

@@ -8,7 +8,8 @@
     "start:dev": "nest start --watch",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "test": "tsx --test test/**/*.test.ts"
   },
   "dependencies": {
     "@nestjs/common": "11.2.3",
@@ -27,7 +28,8 @@
     "stripe": "^18.0.0",
     "@nestjs/jwt": "^11.0.1",
     "bcryptjs": "^3.0.2",
-    "nodemailer": "^7.0.6"
+    "nodemailer": "^7.0.6",
+    "google-auth-library": "^10.3.0"
   },
   "devDependencies": {
     "@nestjs/cli": "11.0.24",
