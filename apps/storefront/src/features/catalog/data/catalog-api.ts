@@ -58,10 +58,7 @@ function toVariant(variant: ApiVariant): ProductVariant {
     currency: "MYR",
     availableStock,
     inStock: availableStock > 0,
-    optionValues:
-      variant.optionValues && Object.keys(variant.optionValues).length > 0
-        ? variant.optionValues
-        : { Option: variant.name },
+    optionValues: variant.optionValues ?? {},
   };
 }
 
@@ -110,6 +107,9 @@ export type CatalogQuery = {
   query?: string;
   category?: string;
   sort?: CatalogSort;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
 };
 
 export async function getProducts(
@@ -126,6 +126,9 @@ export async function getProducts(
   if (filters.sort && filters.sort !== "newest") {
     search.set("sort", filters.sort);
   }
+  if (filters.minPrice != null) search.set("minPrice", String(filters.minPrice));
+  if (filters.maxPrice != null) search.set("maxPrice", String(filters.maxPrice));
+  if (filters.inStock) search.set("inStock", "true");
 
   const suffix = search.size > 0 ? `?${search.toString()}` : "";
   return (await request<ApiProduct[]>(`/products${suffix}`)).map(toProduct);

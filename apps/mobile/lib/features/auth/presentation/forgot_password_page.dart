@@ -54,7 +54,10 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
             TextFormField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Email address'),
+              decoration: const InputDecoration(
+                labelText: 'Email address',
+                prefixIcon: Icon(Icons.alternate_email_rounded),
+              ),
               validator: (value) => value == null || !value.contains('@')
                   ? 'Enter a valid email.'
                   : null,
@@ -66,6 +69,11 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
             const SizedBox(height: 18),
             FilledButton(
               onPressed: _submitting ? null : _submit,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF171717),
+                foregroundColor: const Color(0xFFDBFF4B),
+                minimumSize: const Size.fromHeight(54),
+              ),
               child: Text(_submitting ? 'Requesting…' : 'Request reset link'),
             ),
           ],

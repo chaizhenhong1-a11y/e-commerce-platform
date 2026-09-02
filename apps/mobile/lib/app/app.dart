@@ -67,9 +67,8 @@ class _TextShopAppState extends ConsumerState<TextShopApp>
         : title?.isNotEmpty == true
             ? title!
             : 'You have a new TextShop update.';
-    final actionPath = ref
-        .read(pushRegistrationServiceProvider)
-        .actionPathFor(message);
+    final actionPath =
+        ref.read(pushRegistrationServiceProvider).actionPathFor(message);
 
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) {

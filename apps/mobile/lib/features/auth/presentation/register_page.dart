@@ -55,7 +55,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             TextFormField(
               controller: _firstName,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'First name'),
+              decoration: const InputDecoration(
+                labelText: 'First name',
+                prefixIcon: Icon(Icons.person_outline_rounded),
+              ),
               validator: (value) => value == null || value.trim().isEmpty
                   ? 'First name is required.'
                   : null,
@@ -64,8 +67,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             TextFormField(
               controller: _lastName,
               textInputAction: TextInputAction.next,
-              decoration:
-                  const InputDecoration(labelText: 'Last name (optional)'),
+              decoration: const InputDecoration(
+                labelText: 'Last name (optional)',
+                prefixIcon: Icon(Icons.person_outline_rounded),
+              ),
             ),
             const SizedBox(height: 14),
             TextFormField(
@@ -76,7 +81,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 AutofillHints.newUsername,
                 AutofillHints.email
               ],
-              decoration: const InputDecoration(labelText: 'Email address'),
+              decoration: const InputDecoration(
+                labelText: 'Email address',
+                prefixIcon: Icon(Icons.alternate_email_rounded),
+              ),
               validator: (value) => value == null || !value.contains('@')
                   ? 'Enter a valid email.'
                   : null,
@@ -86,7 +94,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               controller: _password,
               obscureText: true,
               autofillHints: const <String>[AutofillHints.newPassword],
-              decoration: const InputDecoration(labelText: 'Password'),
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                prefixIcon: Icon(Icons.lock_outline_rounded),
+                helperText: 'Use at least 8 characters.',
+              ),
               validator: (value) => value == null || value.length < 8
                   ? 'Use at least 8 characters.'
                   : null,
@@ -101,11 +113,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             const SizedBox(height: 18),
             FilledButton(
               onPressed: auth.isSubmitting ? null : _submit,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF171717),
+                foregroundColor: const Color(0xFFDBFF4B),
+                minimumSize: const Size.fromHeight(54),
+              ),
               child: Text(
                   auth.isSubmitting ? 'Creating account…' : 'Create account'),
             ),
             const SizedBox(height: 10),
             TextButton(
+              style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF171717)),
               onPressed: () => context.pop(),
               child: const Text('Already have an account? Sign in'),
             ),

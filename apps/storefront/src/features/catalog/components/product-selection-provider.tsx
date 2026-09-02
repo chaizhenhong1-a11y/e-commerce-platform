@@ -41,7 +41,7 @@ export function ProductSelectionProvider({
       selectOption: (optionName: string, optionValue: string) => {
         const current = selectedVariant?.optionValues ?? {};
         const exact = variants.find((variant) => {
-          if (variant.optionValues[optionName] !== optionValue) return false;
+          if (!variant.inStock || variant.optionValues[optionName] !== optionValue) return false;
           return Object.entries(current).every(([name, value]) =>
             name === optionName ? true : variant.optionValues[name] === value,
           );

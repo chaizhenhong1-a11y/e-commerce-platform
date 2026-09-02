@@ -23,6 +23,9 @@ type HomePageProps = {
     q?: string;
     category?: string;
     sort?: string;
+    minPrice?: string;
+    maxPrice?: string;
+    inStock?: string;
   }>;
 };
 
@@ -43,9 +46,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const query = params.q?.trim() ?? "";
   const category = params.category?.trim() ?? "";
   const sort = catalogSort(params.sort);
+  const minPrice = params.minPrice ? Number(params.minPrice) : undefined;
+  const maxPrice = params.maxPrice ? Number(params.maxPrice) : undefined;
+  const inStock = params.inStock === "true";
 
   const [products, categories] = await Promise.all([
-    getProducts({ query, category, sort }),
+    getProducts({ query, category, sort, minPrice: Number.isFinite(minPrice) ? minPrice : undefined, maxPrice: Number.isFinite(maxPrice) ? maxPrice : undefined, inStock }),
     getCategories(),
   ]);
 
@@ -146,6 +152,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           category={category}
           sort={sort}
           categories={categories}
+          minPrice={Number.isFinite(minPrice) ? minPrice : undefined}
+          maxPrice={Number.isFinite(maxPrice) ? maxPrice : undefined}
+          inStock={inStock}
         />
 
         {products.length > 0 ? (

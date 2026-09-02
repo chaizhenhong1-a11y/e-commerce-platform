@@ -67,7 +67,8 @@ class ProfilePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(authControllerProvider.notifier).refreshUser(),
+        onRefresh: () =>
+            ref.read(authControllerProvider.notifier).refreshUser(),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(20),
@@ -76,7 +77,8 @@ class ProfilePage extends ConsumerWidget {
               radius: 38,
               child: Text(
                 user.firstName.isEmpty ? '?' : user.firstName[0].toUpperCase(),
-                style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800),
+                style:
+                    const TextStyle(fontSize: 30, fontWeight: FontWeight.w800),
               ),
             ),
             const SizedBox(height: 16),

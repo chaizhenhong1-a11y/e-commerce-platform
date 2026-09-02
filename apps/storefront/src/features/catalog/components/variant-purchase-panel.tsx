@@ -54,7 +54,7 @@ export function VariantPurchasePanel({ variants }: VariantPurchasePanelProps) {
       })}
 
       <div className="product-buy-panel">
-        <div className="product-stock-state"><span className={selectedVariant.inStock ? "stock-dot" : "stock-dot stock-dot--out"} />{selectedVariant.inStock ? `${selectedVariant.availableStock} available · ${selectedVariant.sku}` : `Out of stock · ${selectedVariant.sku}`}</div>
+        <div className="product-stock-state"><span className={selectedVariant.inStock ? "stock-dot" : "stock-dot stock-dot--out"} />{!selectedVariant.inStock ? `Out of stock · ${selectedVariant.sku}` : selectedVariant.availableStock <= 5 ? `Only ${selectedVariant.availableStock} left · ${selectedVariant.sku}` : `${selectedVariant.availableStock} available · ${selectedVariant.sku}`}</div>
         <AddToCartButton variantId={selectedVariant.id} disabled={!selectedVariant.inStock} />
       </div>
     </>

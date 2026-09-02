@@ -37,6 +37,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   String _provider = kDebugMode ? 'MANUAL_TEST' : 'STRIPE';
   bool _initialized = false;
   bool _submitting = false;
+  bool _refreshingInventory = false;
   bool _couponBusy = false;
   CouponValidation? _coupon;
   AutomaticPromotionPreview? _automaticPromotion;
@@ -86,10 +87,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     if (_promotionSessionId == cart.sessionId) return;
     _promotionSessionId = cart.sessionId;
     try {
-      final promotion =
-          await ref.read(checkoutRepositoryProvider).previewAutomaticPromotion(
-                sessionId: cart.sessionId,
-              );
+      final promotion = await ref.read(checkoutRepositoryProvider).previewAutomaticPromotion(
+            sessionId: cart.sessionId,
+          );
       if (mounted) setState(() => _automaticPromotion = promotion);
     } catch (_) {
       if (mounted) setState(() => _automaticPromotion = null);
@@ -129,6 +129,76 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     }
   }
 
+  Future<void> _refreshInventoryState() async {
+    if (_refreshingInventory) return;
+
+    setState(() {
+      _refreshingInventory = true;
+      _error = null;
+    });
+
+    try {
+      ref.invalidate(customerCartProvider);
+      final latestCart = await ref.read(customerCartProvider.future);
+
+      // Inventory changes can also change the winning automatic promotion.
+      _promotionSessionId = null;
+      await _loadAutomaticPromotion(latestCart);
+
+      if (_coupon != null) {
+        try {
+          final refreshedCoupon = await ref
+              .read(checkoutRepositoryProvider)
+              .validateCoupon(
+                sessionId: latestCart.sessionId,
+                couponCode: _coupon!.code,
+              );
+          if (mounted) {
+            setState(() {
+              _coupon = refreshedCoupon;
+              _couponCode.text = refreshedCoupon.code;
+              _couponError = null;
+            });
+          }
+        } on DioException catch (error) {
+          if (mounted) {
+            setState(() {
+              _coupon = null;
+              _couponError = _messageFrom(
+                error,
+                'Coupon is no longer valid for the refreshed cart.',
+              );
+            });
+          }
+        }
+      }
+
+      if (mounted && latestCart.canCheckout) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Stock refreshed. Your cart is ready to checkout.'),
+            ),
+          );
+      }
+    } on DioException catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = _messageFrom(error, 'Unable to refresh stock.');
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _error = 'Unable to refresh stock.';
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _refreshingInventory = false);
+    }
+  }
+
   Future<void> _submit(CustomerCart cart) async {
     if (_submitting || !_formKey.currentState!.validate()) return;
 
@@ -139,10 +209,24 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
     CheckoutOrder? createdOrder;
     try {
+      // Re-read the account cart immediately before order creation so the
+      // review screen cannot submit a stale inventory snapshot. The backend
+      // remains authoritative and performs the final Serializable check.
+      ref.invalidate(customerCartProvider);
+      final checkoutCart = await ref.read(customerCartProvider.future);
+      if (!checkoutCart.canCheckout) {
+        setState(() {
+          _error =
+              'Your cart changed while you were checking out. Review the latest stock before continuing.';
+          _submitting = false;
+        });
+        return;
+      }
+
       final repository = ref.read(checkoutRepositoryProvider);
       createdOrder = await repository.createOrder(
         CheckoutInput(
-          sessionId: cart.sessionId,
+          sessionId: checkoutCart.sessionId,
           email: _email.text,
           fullName: _fullName.text,
           phone: _phone.text,
@@ -314,8 +398,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         ),
         data: (value) {
           if (_promotionSessionId != value.sessionId) {
-            WidgetsBinding.instance
-                .addPostFrameCallback((_) => _loadAutomaticPromotion(value));
+            WidgetsBinding.instance.addPostFrameCallback((_) => _loadAutomaticPromotion(value));
           }
           if (value.items.isEmpty) {
             return const Center(child: Text('Your cart is empty.'));
@@ -324,6 +407,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           if (!value.canCheckout) {
             return _CheckoutBlocked(
               issueCount: value.issueCount,
+              refreshing: _refreshingInventory,
+              onRefreshStock: _refreshInventoryState,
               onReviewCart: () => context.go('/cart'),
             );
           }
@@ -365,12 +450,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         'Saved addresses are unavailable. You can still '
                         'enter delivery details manually.',
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
                     data: (items) {
-                      if (items.isNotEmpty && _selectedAddressId == null) {
+                      if (items.isNotEmpty &&
+                          _selectedAddressId == null) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (!mounted || _selectedAddressId != null) return;
                           final preferred = items.where(
@@ -416,7 +503,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                       TextFormField(
                         initialValue: 'Malaysia',
                         enabled: false,
-                        decoration: const InputDecoration(labelText: 'Country'),
+                        decoration:
+                            const InputDecoration(labelText: 'Country'),
                       ),
                     ],
                   ),
@@ -543,10 +631,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                _OrderSummary(
-                    cart: value,
-                    coupon: _coupon,
-                    automaticPromotion: _automaticPromotion),
+                _OrderSummary(cart: value, coupon: _coupon, automaticPromotion: _automaticPromotion),
                 if (_error != null) ...<Widget>[
                   const SizedBox(height: 14),
                   Text(
@@ -626,10 +711,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 class _CheckoutBlocked extends StatelessWidget {
   const _CheckoutBlocked({
     required this.issueCount,
+    required this.refreshing,
+    required this.onRefreshStock,
     required this.onReviewCart,
   });
 
   final int issueCount;
+  final bool refreshing;
+  final VoidCallback onRefreshStock;
   final VoidCallback onReviewCart;
 
   @override
@@ -666,10 +755,27 @@ class _CheckoutBlocked extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 22),
-              FilledButton.icon(
-                onPressed: onReviewCart,
-                icon: const Icon(Icons.shopping_cart_outlined),
-                label: const Text('Review cart'),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                runSpacing: 10,
+                children: <Widget>[
+                  OutlinedButton.icon(
+                    onPressed: refreshing ? null : onRefreshStock,
+                    icon: refreshing
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh_rounded),
+                    label: Text(refreshing ? 'Refreshing…' : 'Refresh stock'),
+                  ),
+                  FilledButton.icon(
+                    onPressed: onReviewCart,
+                    icon: const Icon(Icons.shopping_cart_outlined),
+                    label: const Text('Review cart'),
+                  ),
+                ],
               ),
             ],
           ),
@@ -763,8 +869,7 @@ class _SavedAddressPicker extends StatelessWidget {
 }
 
 class _OrderSummary extends StatelessWidget {
-  const _OrderSummary(
-      {required this.cart, this.coupon, this.automaticPromotion});
+  const _OrderSummary({required this.cart, this.coupon, this.automaticPromotion});
 
   final CustomerCart cart;
   final CouponValidation? coupon;
@@ -774,12 +879,9 @@ class _OrderSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final shipping = cart.subtotal >= 150 ? 0.0 : 10.0;
     final couponWins = coupon != null &&
-        (automaticPromotion == null ||
-            coupon!.discountCents >= automaticPromotion!.discountCents);
-    final discount =
-        couponWins ? coupon!.discount : automaticPromotion?.discount ?? 0.0;
-    final total =
-        (cart.subtotal + shipping - discount).clamp(0.0, double.infinity);
+        (automaticPromotion == null || coupon!.discountCents >= automaticPromotion!.discountCents);
+    final discount = couponWins ? coupon!.discount : automaticPromotion?.discount ?? 0.0;
+    final total = (cart.subtotal + shipping - discount).clamp(0.0, double.infinity);
 
     return _SectionCard(
       title: 'Order review',
@@ -796,7 +898,8 @@ class _OrderSummary extends StatelessWidget {
                     child: SizedBox(
                       width: 54,
                       height: 54,
-                      child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                      child: item.imageUrl != null &&
+                              item.imageUrl!.isNotEmpty
                           ? Image.network(
                               item.imageUrl!,
                               fit: BoxFit.cover,
@@ -845,9 +948,7 @@ class _OrderSummary extends StatelessWidget {
           if (discount > 0) ...<Widget>[
             const SizedBox(height: 8),
             _row(
-              couponWins
-                  ? 'Discount (${coupon!.code})'
-                  : 'Automatic promotion (${automaticPromotion!.name})',
+              couponWins ? 'Discount (${coupon!.code})' : 'Automatic promotion (${automaticPromotion!.name})',
               '- RM ${discount.toStringAsFixed(2)}',
             ),
           ],

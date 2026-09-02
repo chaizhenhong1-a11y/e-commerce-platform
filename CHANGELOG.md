@@ -1,3 +1,121 @@
+## 0.51.3.1 - Phase 054.0.1: Storefront variant option mapping fix
+
+### Fixed
+- Restored `optionValues` when mapping API product variants into the storefront `ProductVariant` domain model.
+- Fixed the Next.js production type-check failure introduced by the Phase 054.0 catalog mapping baseline.
+- No API behavior, database schema, Flutter UI, or locked black/lime visual identity changes are included.
+
+## [0.51.0] - 2026-09-02
+
+### Added
+- Phase 054.0 catalog discovery foundation with a shared backend query contract for price range and real available-stock filtering.
+- Storefront catalog controls for minimum price, maximum price, and in-stock-only discovery while preserving URL-backed filters.
+- Flutter product repository support for the same search/category/sort/price/availability query parameters for upcoming mobile filter UI.
+
+### Changed
+- Catalog availability filtering uses `quantity - reserved` so reserved inventory is not presented as sellable stock.
+- Existing black/fluorescent-lime Flutter visual identity and commerce flows are unchanged.
+
+## 0.51.3 - Phase 053.3: Checkout inventory recovery loop
+
+### Changed
+- Added an in-place stock refresh action to blocked Flutter and website checkout screens so customers can recover after inventory changes without losing entered delivery details.
+- Refreshing stock now re-reads the account cart from the server and revalidates any applied coupon against the updated cart; automatic promotion state is recalculated from the refreshed subtotal.
+- Customers are returned to a ready-to-checkout state automatically when the refreshed cart becomes valid, while unresolved variant availability issues still direct them to the cart for correction.
+- Preserved account-only ownership, server-authoritative inventory validation, payment recovery behavior, the locked black-and-lime visual identity, and the 30-minute inventory reservation policy.
+- No Prisma migration is required.
+
+## 0.51.2 - Phase 053.2: Checkout inventory preflight
+
+### Changed
+- Flutter and website checkout now refresh the signed-in customer's cart immediately before creating an order, reducing stale-stock submissions after a customer spends time filling in delivery or coupon details.
+- Checkout stops locally when the refreshed cart is empty or contains newly unavailable/out-of-stock variant lines and directs the customer to review the latest cart state.
+- Preserved the backend as the final source of truth: checkout still validates live variant/product availability and sellable inventory inside the existing Serializable order transaction before reserving stock.
+- Preserved account-only checkout ownership, promotion/coupon validation, payment recovery behavior, and the 30-minute inventory reservation policy.
+- No Prisma migration is required.
+
+## 0.51.1 - Phase 053.1: Cart variant & inventory hardening
+
+### Changed
+- Added one-tap quantity correction for cart lines whose requested quantity now exceeds live sellable stock on both Flutter and the website.
+- Cart quantity controls now explicitly respect inactive products/variants and surface low-stock messaging when five or fewer units remain.
+- Failed quantity updates now refresh live cart inventory so customers immediately see server-authoritative stock changes instead of a stale cart snapshot.
+- Preserved account-only cart ownership, variant-specific SKU/media display, checkout blocking for invalid lines, server-side stock validation, and the 30-minute checkout reservation policy.
+- No Prisma migration is required.
+
+## 0.51.0 - Phase 053: Variant availability & low-stock UX
+
+### Changed
+- Improved Flutter and website variant selection so unavailable combinations remain disabled and option changes prefer an in-stock exact match.
+- Added low-stock messaging for concrete variants when five or fewer sellable units remain, while preserving SKU and live inventory visibility.
+- Added a clearer disabled-state indicator to unavailable Flutter option chips without changing the locked black-and-lime visual system.
+- Preserved server-authoritative cart inventory validation, account-only commerce rules, variant-specific media behavior, and the 30-minute checkout reservation policy.
+- No Prisma migration is required.
+
+## 0.50.4.5 - 2026-09-02
+
+### Fixed
+- Restored the exact Phase 052.4 black-and-lime Flutter authentication scaffold as the UI baseline after the incorrect header rollback.
+- Reduced only the mobile authentication brand header height from 154px to 115px; all original Phase 052.4 layout, TEXTSHOP placement, back button, lime decoration, form spacing, and authentication behavior remain unchanged.
+- No API, routing, JWT/session, commerce, database, or storefront Hero behavior changed.
+
+## 0.50.4.2 - 2026-09-02
+
+### Fixed
+- Fixed the Flutter analyzer duplicate wildcard parameter definition in the notification list separator introduced by the previous lint cleanup.
+- No UI, authentication, commerce, routing, or black-and-lime storefront visual behavior changed.
+
+## 0.50.5 - Phase 052.4.1: Flutter auth compatibility & analyze fix
+
+### Fixed
+- Restored the `SignInPage.returnTo` contract required by the account-gated router so sign-in can safely return customers to Cart, Wishlist, Updates, Checkout, and other protected destinations.
+- Preserved the Phase 052.4 black-and-lime authentication presentation while restoring the pre-existing post-login navigation behavior.
+- Cleaned the auth scaffold child ordering lint and the existing notification flow-control lints so `flutter analyze` can return cleanly.
+- No API, authentication protocol, commerce, payment, inventory, order, notification, or database behavior was changed. No Prisma migration is required.
+
+## 0.50.4 - Phase 052.4: Black/Green Flutter authentication UI
+
+### Changed
+- Restyled Flutter sign-in, registration, and password-recovery screens to match the locked TextShop black-and-lime storefront identity.
+- Added a responsive shared authentication scaffold with a dark brand panel, lime visual accent, and compact mobile presentation.
+- Kept the existing customer authentication API, JWT/session behavior, validation, and routes intact.
+- No Prisma migration is required.
+
+## 0.50.3 - 2026-09-02
+
+### Restored
+- Restored the black-and-lime storefront visual identity requested for the Flutter home experience.
+- Restored the dark hero banner with the lime accent composition and Explore collection CTA.
+- Restored the matching Flutter theme tokens used by that hero without changing commerce, account, payment, inventory, order, return, or notification logic.
+
+## 0.50.2 - Phase 052.2: Restore original Flutter storefront UI
+
+- Reverted the Phase 052 and 052.1 Flutter presentation redesign back to the last stable pre-redesign storefront baseline from commit `5df5e87`.
+- Restored the established Home, Product Card, Product Details, Cart, Checkout, Orders, Profile, main shell, and theme presentation without rolling back the underlying commerce features.
+- Preserved Product Variant Matrix support, account-owned cart and wishlist behavior, checkout/payment flows, orders, returns, and notifications; this increment is presentation-only.
+- Future visual work should refine the restored storefront incrementally rather than replacing its visual language wholesale.
+- No Prisma migration is required. The 30-minute unpaid inventory reservation policy is unchanged.
+
+## 0.50.1 - Phase 052.1: Flutter storefront visual polish
+
+- Refined the Phase 052 design system with more deliberate typography, softer neutral surfaces, improved control sizing, navigation icon treatment, and tighter component consistency.
+- Upgraded the Flutter home hero into a more editorial, responsive commerce banner with clearer merchandising hierarchy and stronger brand recognition.
+- Improved discovery presentation with a clearer category eyebrow, larger search treatment, stronger section naming, and tuned responsive product-grid proportions.
+- Polished product cards with cleaner image framing, loading treatment, live-stock cues, stronger price hierarchy, more refined promotion badges, and improved wishlist affordances.
+- Added subtle bottom-navigation separation and storefront-oriented iconography without changing navigation structure or route behavior.
+- Presentation only: no API, database, account ownership, pricing, inventory, payment, promotion, order, return, notification, or 30-minute reservation behavior changed.
+- No Prisma migration is required.
+
+## 0.50.0 - Phase 052: Flutter storefront UI/UX overhaul
+
+- Rebuilt the Flutter visual system around a restrained modern-commerce language with neutral surfaces, stronger typography, tighter spacing, consistent controls, and a distinctive lime accent instead of generic Material defaults.
+- Redesigned the mobile home experience with a branded editorial hero, cleaner search/category discovery, stronger product-section hierarchy, and a more product-led responsive grid.
+- Reworked product cards with image-first composition, compact wishlist affordances, discount/sold-out badges, clearer pricing hierarchy, and less card chrome.
+- Refined product details with a cleaner gallery, stronger merchandising hierarchy, grouped Phase 051 option selection, clearer inventory messaging, bag access, and a more deliberate trust panel.
+- Refined cart, checkout, orders, account, and bottom navigation styling so the primary commerce journey now reads as one coherent application rather than separately assembled screens.
+- This phase is presentation-focused: account ownership, trusted server pricing, cart/checkout/payment logic, wishlist sync, orders, returns, notifications, promotions, variant resolution, and the 30-minute unpaid inventory reservation policy are unchanged.
+- No Prisma migration is required.
+
 ## 0.49.0 - Phase 051: Product options & variant matrix
 
 - Added structured per-variant product options through `ProductVariant.optionValues`, while preserving legacy variant names for historical order snapshots and backward compatibility.
@@ -222,6 +340,18 @@
 - The existing 30-minute unpaid inventory reservation policy is unchanged.
 
 # Changelog
+
+## [0.50.4] - 2026-09-02
+
+### Changed
+- Rebuilt the Flutter customer authentication experience around the locked TextShop black-and-lime visual system.
+- Added a responsive branded auth shell: split-screen commerce identity panel on desktop and compact black/lime header on mobile.
+- Restyled sign-in, registration, and password recovery forms while preserving the existing authentication, validation, routing, and API behavior.
+- Kept the Phase 052.3 black/green storefront Hero as the visual baseline; no storefront Hero redesign is included in this increment.
+
+### Technical
+- Presentation-only Flutter change; no database migration and no backend contract changes.
+
 
 All notable changes to TextShop will be documented in this file.
 

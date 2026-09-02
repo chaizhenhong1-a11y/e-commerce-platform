@@ -64,6 +64,7 @@ export function CheckoutView() {
   const [order, setOrder] = useState<CheckoutOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [refreshingInventory, setRefreshingInventory] = useState(false);
   const [error, setError] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [coupon, setCoupon] = useState<CouponValidation | null>(null);
@@ -168,6 +169,47 @@ export function CheckoutView() {
     setCouponError("");
   }
 
+  async function refreshInventoryState() {
+    if (!cart || refreshingInventory) return;
+
+    setRefreshingInventory(true);
+    setError("");
+
+    try {
+      const latestCart = await getCart(cart.sessionId);
+      setCart(latestCart);
+
+      if (coupon) {
+        try {
+          const refreshedCoupon = await validateCoupon(
+            latestCart.sessionId,
+            coupon.code,
+          );
+          setCoupon(refreshedCoupon);
+          setCouponCode(refreshedCoupon.code);
+          setCouponError("");
+        } catch (cause) {
+          setCoupon(null);
+          setCouponError(
+            cause instanceof Error
+              ? cause.message
+              : "Coupon is no longer valid for the refreshed cart.",
+          );
+        }
+      }
+
+      if (latestCart.canCheckout) {
+        setError("Stock refreshed. Your cart is ready to checkout.");
+      }
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Unable to refresh stock.",
+      );
+    } finally {
+      setRefreshingInventory(false);
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -184,8 +226,26 @@ export function CheckoutView() {
     setError("");
 
     try {
+      // Refresh the account cart at the final submit boundary. This keeps the
+      // review screen aligned with current sellable stock before the backend
+      // performs its authoritative Serializable reservation transaction.
+      const latestCart = await getCart(cart.sessionId);
+      setCart(latestCart);
+
+      if (latestCart.items.length === 0) {
+        setError("Your cart is now empty. Add an item before checking out.");
+        return;
+      }
+
+      if (!latestCart.canCheckout) {
+        setError(
+          "Your cart changed while you were checking out. Review the latest stock before continuing.",
+        );
+        return;
+      }
+
       const created = await createCheckoutOrder({
-        sessionId: cart.sessionId,
+        sessionId: latestCart.sessionId,
         email: form.email.trim(),
         fullName: form.fullName.trim(),
         phone: form.phone.trim(),
@@ -308,9 +368,20 @@ export function CheckoutView() {
           {cart.issueCount} item{cart.issueCount === 1 ? "" : "s"} changed
           since you added them. Resolve stock or availability issues first.
         </p>
-        <Link className="button button--primary" href="/cart">
-          Review cart
-        </Link>
+        <div className="checkout-success__actions">
+          <button
+            className="button"
+            type="button"
+            disabled={refreshingInventory}
+            onClick={refreshInventoryState}
+          >
+            {refreshingInventory ? "Refreshing…" : "Refresh stock"}
+          </button>
+          <Link className="button button--primary" href="/cart">
+            Review cart
+          </Link>
+        </div>
+        {error ? <p className="form-error">{error}</p> : null}
       </section>
     );
   }

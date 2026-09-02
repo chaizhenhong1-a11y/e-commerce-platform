@@ -5,6 +5,9 @@ type CatalogControlsProps = {
   category: string;
   sort: CatalogSort;
   categories: string[];
+  minPrice?: number;
+  maxPrice?: number;
+  inStock: boolean;
 };
 
 export function CatalogControls({
@@ -12,8 +15,11 @@ export function CatalogControls({
   category,
   sort,
   categories,
+  minPrice,
+  maxPrice,
+  inStock,
 }: CatalogControlsProps) {
-  const filtering = Boolean(query || category || sort !== "newest");
+  const filtering = Boolean(query || category || sort !== "newest" || minPrice != null || maxPrice != null || inStock);
 
   return (
     <form className="catalog-controls" action="/#shop" method="get">
@@ -28,6 +34,24 @@ export function CatalogControls({
               {item}
             </option>
           ))}
+        </select>
+      </label>
+
+      <label className="catalog-select">
+        <span>Min price (RM)</span>
+        <input name="minPrice" type="number" min="0" step="0.01" defaultValue={minPrice} />
+      </label>
+
+      <label className="catalog-select">
+        <span>Max price (RM)</span>
+        <input name="maxPrice" type="number" min="0" step="0.01" defaultValue={maxPrice} />
+      </label>
+
+      <label className="catalog-select">
+        <span>Availability</span>
+        <select name="inStock" defaultValue={inStock ? "true" : ""}>
+          <option value="">All products</option>
+          <option value="true">In stock only</option>
         </select>
       </label>
 

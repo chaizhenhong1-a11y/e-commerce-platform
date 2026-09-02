@@ -8,6 +8,9 @@ type CatalogQuery = {
   query?: string;
   category?: string;
   sort?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
 };
 
 @Injectable()
@@ -21,6 +24,8 @@ export class ProductsService {
     const query = filters.query?.trim();
     const category = filters.category?.trim();
     const sort = this.normalizeSort(filters.sort);
+    const minPriceCents = this.toPriceCents(filters.minPrice);
+    const maxPriceCents = this.toPriceCents(filters.maxPrice);
 
     const products = await this.prisma.product.findMany({
       where: {
@@ -104,8 +109,29 @@ export class ProductsService {
       },
     });
 
+    const filteredProducts = products
+      .map((product) => ({
+        ...product,
+        variants: product.variants.filter((variant) => {
+          const available = Math.max(
+            0,
+            (variant.inventory?.quantity ?? 0) -
+              (variant.inventory?.reserved ?? 0),
+          );
+          if (filters.inStock === true && available <= 0) return false;
+          if (minPriceCents != null && variant.priceCents < minPriceCents) {
+            return false;
+          }
+          if (maxPriceCents != null && variant.priceCents > maxPriceCents) {
+            return false;
+          }
+          return true;
+        }),
+      }))
+      .filter((product) => product.variants.length > 0);
+
     if (sort === 'price-asc' || sort === 'price-desc') {
-      products.sort((left, right) => {
+      filteredProducts.sort((left, right) => {
         const leftPrice = left.variants[0]?.priceCents ?? Number.MAX_SAFE_INTEGER;
         const rightPrice =
           right.variants[0]?.priceCents ?? Number.MAX_SAFE_INTEGER;
@@ -114,7 +140,7 @@ export class ProductsService {
       });
     }
 
-    return products;
+    return filteredProducts;
   }
 
   async findBySlug(slug: string) {
@@ -618,6 +644,11 @@ export class ProductsService {
 
   private isUniqueConstraint(error: unknown) {
     return typeof error === 'object' && error !== null && 'code' in error && (error as { code?: string }).code === 'P2002';
+  }
+
+  private toPriceCents(value?: number) {
+    if (value == null || !Number.isFinite(value) || value < 0) return undefined;
+    return Math.round(value * 100);
   }
 
   private normalizeSort(value?: string): CatalogSort {

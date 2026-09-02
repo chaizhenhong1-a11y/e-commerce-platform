@@ -85,16 +85,14 @@ class Product {
 
   factory Product.fromJson(Map<String, dynamic> json) {
     final category = json['category'] as Map<String, dynamic>?;
-    final rawVariants =
-        json['variants'] as List<dynamic>? ?? const <dynamic>[];
+    final rawVariants = json['variants'] as List<dynamic>? ?? const <dynamic>[];
     if (rawVariants.isEmpty) {
       throw const FormatException('Product has no active variants.');
     }
 
     final variants = rawVariants
         .map(
-          (item) =>
-              ProductVariant.fromJson(item as Map<String, dynamic>),
+          (item) => ProductVariant.fromJson(item as Map<String, dynamic>),
         )
         .toList(growable: false);
 

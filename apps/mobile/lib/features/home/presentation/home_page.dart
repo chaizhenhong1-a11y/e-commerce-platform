@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../products/presentation/product_providers.dart';
 import '../../products/presentation/widgets/product_card.dart';
 import '../../wishlist/presentation/wishlist_providers.dart';
@@ -49,9 +50,17 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 20,
-        title: const Text(
-          'TextShop',
-          style: TextStyle(fontWeight: FontWeight.w900),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            DecoratedBox(
+              decoration:
+                  BoxDecoration(color: AppTheme.accent, shape: BoxShape.circle),
+              child: SizedBox(width: 12, height: 12),
+            ),
+            SizedBox(width: 8),
+            Text('TextShop', style: TextStyle(fontWeight: FontWeight.w900)),
+          ],
         ),
         actions: <Widget>[
           Badge(
@@ -63,11 +72,6 @@ class _HomePageState extends ConsumerState<HomePage> {
               icon: const Icon(Icons.favorite_border_rounded),
             ),
           ),
-          IconButton(
-            tooltip: 'Refresh products',
-            onPressed: () => _refresh(),
-            icon: const Icon(Icons.refresh_rounded),
-          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -77,7 +81,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: <Widget>[
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               sliver: SliverToBoxAdapter(
                 child: _HeroBanner(
                   onShopNow: () {
@@ -92,7 +96,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               sliver: SliverToBoxAdapter(
                 child: SearchBar(
                   controller: _searchController,
@@ -113,7 +117,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               sliver: SliverToBoxAdapter(
                 child: _CategoryStrip(
                   categories: categories,
@@ -129,7 +133,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(18, 24, 18, 12),
+              padding: const EdgeInsets.fromLTRB(16, 26, 16, 12),
               sliver: SliverToBoxAdapter(
                 child: Row(
                   children: <Widget>[
@@ -218,7 +222,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 }
 
                 return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 30),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
                   sliver: SliverLayoutBuilder(
                     builder: (context, constraints) {
                       final width = constraints.crossAxisExtent;
@@ -254,9 +258,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: count,
-                          mainAxisSpacing: 14,
-                          crossAxisSpacing: 14,
-                          childAspectRatio: width < 520 ? 0.68 : 0.76,
+                          mainAxisSpacing: 22,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: width < 520 ? 0.67 : 0.75,
                         ),
                       );
                     },
@@ -278,81 +282,77 @@ class _HeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Container(
       constraints: const BoxConstraints(minHeight: 220),
-      padding: const EdgeInsets.all(26),
+      padding: const EdgeInsets.fromLTRB(24, 24, 18, 24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: <Color>[
-            scheme.primaryContainer,
-            scheme.secondaryContainer,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(28),
+        color: AppTheme.brand,
+        borderRadius: BorderRadius.circular(22),
       ),
-      child: Row(
+      child: Stack(
         children: <Widget>[
-          Expanded(
-            flex: 3,
+          Positioned(
+            right: -28,
+            top: -42,
+            child: Container(
+              width: 190,
+              height: 190,
+              decoration: const BoxDecoration(
+                color: AppTheme.accent,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 28,
+            bottom: 14,
+            child: Transform.rotate(
+              angle: -0.12,
+              child: const Icon(
+                Icons.shopping_bag_rounded,
+                size: 104,
+                color: AppTheme.brand,
+              ),
+            ),
+          ),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 390),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: scheme.surface.withValues(alpha: 0.72),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 7,
-                    ),
-                    child: Text(
-                      'CURATED FOR EVERYDAY',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 11,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
+                const Text(
+                  'NEW SEASON · LIVE STOCK',
+                  style: TextStyle(
+                    color: AppTheme.accent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.1,
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
                 Text(
-                  'Simple things,\nbetter chosen.',
+                  'Find your next\neveryday favorite.',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: Colors.white,
                         fontWeight: FontWeight.w900,
                         height: 1.02,
                       ),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'Discover practical products with clear pricing, '
-                  'live stock and secure checkout.',
-                  style: TextStyle(
-                    color: scheme.onSurfaceVariant,
-                    height: 1.45,
-                  ),
+                const SizedBox(height: 11),
+                const Text(
+                  'Clean picks, real inventory and secure checkout.',
+                  style: TextStyle(color: Color(0xFFCFCFCA), height: 1.4),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.accent,
+                    foregroundColor: AppTheme.brand,
+                  ),
                   onPressed: onShopNow,
-                  child: const Text('Shop now'),
+                  child: const Text('Explore collection'),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 2,
-            child: Icon(
-              Icons.shopping_bag_outlined,
-              size: 92,
-              color: scheme.primary.withValues(alpha: 0.72),
             ),
           ),
         ],

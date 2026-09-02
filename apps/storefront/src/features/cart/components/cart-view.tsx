@@ -49,6 +49,11 @@ export function CartView() {
       setError(
         cause instanceof Error ? cause.message : "Unable to update cart.",
       );
+      try {
+        setCart(await getCart(cart.sessionId));
+      } catch {
+        // Keep the last cart snapshot if the recovery refresh also fails.
+      }
     } finally {
       setBusyItemId(null);
     }
@@ -170,9 +175,24 @@ export function CartView() {
                     <span className="cart-item-issue">{item.issue}</span>
                   ) : (
                     <span className="cart-item-stock">
-                      {item.availableStock} available
+                      {item.availableStock <= 5
+                        ? `Only ${item.availableStock} left`
+                        : `${item.availableStock} available`}
                     </span>
                   )}
+                  {item.quantity > item.availableStock &&
+                  item.availableStock > 0 &&
+                  item.productActive &&
+                  item.variantActive ? (
+                    <button
+                      className="remove-link"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => changeQuantity(item.id, item.availableStock)}
+                    >
+                      Adjust quantity to {item.availableStock}
+                    </button>
+                  ) : null}
                   <strong className="cart-market-item__price">
                     RM {item.price.toFixed(2)}
                   </strong>
@@ -191,6 +211,8 @@ export function CartView() {
                         type="button"
                         disabled={
                           busy ||
+                          !item.productActive ||
+                          !item.variantActive ||
                           !!item.issue ||
                           item.quantity >= item.availableStock ||
                           item.quantity >= 99

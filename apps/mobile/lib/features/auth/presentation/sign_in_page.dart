@@ -55,7 +55,10 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const <String>[AutofillHints.email],
-              decoration: const InputDecoration(labelText: 'Email address'),
+              decoration: const InputDecoration(
+                labelText: 'Email address',
+                prefixIcon: Icon(Icons.alternate_email_rounded),
+              ),
               validator: (value) => value == null || !value.contains('@')
                   ? 'Enter a valid email.'
                   : null,
@@ -65,7 +68,10 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               controller: _passwordController,
               obscureText: true,
               autofillHints: const <String>[AutofillHints.password],
-              decoration: const InputDecoration(labelText: 'Password'),
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                prefixIcon: Icon(Icons.lock_outline_rounded),
+              ),
               validator: (value) => value == null || value.isEmpty
                   ? 'Enter your password.'
                   : null,
@@ -81,14 +87,24 @@ class _SignInPageState extends ConsumerState<SignInPage> {
             const SizedBox(height: 18),
             FilledButton(
               onPressed: auth.isSubmitting ? null : _submit,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF171717),
+                foregroundColor: const Color(0xFFDBFF4B),
+                minimumSize: const Size.fromHeight(54),
+              ),
               child: Text(auth.isSubmitting ? 'Signing in…' : 'Sign in'),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextButton(
+              style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF171717)),
               onPressed: () => context.push('/forgot-password'),
               child: const Text('Forgot password?'),
             ),
+            const Divider(height: 28),
             TextButton(
+              style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF171717)),
               onPressed: () => context.push('/register'),
               child: const Text('Create a TextShop account'),
             ),

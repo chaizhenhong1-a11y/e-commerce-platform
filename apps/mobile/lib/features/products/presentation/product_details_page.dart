@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../cart/presentation/cart_providers.dart';
 import 'package:go_router/go_router.dart';
@@ -100,7 +101,17 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
     final product = ref.watch(productProvider(widget.productId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Product details')),
+      appBar: AppBar(
+        title: const Text('Product'),
+        actions: <Widget>[
+          IconButton(
+            tooltip: 'Bag',
+            onPressed: () => context.push('/cart'),
+            icon: const Icon(Icons.shopping_bag_outlined),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: product.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stackTrace) => _DetailsError(
@@ -172,7 +183,7 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
               }
 
               return ListView(
-                padding: const EdgeInsets.fromLTRB(18, 12, 18, 36),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 34),
                 children: <Widget>[
                   _ProductVisual(
                     product: item,
@@ -251,7 +262,7 @@ class _ProductVisual extends StatelessWidget {
         AspectRatio(
           aspectRatio: 1,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(18),
             child: selectedImage != null
                 ? Image.network(
                     selectedImage.url,
@@ -361,7 +372,7 @@ class _ProductInformation extends StatelessWidget {
         Text(
           product.category.toUpperCase(),
           style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.primary,
+            color: AppTheme.muted,
             fontWeight: FontWeight.w900,
             letterSpacing: 0.8,
           ),
@@ -436,10 +447,13 @@ class _ProductInformation extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                selectedVariant.inStock
-                    ? '${selectedVariant.availableStock} available · '
-                        '${selectedVariant.sku}'
-                    : 'Out of stock · ${selectedVariant.sku}',
+                !selectedVariant.inStock
+                    ? 'Out of stock · ${selectedVariant.sku}'
+                    : selectedVariant.availableStock <= 5
+                        ? 'Only ${selectedVariant.availableStock} left · '
+                            '${selectedVariant.sku}'
+                        : '${selectedVariant.availableStock} available · '
+                            '${selectedVariant.sku}',
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
@@ -458,8 +472,8 @@ class _ProductInformation extends StatelessWidget {
         const SizedBox(height: 24),
         DecoratedBox(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(18),
+            color: AppTheme.accent.withValues(alpha: 0.38),
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -596,12 +610,22 @@ class _VariantSelector extends StatelessWidget {
                             onSelected(exact);
                           }
                         : null,
-                    label: Text(
-                      value,
-                      style: TextStyle(
-                        fontWeight:
-                            selected ? FontWeight.w900 : FontWeight.w700,
-                      ),
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          value,
+                          style: TextStyle(
+                            fontWeight: selected
+                                ? FontWeight.w900
+                                : FontWeight.w700,
+                          ),
+                        ),
+                        if (!available) ...<Widget>[
+                          const SizedBox(width: 6),
+                          const Icon(Icons.block_rounded, size: 14),
+                        ],
+                      ],
                     ),
                   );
                 }).toList(growable: false),

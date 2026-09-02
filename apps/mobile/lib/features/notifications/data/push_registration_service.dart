@@ -141,9 +141,8 @@ class PushRegistrationService {
   }
 
   Future<void> _register(String token) async {
-    final platform = defaultTargetPlatform == TargetPlatform.iOS
-        ? 'IOS'
-        : 'ANDROID';
+    final platform =
+        defaultTargetPlatform == TargetPlatform.iOS ? 'IOS' : 'ANDROID';
     await _apiClient.dio.post<void>(
       '/notifications/devices',
       data: <String, String>{
