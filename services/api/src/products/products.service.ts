@@ -11,6 +11,8 @@ type CatalogQuery = {
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
+  page?: number;
+  limit?: number;
 };
 
 @Injectable()
@@ -140,8 +142,66 @@ export class ProductsService {
       });
     }
 
-    return filteredProducts;
+    if (filters.page == null && filters.limit == null) {
+      return filteredProducts;
+    }
+
+    const page = Math.max(1, Math.trunc(filters.page ?? 1));
+    const limit = Math.min(100, Math.max(1, Math.trunc(filters.limit ?? 24)));
+    const total = filteredProducts.length;
+    const start = (page - 1) * limit;
+    const items = filteredProducts.slice(start, start + limit);
+
+    return {
+      items,
+      page,
+      limit,
+      total,
+      hasMore: start + items.length < total,
+    };
   }
+
+  async catalogMetadata() {
+    const products = await this.prisma.product.findMany({
+      where: { status: 'ACTIVE' },
+      select: {
+        category: {
+          select: { name: true },
+        },
+        variants: {
+          where: { isActive: true },
+          select: { priceCents: true },
+        },
+      },
+    });
+
+    const categories = Array.from(
+      new Set(
+        products
+          .map((product) => product.category?.name?.trim())
+          .filter((name): name is string => Boolean(name)),
+      ),
+    ).sort((left, right) => left.localeCompare(right));
+
+    const prices = products.flatMap((product) =>
+      product.variants.map((variant) => variant.priceCents),
+    );
+
+    if (prices.length === 0) {
+      return {
+        categories,
+        minPrice: null,
+        maxPrice: null,
+      };
+    }
+
+    return {
+      categories,
+      minPrice: Math.min(...prices) / 100,
+      maxPrice: Math.max(...prices) / 100,
+    };
+  }
+
 
   async findBySlug(slug: string) {
     const product = await this.prisma.product.findUnique({

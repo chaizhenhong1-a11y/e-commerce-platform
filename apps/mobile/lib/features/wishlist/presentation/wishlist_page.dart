@@ -95,7 +95,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
               ),
             ),
             data: (catalog) {
-              final saved = catalog
+              final saved = catalog.items
                   .where((product) => ids.contains(product.id))
                   .toList(growable: false);
 

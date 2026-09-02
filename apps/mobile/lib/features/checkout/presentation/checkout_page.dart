@@ -87,9 +87,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     if (_promotionSessionId == cart.sessionId) return;
     _promotionSessionId = cart.sessionId;
     try {
-      final promotion = await ref.read(checkoutRepositoryProvider).previewAutomaticPromotion(
-            sessionId: cart.sessionId,
-          );
+      final promotion =
+          await ref.read(checkoutRepositoryProvider).previewAutomaticPromotion(
+                sessionId: cart.sessionId,
+              );
       if (mounted) setState(() => _automaticPromotion = promotion);
     } catch (_) {
       if (mounted) setState(() => _automaticPromotion = null);
@@ -147,12 +148,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
       if (_coupon != null) {
         try {
-          final refreshedCoupon = await ref
-              .read(checkoutRepositoryProvider)
-              .validateCoupon(
-                sessionId: latestCart.sessionId,
-                couponCode: _coupon!.code,
-              );
+          final refreshedCoupon =
+              await ref.read(checkoutRepositoryProvider).validateCoupon(
+                    sessionId: latestCart.sessionId,
+                    couponCode: _coupon!.code,
+                  );
           if (mounted) {
             setState(() {
               _coupon = refreshedCoupon;
@@ -398,7 +398,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         ),
         data: (value) {
           if (_promotionSessionId != value.sessionId) {
-            WidgetsBinding.instance.addPostFrameCallback((_) => _loadAutomaticPromotion(value));
+            WidgetsBinding.instance
+                .addPostFrameCallback((_) => _loadAutomaticPromotion(value));
           }
           if (value.items.isEmpty) {
             return const Center(child: Text('Your cart is empty.'));
@@ -450,14 +451,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         'Saved addresses are unavailable. You can still '
                         'enter delivery details manually.',
                         style: TextStyle(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
                     data: (items) {
-                      if (items.isNotEmpty &&
-                          _selectedAddressId == null) {
+                      if (items.isNotEmpty && _selectedAddressId == null) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (!mounted || _selectedAddressId != null) return;
                           final preferred = items.where(
@@ -503,8 +502,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                       TextFormField(
                         initialValue: 'Malaysia',
                         enabled: false,
-                        decoration:
-                            const InputDecoration(labelText: 'Country'),
+                        decoration: const InputDecoration(labelText: 'Country'),
                       ),
                     ],
                   ),
@@ -631,7 +629,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                _OrderSummary(cart: value, coupon: _coupon, automaticPromotion: _automaticPromotion),
+                _OrderSummary(
+                    cart: value,
+                    coupon: _coupon,
+                    automaticPromotion: _automaticPromotion),
                 if (_error != null) ...<Widget>[
                   const SizedBox(height: 14),
                   Text(
@@ -869,7 +870,8 @@ class _SavedAddressPicker extends StatelessWidget {
 }
 
 class _OrderSummary extends StatelessWidget {
-  const _OrderSummary({required this.cart, this.coupon, this.automaticPromotion});
+  const _OrderSummary(
+      {required this.cart, this.coupon, this.automaticPromotion});
 
   final CustomerCart cart;
   final CouponValidation? coupon;
@@ -879,9 +881,12 @@ class _OrderSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final shipping = cart.subtotal >= 150 ? 0.0 : 10.0;
     final couponWins = coupon != null &&
-        (automaticPromotion == null || coupon!.discountCents >= automaticPromotion!.discountCents);
-    final discount = couponWins ? coupon!.discount : automaticPromotion?.discount ?? 0.0;
-    final total = (cart.subtotal + shipping - discount).clamp(0.0, double.infinity);
+        (automaticPromotion == null ||
+            coupon!.discountCents >= automaticPromotion!.discountCents);
+    final discount =
+        couponWins ? coupon!.discount : automaticPromotion?.discount ?? 0.0;
+    final total =
+        (cart.subtotal + shipping - discount).clamp(0.0, double.infinity);
 
     return _SectionCard(
       title: 'Order review',
@@ -898,8 +903,7 @@ class _OrderSummary extends StatelessWidget {
                     child: SizedBox(
                       width: 54,
                       height: 54,
-                      child: item.imageUrl != null &&
-                              item.imageUrl!.isNotEmpty
+                      child: item.imageUrl != null && item.imageUrl!.isNotEmpty
                           ? Image.network(
                               item.imageUrl!,
                               fit: BoxFit.cover,
@@ -948,7 +952,9 @@ class _OrderSummary extends StatelessWidget {
           if (discount > 0) ...<Widget>[
             const SizedBox(height: 8),
             _row(
-              couponWins ? 'Discount (${coupon!.code})' : 'Automatic promotion (${automaticPromotion!.name})',
+              couponWins
+                  ? 'Discount (${coupon!.code})'
+                  : 'Automatic promotion (${automaticPromotion!.name})',
               '- RM ${discount.toStringAsFixed(2)}',
             ),
           ],

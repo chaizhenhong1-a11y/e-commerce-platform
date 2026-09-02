@@ -1,3 +1,91 @@
+## 0.51.7.4 - Phase 054.4.4: Retire legacy root Flutter app
+
+### Removed
+- Retired the obsolete Flutter application that lived at the repository root.
+- `apps/mobile` is now the only supported Flutter mobile application location.
+- This cleanup removes duplicate root Flutter entrypoints/platform folders only and does not change the active mobile UI or commerce behavior.
+
+### Project structure
+- Run the mobile app from `apps/mobile`.
+- The repository root remains the monorepo/workspace root for shared scripts, documentation, storefront, and API services.
+
+## 0.51.7.3 - Phase 054.4.3: Revert unauthorized product-detail restyle
+
+### Restored
+- Reverted the Phase 054.4.2 product-details visual restyle and restored the exact prior presentation baseline.
+- Kept only the lint-safe braces around the null-product guard.
+- No Home, Hero, search, category, product-card, bottom-navigation, API, pagination, inventory, payment, Prisma, or Staff Catalog behavior is changed.
+
+## 0.51.7.2 - Phase 054.4.2: Restore black-and-lime product details UI
+
+### Restored
+- Restored the Flutter product details page to the established TextShop black-and-fluorescent-lime visual identity.
+- Removed the accidental slate/grey product-detail styling and aligned the page with the existing brand palette.
+- Preserved the current product provider, product data, navigation contract, and placeholder Add to cart behavior; this increment is presentation-only.
+- Kept the curly-braces lint fix for the null-product guard.
+
+## 0.51.6.1 - Phase 054.4.1: Wishlist pagination compatibility
+
+### Fixed
+- Updated the Flutter wishlist page to read products from the paginated `ProductCatalogState.items` collection introduced in Phase 054.4.
+- Preserved the existing wishlist refresh, authentication, product-card navigation, and empty/error states.
+- This is a regression-recovery increment only; no API, inventory, payment, Prisma, or Staff Catalog behavior is changed.
+
+## 0.51.7 - Phase 054.4: Catalog pagination and infinite scrolling
+
+### Added
+- Added optional `page` and `limit` parameters to the public product catalog API while preserving the legacy unpaginated array response for existing storefront callers.
+- Added paginated catalog responses with `items`, `page`, `limit`, `total`, and `hasMore`.
+- Added Flutter incremental catalog loading with a 24-product page size, duplicate-ID protection, and automatic next-page loading near the bottom of the list.
+
+### Changed
+- Flutter search, category, sort, price, and stock-filter changes now rebuild pagination from page 1 automatically.
+- Pull-to-refresh resets the product catalog to page 1 while continuing to refresh catalog metadata and wishlist state.
+- Product result counts now show loaded products against the server-reported filtered total.
+- Preserved the verified Staff Catalog service surface and existing storefront behavior; no Prisma migration, payment flow, reservation policy, authentication behavior, or staff UI contract is changed.
+
+## 0.51.6 - Phase 054.3: Catalog filter consistency hardening
+
+### Changed
+- Flutter name sorting now uses the backend `name` sort contract instead of downloading server results and re-sorting them on the client.
+- Pull-to-refresh now refreshes lightweight catalog metadata together with products and wishlist state.
+- The Flutter filter sheet now shows the active catalog price range from `GET /products/catalog-meta` when metadata is available.
+- Preserved the verified Phase 054.2.1 Staff Catalog recovery baseline; no staff product, variant, image, inventory, payment, reservation, authentication, or Prisma behavior is changed.
+
+## 0.51.5.1 - Phase 054.2.1: Staff catalog service recovery
+
+### Fixed
+- Restored the complete Staff Catalog service surface that was accidentally removed by the Phase 054.2 incremental package.
+- Preserved the Phase 054.2 `catalogMetadata()` endpoint implementation while restoring staff product, variant, image, and inventory operations.
+- This is a regression-recovery increment only; no new product behavior, Prisma migration, payment flow, inventory reservation policy, or UI change is introduced.
+
+## 0.51.5 - Phase 054.2: Lightweight catalog metadata
+
+### Added
+- Added `GET /products/catalog-meta` for lightweight public catalog metadata.
+- The metadata response exposes active product categories plus minimum and maximum active variant prices without returning product images, inventory payloads, descriptions, or full variant records.
+
+### Changed
+- Flutter category discovery now uses catalog metadata instead of downloading a second unfiltered copy of the complete product catalog.
+- `ProductRepositoryCatalogMetadata` provides a fallback implementation for test doubles and non-API repositories, so existing repository abstractions remain backward compatible.
+- Preserved Phase 054.1 server-backed search/category/sort/price/availability filters and the locked black/fluorescent-lime UI.
+- No Prisma migration, payment behavior, reservation policy, or authentication change is required.
+
+## 0.51.4 - Phase 054.1: Flutter server-backed catalog filters
+
+### Added
+- Added Flutter catalog controls for minimum price, maximum price, and in-stock-only discovery.
+- Added an advanced filter badge so customers can see when price/availability constraints are active.
+
+### Changed
+- Flutter catalog search, category, sort, price, and availability filtering now flow through the existing `ProductCatalogQuery` API contract instead of filtering a fully downloaded catalog locally.
+- Search input is debounced before server requests to avoid unnecessary API traffic while typing.
+- Category discovery remains based on the unfiltered catalog so selecting a category does not collapse the available category list.
+- Name sorting remains client-side because the current backend catalog sort contract supports newest and price ordering.
+- Empty-state reset now clears search, category, sort, price range, and in-stock-only state together.
+- Preserved the locked TextShop black/fluorescent-lime visual identity and existing wishlist/product navigation behavior.
+- No API contract change, Prisma migration, inventory policy change, or payment behavior change is required.
+
 ## 0.51.3.1 - Phase 054.0.1: Storefront variant option mapping fix
 
 ### Fixed

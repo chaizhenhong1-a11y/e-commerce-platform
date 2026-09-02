@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,33 +18,252 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
+  Timer? _searchDebounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.extentAfter > 700) return;
+    ref.read(productsProvider.notifier).loadMore();
+  }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
   Future<void> _refresh() async {
-    ref.invalidate(productsProvider);
+    ref.invalidate(productCatalogMetadataProvider);
     await Future.wait<void>(<Future<void>>[
-      ref.read(productsProvider.future).then((_) {}),
+      ref.read(productsProvider.notifier).refresh(),
+      ref.read(productCatalogMetadataProvider.future).then((_) {}),
       ref.read(wishlistProductIdsProvider.notifier).refreshFromServer(),
     ]);
   }
 
   void _clearSearch() {
+    _searchDebounce?.cancel();
     _searchController.clear();
     ref.read(productSearchQueryProvider.notifier).state = '';
+  }
+
+  void _queueSearch(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      ref.read(productSearchQueryProvider.notifier).state = value;
+    });
+  }
+
+  void _clearCatalogFilters() {
+    _clearSearch();
+    ref.read(selectedProductCategoryProvider.notifier).state = null;
+    ref.read(productSortProvider.notifier).state = ProductSort.newest;
+    ref.read(productMinPriceProvider.notifier).state = null;
+    ref.read(productMaxPriceProvider.notifier).state = null;
+    ref.read(productInStockOnlyProvider.notifier).state = false;
+  }
+
+  Future<void> _openCatalogFilters() async {
+    final currentMin = ref.read(productMinPriceProvider);
+    final currentMax = ref.read(productMaxPriceProvider);
+    final currentInStock = ref.read(productInStockOnlyProvider);
+    final catalogMetadata =
+        ref.read(productCatalogMetadataProvider).valueOrNull;
+
+    final minController = TextEditingController(
+      text: currentMin?.toStringAsFixed(2) ?? '',
+    );
+    final maxController = TextEditingController(
+      text: currentMax?.toStringAsFixed(2) ?? '',
+    );
+    var inStockOnly = currentInStock;
+    String? validationMessage;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            void apply() {
+              final min = minController.text.trim().isEmpty
+                  ? null
+                  : double.tryParse(minController.text.trim());
+              final max = maxController.text.trim().isEmpty
+                  ? null
+                  : double.tryParse(maxController.text.trim());
+
+              if ((minController.text.trim().isNotEmpty && min == null) ||
+                  (maxController.text.trim().isNotEmpty && max == null)) {
+                setSheetState(() {
+                  validationMessage = 'Enter a valid price.';
+                });
+                return;
+              }
+              if ((min != null && min < 0) || (max != null && max < 0)) {
+                setSheetState(() {
+                  validationMessage = 'Price cannot be negative.';
+                });
+                return;
+              }
+              if (min != null && max != null && min > max) {
+                setSheetState(() {
+                  validationMessage =
+                      'Minimum price cannot be higher than maximum price.';
+                });
+                return;
+              }
+
+              ref.read(productMinPriceProvider.notifier).state = min;
+              ref.read(productMaxPriceProvider.notifier).state = max;
+              ref.read(productInStockOnlyProvider.notifier).state = inStockOnly;
+              Navigator.of(sheetContext).pop();
+            }
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  8,
+                  20,
+                  20 + MediaQuery.viewInsetsOf(context).bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Filter products',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                          ),
+                    ),
+                    if (catalogMetadata?.minPrice != null &&
+                        catalogMetadata?.maxPrice != null) ...<Widget>[
+                      const SizedBox(height: 6),
+                      Text(
+                        'Catalog range: \$${catalogMetadata!.minPrice!.toStringAsFixed(2)} – \$${catalogMetadata.maxPrice!.toStringAsFixed(2)}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: TextField(
+                            controller: minController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Min price',
+                              prefixText: 'RM ',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: maxController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Max price',
+                              prefixText: 'RM ',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('In-stock products only'),
+                      subtitle: const Text(
+                        'Uses live sellable stock after reservations.',
+                      ),
+                      value: inStockOnly,
+                      onChanged: (value) {
+                        setSheetState(() {
+                          inStockOnly = value;
+                          validationMessage = null;
+                        });
+                      },
+                    ),
+                    if (validationMessage != null) ...<Widget>[
+                      const SizedBox(height: 4),
+                      Text(
+                        validationMessage!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+                    Row(
+                      children: <Widget>[
+                        TextButton(
+                          onPressed: () {
+                            minController.clear();
+                            maxController.clear();
+                            setSheetState(() {
+                              inStockOnly = false;
+                              validationMessage = null;
+                            });
+                          },
+                          child: const Text('Reset'),
+                        ),
+                        const Spacer(),
+                        FilledButton(
+                          onPressed: apply,
+                          child: const Text('Apply filters'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    minController.dispose();
+    maxController.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final products = ref.watch(filteredProductsProvider);
+    final catalogState = ref.watch(productsProvider).valueOrNull;
     final categories = ref.watch(productCategoriesProvider);
     final selectedCategory = ref.watch(selectedProductCategoryProvider);
     final query = ref.watch(productSearchQueryProvider);
     final sort = ref.watch(productSortProvider);
+    final minPrice = ref.watch(productMinPriceProvider);
+    final maxPrice = ref.watch(productMaxPriceProvider);
+    final inStockOnly = ref.watch(productInStockOnlyProvider);
+    final activeAdvancedFilterCount = (minPrice == null ? 0 : 1) +
+        (maxPrice == null ? 0 : 1) +
+        (inStockOnly ? 1 : 0);
+    final hasAnyFilter = query.isNotEmpty ||
+        selectedCategory != null ||
+        sort != ProductSort.newest ||
+        activeAdvancedFilterCount > 0;
     final wishlist = ref.watch(wishlistProductIdsProvider);
     final wishlistIds = wishlist.valueOrNull ?? <String>{};
     final wishlistCount = ref.watch(wishlistCountProvider);
@@ -78,6 +299,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: CustomScrollView(
+          controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: <Widget>[
             SliverPadding(
@@ -110,9 +332,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         icon: const Icon(Icons.close_rounded),
                       ),
                   ],
-                  onChanged: (value) {
-                    ref.read(productSearchQueryProvider.notifier).state = value;
-                  },
+                  onChanged: _queueSearch,
                 ),
               ),
             ),
@@ -148,17 +368,23 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ),
                       ),
                     ),
-                    products.when(
-                      data: (items) => Text(
-                        '${items.length} item${items.length == 1 ? '' : 's'}',
+                    if (catalogState != null)
+                      Text(
+                        '${catalogState.items.length} of ${catalogState.total}',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      loading: () => const SizedBox.shrink(),
-                      error: (error, stackTrace) => const SizedBox.shrink(),
-                    ),
                     const SizedBox(width: 8),
+                    Badge(
+                      isLabelVisible: activeAdvancedFilterCount > 0,
+                      label: Text('$activeAdvancedFilterCount'),
+                      child: IconButton(
+                        tooltip: 'Filter products',
+                        onPressed: _openCatalogFilters,
+                        icon: const Icon(Icons.tune_rounded),
+                      ),
+                    ),
                     PopupMenuButton<ProductSort>(
                       tooltip: 'Sort products',
                       initialValue: sort,
@@ -206,17 +432,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   return SliverFillRemaining(
                     hasScrollBody: false,
                     child: _EmptyProducts(
-                      hasFilter: query.isNotEmpty || selectedCategory != null,
-                      onReset: () {
-                        _clearSearch();
-                        ref
-                            .read(
-                              selectedProductCategoryProvider.notifier,
-                            )
-                            .state = null;
-                        ref.read(productSortProvider.notifier).state =
-                            ProductSort.newest;
-                      },
+                      hasFilter: hasAnyFilter,
+                      onReset: _clearCatalogFilters,
                     ),
                   );
                 }
@@ -268,6 +485,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                 );
               },
             ),
+            if (catalogState?.isLoadingMore ?? false)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 28),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
           ],
         ),
       ),

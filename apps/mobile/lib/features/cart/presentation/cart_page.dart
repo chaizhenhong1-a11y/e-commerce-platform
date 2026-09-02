@@ -24,11 +24,16 @@ class CartPage extends ConsumerWidget {
               children: <Widget>[
                 const Icon(Icons.lock_outline_rounded, size: 56),
                 const SizedBox(height: 16),
-                const Text('Sign in to use your cart', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+                const Text('Sign in to use your cart',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
                 const SizedBox(height: 8),
-                const Text('Your cart is private and belongs to your account.', textAlign: TextAlign.center),
+                const Text('Your cart is private and belongs to your account.',
+                    textAlign: TextAlign.center),
                 const SizedBox(height: 18),
-                FilledButton(onPressed: () => context.push('/sign-in?returnTo=%2Fcart'), child: const Text('Sign in')),
+                FilledButton(
+                    onPressed: () => context.push('/sign-in?returnTo=%2Fcart'),
+                    child: const Text('Sign in')),
               ],
             ),
           ),
@@ -92,9 +97,7 @@ class _CartContent extends ConsumerWidget {
                   child: Text(
                     '${cart.totalQuantity} item${cart.totalQuantity == 1 ? '' : 's'}',
                     style: TextStyle(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurfaceVariant,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -243,9 +246,8 @@ class _CartItemCardState extends ConsumerState<_CartItemCard> {
                       item.variantActive) ...<Widget>[
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
-                      onPressed: _busy
-                          ? null
-                          : () => _update(item.availableStock),
+                      onPressed:
+                          _busy ? null : () => _update(item.availableStock),
                       icon: const Icon(Icons.inventory_2_outlined, size: 18),
                       label: Text('Adjust to ${item.availableStock}'),
                     ),
@@ -261,15 +263,13 @@ class _CartItemCardState extends ConsumerState<_CartItemCard> {
                   Row(
                     children: <Widget>[
                       IconButton.filledTonal(
-                        onPressed:
-                            _busy || item.quantity <= 1
-                                ? null
-                                : () => _update(item.quantity - 1),
+                        onPressed: _busy || item.quantity <= 1
+                            ? null
+                            : () => _update(item.quantity - 1),
                         icon: const Icon(Icons.remove_rounded),
                       ),
                       Padding(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
                           '${item.quantity}',
                           style: const TextStyle(
@@ -389,7 +389,6 @@ class _CartError extends StatelessWidget {
     );
   }
 }
-
 
 class _CartImageFallback extends StatelessWidget {
   const _CartImageFallback();
