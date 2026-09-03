@@ -6,7 +6,9 @@ import 'auth_providers.dart';
 import 'auth_scaffold.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
-  const RegisterPage({super.key});
+  const RegisterPage({this.returnTo, super.key});
+
+  final String? returnTo;
 
   @override
   ConsumerState<RegisterPage> createState() => _RegisterPageState();
@@ -18,6 +20,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _lastName = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
+
+  String get _safeReturnTo {
+    final target = widget.returnTo;
+    if (target == null ||
+        !target.startsWith('/') ||
+        target.startsWith('/sign-in') ||
+        target.startsWith('/register') ||
+        target.startsWith('/forgot-password')) {
+      return '/profile';
+    }
+    return target;
+  }
 
   @override
   void dispose() {
@@ -36,7 +50,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           firstName: _firstName.text,
           lastName: _lastName.text,
         );
-    if (success && mounted) context.go('/profile');
+    if (success && mounted) {
+      context.go(_safeReturnTo);
+    }
   }
 
   @override

@@ -1,3 +1,543 @@
+## 0.51.31 - Phase 054.28: TextShop V1 Final Gate
+
+### Status
+- Declared the current commerce baseline `TextShop V1 Stable Baseline`.
+- This milestone is a stable first-version baseline, not a Production Ready declaration.
+
+### Final gate
+- Product discovery and product-details purchase flow: PASS.
+- Variant selection, live inventory visibility, cart validation, and cart mutation recovery: PASS.
+- Guest authentication guidance and protected-flow return navigation: PASS.
+- Checkout validation, coupon revalidation, server-authoritative pricing, and inventory reservation: PASS.
+- Final-unit inventory, reserved-stock exhaustion, duplicate checkout, and inactive product/SKU regression coverage: PASS.
+- Payment creation/recovery, provider failure handling, duplicate confirmation idempotency, and reservation-expiry protection: PASS.
+- Customer orders, payment recovery, cancellation, fulfillment status, courier/tracking, and live order refresh: PASS.
+- Staff/Admin role isolation and protected Staff Center access: PASS.
+- Staff order processing -> shipping -> delivery workflow: PASS.
+- Staff returns review -> transit/receive -> inspection -> refund completion workflow: PASS.
+- Customer return/refund ownership and quantity boundaries: PASS.
+- Account/address and authenticated session recovery flows: PASS.
+- Guest-order signed access and account-order ownership isolation: PASS.
+- In-app notification persistence and external email/push failure isolation: PASS.
+- Mobile Staff catalog, inventory adjustment/history, product/SKU management, variant matrix, and product-media metadata management: PASS.
+- API regression matrix through Phase 054.27: PASS.
+- Root verification reported by the project owner after Phase 054.27: PASS.
+
+### V1 regression matrix
+- Phase 054.23 covered Cart/Inventory, fulfillment transitions, and warehouse return transitions.
+- Phase 054.24 covered Checkout/Reservation/Payment settlement and unpaid-order reservation release.
+- Phase 054.25 covered authentication/session boundaries, Staff authorization, and order-access isolation.
+- Phase 054.26 covered payment recovery/provider failures and guest-to-account cart merge boundaries.
+- Phase 054.27 covered refund/return edge cases and notification delivery failure isolation.
+- All reported verification blockers from these rounds were resolved; Phase 054.26.1 was a test-only TypeScript union narrowing correction.
+
+### Preserved
+- Existing TextShop customer UI and established visual language are unchanged.
+- Existing backend-authoritative pricing, inventory, payment, order, fulfillment, return, refund, and permission rules remain unchanged.
+- No production API, Prisma schema, Flutter behavior, storefront behavior, navigation, or database changes are included in this milestone package.
+
+### Next milestone
+- Future work proceeds from this baseline as post-V1 enhancement work.
+- Production readiness remains a separate later milestone requiring deployment/operations hardening, CI/CD, observability, security review, backup/recovery, and broader end-to-end/load validation.
+
+## 0.51.30 - Phase 054.27: V1 Stability Matrix - Final Round
+
+### Added
+- Added direct-refund edge tests for fulfilled-order return enforcement, duplicate refund rejection, missing provider references, asynchronous refund processing, and provider refund failure recording.
+- Added customer return-request edge tests for authentication, order ownership, duplicate item lines, remaining returnable quantity, and active-return conflict protection.
+- Added notification delivery failure-isolation coverage proving in-app notifications survive simultaneous email and push delivery failures.
+
+### Final-round focus
+- Refund provider outages must be recorded as FAILED and must not be silently swallowed.
+- Fulfilled orders must use the return workflow rather than bypassing warehouse inspection with a direct refund.
+- Return quantities cannot exceed the unreturned quantity from the original order.
+- A customer cannot create overlapping active returns for the same order.
+- Email/push infrastructure failures cannot roll back an already-created in-app notification.
+
+### Scope
+- Test-only V1 stability increment.
+- No production API, Prisma, Flutter, storefront, navigation, or UI changes.
+- Existing `tsx --test test/**/*.test.ts` verification automatically includes these tests.
+
+### Preserved
+- Phase 054.23 through 054.26.1 regression coverage remains unchanged.
+- Existing TextShop customer UI, Staff Center, checkout, payment, fulfillment, tracking, returns, refunds, and notification behavior remain unchanged.
+
+## 0.51.29.1 - Phase 054.26.1: Payment recovery test type narrowing fix
+
+### Fixed
+- Narrowed the union return type from `PaymentsService.create()` before asserting the `resumed` field in payment-recovery regression tests.
+- Fixes the two TS2339 build errors reported by `nest build` while preserving the already-passing runtime test behavior.
+
+### Scope
+- Test-only correction.
+- No production API, Prisma, Flutter, storefront, or UI changes.
+- Phase 054.26 feature/stability progress is unchanged; this correction does not count as a new V1 feature phase.
+
+## 0.51.29 - Phase 054.26: V1 Stability Matrix - Round 4
+
+### Added
+- Added payment-recovery regression tests for existing-session resume, provider processing locks, expired-session replacement, provider session creation failure, and production blocking of the MANUAL_TEST provider.
+- Added account-cart merge regression tests for guest-to-account migration, sellable-stock capping, the V1 quantity ceiling, sold-out guest-line removal, and invalid cart-session rejection.
+- Added payment-provider registry regression tests ensuring supported adapters resolve deterministically and unsupported providers fail explicitly.
+
+### Failure-recovery focus
+- Repeated payment requests must resume an existing open provider session rather than create duplicate payment records.
+- Provider sessions still processing must block a replacement payment attempt.
+- Expired provider sessions must be failed before a replacement is created.
+- Provider outages during session creation must leave the new payment marked failed instead of silently pending.
+- Guest cart migration after sign-in must never create quantities above current sellable inventory or above the V1 cart limit.
+
+### Scope
+- No production API, Prisma, Flutter, website, or UI code is changed.
+- These zero-database tests join the existing API test command automatically.
+
+### Preserved
+- Phase 054.23 through 054.25 stability coverage remains unchanged.
+- Existing checkout, reservation, payment, authentication, order ownership, fulfillment, returns, Staff Center, and TextShop visual language remain unchanged.
+
+## 0.51.28 - Phase 054.25: V1 Stability Matrix - Round 3
+
+### Added
+- Added authentication-guard regression tests for missing/malformed bearer tokens, valid identity attachment, expired/invalid access tokens, and optional-auth anonymous behavior.
+- Added Staff authorization tests proving CUSTOMER accounts are rejected while STAFF and ADMIN roles are accepted.
+- Added refresh-session tests for unknown, revoked, expired, and disabled-account sessions plus successful refresh-token rotation.
+- Added access-token tests for wrong token type, expired/invalid JWT verification, deleted/unavailable accounts, and authoritative identity restoration.
+- Added order-access isolation tests for account ownership, anonymous denial, guest-order token issuance, cross-order token rejection, and tampered-token rejection.
+
+### Security and stability focus
+- Protected API routes must fail closed with 401 when authentication is absent or invalid.
+- Staff routes must enforce role separation with 403 for authenticated customers.
+- Refresh sessions must rotate instead of being reused and must stop working after revocation, expiration, or account disablement.
+- Account-owned orders continue to hide unauthorized access behind `Order not found`.
+- Guest-order access tokens remain scoped to exactly one guest order and cannot grant access to account-owned or different guest orders.
+
+### Scope
+- No production auth, order, controller, database, or Flutter code is changed in this increment.
+- No UI changes.
+- The new tests run through the existing `tsx --test test/**/*.test.ts` API verification command.
+
+### Preserved
+- Phase 054.23 and 054.24 stability tests remain unchanged.
+- Existing guest browsing, authenticated commerce, Staff Center, fulfillment, payment, inventory, returns, and TextShop visual language remain unchanged.
+
+## 0.51.27 - Phase 054.24: V1 Stability Matrix - Round 2
+
+### Added
+- Added checkout reservation regression tests for final-unit checkout, reserved-stock exhaustion, product/SKU deactivation, duplicate checkout idempotency, current-price snapshotting, and coupon invalidation before inventory reservation.
+- Added payment settlement regression tests for reserved inventory consumption, duplicate payment-confirmation idempotency, expired reservations, and missing reserved inventory.
+- Added unpaid-order expiration tests covering reservation release, defensive release when reserved stock is lower than the order quantity, and re-checking expiration state inside the transaction.
+
+### Stability focus
+- Checkout → reservation → payment → order inventory settlement is now covered by dedicated zero-database service tests.
+- Duplicate converted-cart checkout must return the existing order instead of reserving stock twice.
+- Duplicate successful payment confirmation must not decrement inventory twice.
+- Expired unpaid orders must release reservations and fail pending payment state.
+- Invalid/expired coupons must fail before inventory is reserved.
+
+### Scope
+- No customer or Staff UI changes.
+- No production service/controller/DTO/Prisma changes are included in this increment.
+- These tests join the existing `tsx --test test/**/*.test.ts` API verification flow.
+
+### Preserved
+- Phase 054.23 Cart/Inventory, Fulfillment, and Returns stability tests remain unchanged.
+- Existing TextShop visual language and commerce behavior remain unchanged.
+
+## 0.51.26 - Phase 054.23: V1 Stability Matrix - Round 1
+
+### Added
+- Added zero-database API regression coverage for cart sellable-stock boundaries, including reserved inventory, final-unit purchases, combined cart quantities, unavailable SKUs, and invalid quantity limits.
+- Added fulfillment transition regression coverage for processing, shipping, delivery, idempotency, payment-state enforcement, and shipping-detail validation.
+- Added returns warehouse transition regression coverage for approval, in-transit, receiving, complete-line inspection, and completion preconditions.
+
+### Stability scope
+- This first V1 matrix round targets high-risk commerce state boundaries without changing production business logic.
+- Tests use the existing Node `tsx --test test/**/*.test.ts` runner and remain database-free, matching the current automated testing foundation.
+- Existing notification/email/push tests remain unchanged.
+
+### Preserved
+- No API production source, Prisma schema, Flutter source, storefront source, database behavior, customer UI, Staff UI, navigation, or TextShop visual language is changed.
+- Existing inventory reservation, fulfillment, refund, return, authentication, payment, and catalog rules remain backend-authoritative.
+
+## 0.51.25 - Phase 054.22: Mobile Staff Variant Matrix & Product Media
+
+### Added
+- Added Flutter variant-matrix generation to the Staff product editor.
+- Staff can define one or two structured option axes, SKU prefix, base/compare-at prices, currency, and initial stock for generated combinations.
+- Added mobile product-media record management for image URL, alt text, SKU assignment, display order, primary-image selection, metadata editing, and removal.
+- Product state reloads after matrix and media mutations so the editor always reflects authoritative API data.
+
+### API compatibility
+- Uses the supplied current variant-matrix and product-image Staff Catalog endpoints.
+- Existing backend duplicate-combination handling, 100-combination limit, image/variant validation, and publishing rules remain authoritative.
+- No backend, DTO, Prisma, or `products.service.ts` modification is included.
+
+### Scope
+- Device binary upload remains available in the existing web Staff Catalog.
+- This mobile increment manages catalog media by URL and metadata without introducing a new Flutter file-picker dependency.
+
+### Preserved
+- Phase 054.20.1 immediate inventory decrease refresh remains preserved.
+- Existing mobile product/SKU, inventory, returns, orders, customer UI, and TextShop visual language remain unchanged.
+
+## 0.51.24 - Phase 054.21: Mobile Staff Product Management
+
+### Added
+- Added protected Flutter routes for creating and editing Staff catalog products.
+- Added `New product` access from the mobile Catalog & inventory AppBar and `Edit product` access on each product card.
+- Added product create/edit fields for name, slug, description, category, status, and featured state.
+- New products are intentionally created as `DRAFT`, matching the backend publishing rule.
+- Added mobile SKU creation and editing for SKU, variant name, selling price, compare-at price, currency, active state, initial quantity, and option values.
+- Added safe SKU removal; the existing backend decides whether a SKU is physically deleted or deactivated when commerce/audit history exists.
+- Added editor option loading from the current active category list and full product reload after mutations.
+- Added backend error propagation, busy-state protection, validation, and refresh support.
+
+### API compatibility
+- Built against the supplied current Staff Catalog controller and DTOs.
+- Uses existing protected endpoints for editor options, product create/read/save, variant create/save, and variant removal.
+- Existing backend publishing validation remains authoritative: an active SKU is required before a product can be published.
+- No change was made to `products.service.ts`, the Staff controller, DTOs, Prisma schema, or database.
+
+### Scope
+- This increment covers core product and SKU management in Flutter.
+- Variant-matrix generation and product-media upload/management remain in the web Staff Catalog and are intentionally deferred to the next increment.
+
+### Preserved
+- Existing mobile inventory adjustment/history behavior, including Phase 054.20.1 immediate decrease refresh, remains preserved.
+- Existing customer catalog UI and TextShop visual language remain unchanged.
+- Existing Staff Orders and Returns operations remain unchanged.
+
+## 0.51.23.1 - Phase 054.20.1: Inventory decrease refresh fix
+
+### Fixed
+- Staff Catalog now immediately applies the authoritative inventory returned by the adjustment API to the matching SKU after both positive and negative stock adjustments.
+- Decreasing stock now updates Quantity, Reserved, and Available on screen immediately instead of depending solely on the follow-up catalog reload.
+- The normal catalog reload still runs after the local authoritative update so filters and server state remain synchronized.
+
+### Preserved
+- Existing audited inventory adjustment API, validation, inventory history, catalog filters, customer catalog UI, and TextShop visual language remain unchanged.
+- No backend or database change is included.
+
+## 0.51.23 - Phase 054.20: Mobile Staff Catalog & Inventory
+
+### Added
+- Added protected Flutter `/staff/catalog` access for authenticated `STAFF` and `ADMIN` accounts.
+- Added a Staff Center entry for native Catalog & inventory operations.
+- Added staff catalog search by product, slug or SKU, product-status filtering, and the existing low-stock filter.
+- Added product and SKU inventory visibility for physical quantity, reserved stock, and available stock.
+- Added audited inventory adjustments with signed deltas and a required reason.
+- Added client-side validation preventing zero adjustments and quantities below reserved stock; the backend remains authoritative.
+- Added the latest 50 inventory-adjustment history records per SKU with actor, reason, quantity transition, and timestamp.
+- Added refresh, pull-to-refresh, busy-state protection, and API error handling.
+
+### API compatibility
+- Built directly against the supplied current `StaffProductsController`, `ProductsService`, and staff catalog domain.
+- Uses the existing protected `GET /staff/catalog`, `POST /staff/catalog/variants/:variantId/inventory/adjust`, and `GET /staff/catalog/variants/:variantId/inventory/history` endpoints.
+- No changes were made to `products.service.ts`; all existing Staff product methods are preserved.
+
+### Scope
+- This increment intentionally focuses on catalog visibility and audited stock control.
+- Product creation, full product editing, variant matrix editing, and media management remain in the existing web Staff Catalog for now.
+
+### Preserved
+- Existing customer catalog UI and commerce behavior remain unchanged.
+- Existing Flutter Staff Orders and Returns operations remain unchanged.
+- Existing web Staff Catalog remains available.
+- No backend API or database change is included.
+
+## 0.51.22 - Phase 054.19: Mobile Staff Returns operations
+
+### Added
+- Added protected Flutter `/staff/returns` operations for authenticated `STAFF` and `ADMIN` accounts.
+- Added a Staff Center entry for returns management using the existing protected Staff Returns API.
+- Added status filtering and native return-case cards with order, customer, item, reason, refund and inspection information.
+- Added approve/reject review with optional staff notes.
+- Added the operational return chain: approve → in transit / receive → inspect → complete & refund.
+- Added per-item inspection inputs for condition (`UNOPENED`, `OPENED`, `DAMAGED`, `DEFECTIVE`) and disposition (`RESTOCK`, `QUARANTINE`, `DISCARD`).
+- Added confirmation dialogs, operation busy-state protection, API error handling, manual refresh and pull-to-refresh.
+
+### API compatibility
+- Uses the existing Staff Returns endpoints already used by the web staff console:
+  `GET /staff/returns`, plus `approve`, `reject`, `in-transit`, `receive`, `inspect`, and `complete` actions.
+- Existing backend transition, refund and inventory-disposition logic remains authoritative; no duplicate business rules are introduced in Flutter.
+
+### Preserved
+- Existing customer returns, orders, Staff Orders & Fulfillment, Profile, navigation and TextShop visual language remain unchanged.
+- Existing web Staff Returns console remains available.
+- No backend API or database change is included in this phase.
+
+## 0.51.21 - Phase 054.18: Mobile Staff Orders & Fulfillment
+
+### Added
+- Added protected Flutter `/staff/orders` operations for authenticated `STAFF` and `ADMIN` accounts.
+- Added Staff Center navigation into native Orders & fulfillment.
+- Added live staff order loading with status, payment-status and text search filters backed by the existing `GET /staff/orders` API.
+- Added order cards with customer identity, totals, item summaries, processing/shipping/delivery timestamps and tracking details.
+- Added native fulfillment actions for `Start processing`, `Ship order`, and `Mark delivered`.
+- Added a validated shipping dialog requiring courier and tracking number with an optional HTTP/HTTPS tracking URL.
+- Added confirmation dialogs, busy-state protection, API error handling, manual refresh and pull-to-refresh.
+
+### Security and workflow
+- The `/staff/orders` page uses the existing Staff/Admin route guard and the backend `StaffAuthGuard` remains authoritative.
+- Existing backend transition rules are preserved: paid confirmed orders can enter processing, paid processing orders can ship, and shipped orders can be marked delivered.
+- No email-based administrator checks are introduced.
+
+### Preserved
+- Existing customer commerce flows, bottom navigation and TextShop visual language remain unchanged.
+- Existing web Staff Orders console remains available.
+- No backend API or database changes are included in this phase.
+
+## 0.51.20 - Phase 054.17: Protected mobile Staff Center foundation
+
+### Added
+- Added a Staff/Admin-only `/staff` route guarded by the authenticated user's backend role.
+- Added a Staff Center entry to Profile for `STAFF` and `ADMIN` accounts only; customer Profile remains unchanged.
+- Added a native Staff Center overview backed by the existing protected `GET /staff/orders/summary` API.
+- Added operational counters for total orders, awaiting payment, ready to fulfill, fulfilled orders, active returns, refund processing, and low-stock variants.
+- Added pull-to-refresh, manual refresh, loading, and retry states for the Staff Center summary.
+
+### Security
+- Unauthenticated access to `/staff` is redirected through the existing sign-in return flow.
+- Authenticated customer accounts cannot open the Staff Center and are returned to Profile.
+- Backend `StaffAuthGuard` remains the source of truth for API authorization; the Flutter route guard is an additional UX boundary, not a replacement for server authorization.
+
+### Preserved
+- Existing customer navigation, commerce flow, Profile content, and TextShop visual language remain unchanged.
+- Existing web Staff Orders console remains the fulfillment surface in this phase.
+- No backend API or database change is required.
+
+## 0.51.19 - Phase 054.16: Admin / Staff identity recognition
+
+### Added
+- Flutter `AuthUser` now parses the backend `role` returned by login/register/session restore and `/auth/me`.
+- Added typed `AuthUserRole` handling for `CUSTOMER`, `STAFF`, `ADMIN`, plus a safe unknown fallback.
+- Added `hasStaffAccess`, `isStaff`, and `isAdmin` helpers so future Staff Center routing and authorization can use role semantics instead of email-based checks.
+- Staff/Admin accounts now show a small role chip on Profile so the signed-in identity can be verified from the mobile client.
+
+### Backend verification
+- The current NestJS auth service already includes Prisma `UserRole` in its public authenticated-user response, and the existing staff guard accepts `STAFF` and `ADMIN`; no backend auth change was required for this phase.
+
+### Preserved
+- Customer account behavior and existing authentication/session flows remain unchanged.
+- Existing TextShop layout, navigation, colors, and visual language remain unchanged; no redesign is included.
+- This phase establishes role recognition only. It does not add a Flutter Staff Center or duplicate the existing web staff console.
+
+## 0.51.18.3.1 - Phase 054.15.3.1: Orders refresh analyzer fix
+
+### Fixed
+- Consume the Riverpod `ref.refresh(...)` result while still awaiting the refreshed orders request, resolving the `unused_result` analyzer warning.
+- No behavior, API, navigation, or UI changes.
+
+## 0.51.18.3 - Phase 054.15.3: Reliable My Orders live refresh
+
+### Fixed
+- My Orders now uses `ref.refresh(customerOrdersProvider.future)` for each polling cycle so every cycle explicitly performs a fresh `/orders/me` read and publishes the returned order list.
+- The order-list poll is no longer cancelled when Flutter Web becomes `inactive` or `paused` while switching to the Staff browser tab. This prevents the customer list from silently stopping while staff changes an order to processing, shipped, or delivered.
+- Returning to the customer tab still triggers an immediate refresh in addition to the normal 4-second polling cycle.
+- Polling is cancelled only when the app is detached/disposed; background browser throttling remains platform-controlled.
+
+### Preserved
+- Existing TextShop My Orders UI, card layout, status chip styling, navigation, and visual language remain unchanged.
+- Existing Order Details live refresh and staff fulfillment rules remain unchanged.
+- No websocket or backend API changes are introduced.
+
+## 0.51.18.2 - Phase 054.15.2: Live order-list status refresh
+
+### Fixed
+- My Orders now refreshes from the server every 4 seconds while the page is visible and the customer is signed in.
+- Staff fulfillment changes such as `CONFIRMED -> PROCESSING -> SHIPPED -> DELIVERED` now update directly on the order cards instead of only updating inside Order Details.
+- The list refresh pauses when the app is backgrounded and resumes when the app returns to the foreground.
+- Refresh requests are de-duplicated so overlapping poll/manual refresh operations do not run concurrently.
+- Temporary network failures keep the last successful order list visible and retry on the next refresh interval.
+
+### Preserved
+- Existing TextShop My Orders card layout, colors, status chip styling, navigation, and visual language remain unchanged.
+- Existing Order Details live fulfillment refresh from Phase 054.15.1 remains unchanged.
+- No websocket or new backend infrastructure is introduced for the V1 baseline.
+
+## 0.51.18.1 - Phase 054.15.1: Live fulfillment refresh
+
+### Fixed
+- Customer order details now poll the server every 4 seconds while an order is still active, so staff fulfillment changes appear stage-by-stage instead of only after the customer manually refreshes at the end.
+- `CONFIRMED -> PROCESSING -> SHIPPED -> DELIVERED` changes now refresh both the open order and the My Orders list while the order-details page is visible.
+- Live refresh pauses when the app is backgrounded and stops for terminal order states to avoid unnecessary requests.
+- Temporary refresh/network failures keep the last successful order state visible and are retried on the next interval.
+
+### Preserved
+- Existing TextShop order-details UI and visual styling are unchanged.
+- Existing manual refresh, pull-to-refresh, payment recovery, cancellation, refunds, returns, courier/tracking display, and staff fulfillment rules remain unchanged.
+- No websocket or new backend infrastructure is introduced for the V1 baseline.
+
+## 0.51.18 - Phase 054.15: Customer tracking closure
+
+### Improved
+- Customer order details now refresh both the selected order and the customer order list from the app-bar refresh action and pull-to-refresh.
+- Processing time is now shown in the delivery section when staff has moved an order into processing.
+- Shipping and delivery timestamps now include local time as well as the date.
+- Tracking links are shown only for valid HTTP/HTTPS URLs and now fail gracefully if the external browser cannot be opened.
+- Optional fulfillment metadata is trimmed and malformed fulfillment timestamps no longer crash order-details parsing.
+
+### Preserved
+- Existing TextShop order-details layout, colors, cards, typography, and customer visual language remain unchanged.
+- Existing payment recovery, cancellation, refunds, returns, shipping address, timeline, notification, checkout, and inventory behavior remain unchanged.
+- Staff fulfillment state transitions from Phase 054.14 remain backend-authoritative.
+
+## 0.51.17.1 - Phase 054.14.1: Fix auth back navigation
+
+### Fixed
+- Auth screens now return to the public storefront when they were opened through a route replacement and there is no Navigator history to pop.
+- Existing pushed auth flows such as Register and Forgot Password still pop back normally when a previous route exists.
+
+### Preserved
+- Guest `returnTo` login behavior from Phase 054.13 remains unchanged.
+- No TextShop UI, colors, layout, authentication API, checkout, order, inventory, or staff fulfillment behavior is changed.
+
+## 0.51.17 - Phase 054.14: Staff fulfillment hardening
+
+### Improved
+- Completed the existing staff fulfillment console around the current paid-order lifecycle: confirmed -> processing -> shipped -> delivered.
+- Staff order list responses now include `processingAt` and `trackingUrl` alongside the existing courier, tracking number, shipped time, and delivered time.
+- Staff order cards now surface processing, shipment, delivery, and tracking-link information already stored by the backend.
+- Shipping submissions trim courier/tracking values and reject blank fulfillment details before calling the API.
+- Staff order loading and fulfillment mutations now recover cleanly from network failures instead of leaving loading/busy state stuck.
+
+### Preserved
+- Existing backend transition rules remain authoritative: only paid confirmed orders can enter processing, only paid processing orders can ship, and only shipped orders can be marked delivered.
+- Existing customer order, notification, refund, return, inventory, checkout, and payment behavior is unchanged.
+- Existing TextShop staff visual design and layout are preserved.
+
+## 0.51.15.1 - Phase 054.13.1: Fix guest auth router compile error
+
+### Fixed
+- Replaced the non-existent `AuthState.isChecking` getter usage in the mobile auth route guard with the existing `AuthStatus.checking` state.
+- Added the `auth_state.dart` import required by the route guard.
+
+### Stability
+- Guest authentication routing and `returnTo` behavior from Phase 054.13 are preserved.
+- No TextShop UI, theme, layout, backend API, checkout, order, inventory, or staff workflow behavior is changed.
+
+## 0.51.16 - Phase 054.13: Guest authentication return flow
+
+### Added
+- Added a shared Flutter authentication route guard for account-bound destinations: cart, wishlist, checkout, orders, order details, addresses, notifications, and profile.
+- Guest navigation to a protected destination now routes to Sign in with the original internal destination preserved in `returnTo`.
+- Registration now preserves the same `returnTo` destination and returns there after successful account creation.
+
+### Fixed
+- Signing in from a protected flow now returns the customer to the destination they originally requested instead of always sending them to Profile.
+- The Sign in -> Create account path now carries the protected destination through registration.
+- Unsafe/authentication-loop return paths fall back to Profile.
+
+### Stability
+- Home and product browsing remain available to guests.
+- Existing TextShop authentication styling, navigation shell, commerce pages, API contracts, inventory, checkout, payment, and order behavior are preserved.
+- No visual redesign is introduced.
+
+## 0.51.15 - Phase 054.12: Refresh inventory after checkout reservation
+
+### Fixed
+- Flutter now invalidates catalog, product-detail, and wishlist product snapshots immediately after an order is created and receives its 30-minute inventory reservation.
+- Home/product stock no longer depends on a manual refresh to observe the server-authoritative available inventory after checkout.
+
+### Stability
+- The backend remains authoritative for inventory and reservation calculations; this change only refreshes stale Flutter client state after successful order creation.
+- Existing checkout validation, coupon revalidation, payment recovery, cart invalidation, order invalidation, UI layout, theme, and navigation are preserved.
+- No storefront UI, Staff UI, Prisma schema, inventory rules, payment rules, or order lifecycle API contract is changed.
+
+## 0.51.14 - Phase 054.11: Safe storefront order images
+
+### Fixed
+- Added the storefront Next.js image configuration required by the current Bing-hosted product image URLs used by existing order snapshots.
+- Order history now falls back to the existing TextShop placeholder when an allowed remote image fails to load instead of leaving a broken image state.
+- Restored access to `/account/orders` for existing orders that contain the current `tse4.mm.bing.net` image host.
+
+### Stability
+- Existing order layout, actions, filters, status presentation, and visual styling are preserved.
+- No Flutter UI, customer purchase flow, Staff UI, API contract, Prisma schema, inventory, payment, or order lifecycle behavior is changed.
+
+## 0.51.13 - Phase 054.10: Independent wishlist product source
+
+### Fixed
+- Wishlist no longer derives saved products from the currently loaded paginated catalog page.
+- Saved products are now loaded independently from the unfiltered active product catalog, so Home search, category, price, stock filters, sorting, and pagination do not hide valid wishlist items.
+- Pull-to-refresh now refreshes both wishlist ids and the independent wishlist product data source.
+
+### Stability
+- Existing wishlist presentation, product cards, routes, optimistic save/remove behavior, and authentication guard are preserved.
+- This first-version implementation intentionally reuses the existing unpaginated product endpoint instead of adding a new wishlist-products API contract.
+- No Home UI, theme, catalog filter UI, product details, cart, checkout, orders, payment, Staff Catalog, Prisma, or API service behavior is changed.
+
+## 0.51.12 - Phase 054.9: Stable account and address flows
+
+### Improved
+- Session restoration now safely falls back to the signed-out state when local storage or another non-HTTP restore step fails, preventing the app from remaining stuck in account checking.
+- Login and registration avoid updating authentication state after their controller has been disposed.
+- Sign out always transitions the local app to the signed-out state after local credentials are cleared, even when the remote logout request fails.
+- Email-verification resend and password-reset requests now recover from non-HTTP failures without leaving account actions stuck.
+- Signing out explicitly clears cached customer address state together with other account-scoped customer data.
+- Address create/edit, default-address changes, and address deletion now re-sync the address book from the server after success.
+
+### Stability
+- Existing sign-in, registration, forgot-password, profile, verification, and address-book presentation is preserved.
+- No authentication UI redesign, Home, theme, product details, cart, checkout, orders, payment, Staff Catalog, Prisma, or API behavior is changed.
+
+## 0.51.11 - Phase 054.8: Stable customer order actions
+
+### Improved
+- Payment recovery now refreshes both the order details and the customer order list after a confirmed or development payment succeeds.
+- Successful order cancellation, refund requests, and return requests now immediately re-sync both order views from the server.
+- Prevents payment continuation and order cancellation from starting at the same time.
+- Adds mounted-state checks after confirmation dialogs before starting order mutations.
+
+### Stability
+- Existing order timeline, shipping, fulfillment, refund, return, payment recovery, and reservation-expiry presentation remains unchanged.
+- No Orders visual redesign, Home, theme, product details, cart, checkout, payment-provider contract, Staff Catalog, Prisma, or API behavior is changed.
+
+## 0.51.10 - Phase 054.7: Stable checkout submission flow
+
+### Improved
+- Revalidates an applied coupon against the latest server cart session immediately before order creation.
+- Prevents a coupon validated for an older cart snapshot from being carried into a new checkout session.
+- Stops checkout safely and asks the customer to review updated totals when a coupon becomes invalid during submission.
+- Re-syncs the server cart after checkout failures that occur before an order is created.
+- Adds mounted-state guards around asynchronous checkout transitions to avoid updating a disposed page.
+
+### Stability
+- Existing server-authoritative inventory refresh, Serializable checkout validation, payment amount verification, order reservation, and payment recovery behavior remain intact.
+- No Checkout visual redesign, Home, theme, product detail, cart UI, payment provider contract, Staff Catalog, Prisma, or API service behavior is changed.
+
+## 0.51.9 - Phase 054.6: Stable cart mutation flow
+
+### Improved
+- Hardened cart quantity updates against inactive products, inactive variants, sold-out stock, and quantities above current available stock.
+- Successful quantity changes and removals now immediately re-sync the cart from the server instead of relying only on a deferred invalidation.
+- Failed cart mutations also re-sync server state so the UI does not remain stale when inventory or cart state changed concurrently.
+- Added fallback handling for non-HTTP cart mutation failures.
+- Keeps the existing cart presentation and checkout flow unchanged.
+
+### Stability
+- Cart item actions remain locked while their request is running to prevent duplicate mutations.
+- Quantity is capped by both current available inventory and the existing first-version cart limit.
+- No Home, theme, product-detail styling, checkout, payment, Staff Catalog, Prisma, or API behavior is changed.
+
+## 0.51.8 - Phase 054.5: Stable product detail purchase flow
+
+### Added
+- Connected the existing product-details screen to real product and variant data without redesigning the app theme.
+- Displays the selected variant price, compare-at price, SKU, live available stock, and sold-out state.
+- Added variant selection with quantity controls constrained by available stock.
+- Uses product/variant images with fallback handling and optional image thumbnails.
+- Connected Add to cart to the existing cart repository and refreshes the shared cart state after a successful add.
+- Added wishlist toggle support using the existing wishlist controller.
+- Added signed-out guards plus API error feedback for cart and wishlist actions.
+
+### Stability
+- Add to cart is disabled for sold-out variants and while a request is already running.
+- Quantity cannot exceed the selected variant's current available stock.
+- Switching variants resets quantity and image selection to a safe state.
+- No Home, catalog pagination, theme, checkout, payment, Staff Catalog, Prisma, or API service behavior is changed.
+
 ## 0.51.7.4 - Phase 054.4.4: Retire legacy root Flutter app
 
 ### Removed

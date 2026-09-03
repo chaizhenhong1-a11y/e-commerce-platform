@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../auth/domain/auth_state.dart';
+import '../../account/presentation/address_book_providers.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../cart/presentation/cart_providers.dart';
 import '../../orders/presentation/order_providers.dart';
@@ -97,6 +98,21 @@ class ProfilePage extends ConsumerWidget {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
+            if (user.hasStaffAccess) ...<Widget>[
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.center,
+                child: Chip(
+                  avatar: Icon(
+                    user.isAdmin
+                        ? Icons.admin_panel_settings_outlined
+                        : Icons.badge_outlined,
+                    size: 18,
+                  ),
+                  label: Text(user.role.label),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             if (!user.emailVerified)
               Card(
@@ -129,6 +145,22 @@ class ProfilePage extends ConsumerWidget {
             if (auth.message != null) ...<Widget>[
               const SizedBox(height: 12),
               Text(auth.message!),
+            ],
+            if (user.hasStaffAccess) ...<Widget>[
+              const SizedBox(height: 20),
+              Card(
+                child: ListTile(
+                  leading: Icon(
+                    user.isAdmin
+                        ? Icons.admin_panel_settings_outlined
+                        : Icons.badge_outlined,
+                  ),
+                  title: const Text('Staff Center'),
+                  subtitle: const Text('Commerce operations and fulfillment'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/staff'),
+                ),
+              ),
             ],
             const SizedBox(height: 20),
             Card(
@@ -164,6 +196,7 @@ class ProfilePage extends ConsumerWidget {
                     onTap: () async {
                       await ref.read(authControllerProvider.notifier).logout();
                       ref.invalidate(customerCartProvider);
+                      ref.invalidate(customerAddressesProvider);
                       ref.invalidate(wishlistProductIdsProvider);
                       ref.invalidate(customerOrdersProvider);
                       ref.invalidate(notificationFeedProvider);

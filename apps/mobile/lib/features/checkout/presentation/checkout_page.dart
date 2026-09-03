@@ -11,6 +11,8 @@ import '../../auth/presentation/auth_providers.dart';
 import '../../cart/domain/customer_cart.dart';
 import '../../cart/presentation/cart_providers.dart';
 import '../../orders/presentation/order_providers.dart';
+import '../../products/presentation/product_providers.dart';
+import '../../wishlist/presentation/wishlist_providers.dart';
 import '../domain/checkout_order.dart';
 import 'checkout_providers.dart';
 
@@ -199,6 +201,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     }
   }
 
+  void _invalidateInventoryViews() {
+    ref.invalidate(productsProvider);
+    ref.invalidate(productProvider);
+    ref.invalidate(wishlistProductsProvider);
+  }
+
   Future<void> _submit(CustomerCart cart) async {
     if (_submitting || !_formKey.currentState!.validate()) return;
 
@@ -214,6 +222,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       // remains authoritative and performs the final Serializable check.
       ref.invalidate(customerCartProvider);
       final checkoutCart = await ref.read(customerCartProvider.future);
+      if (!mounted) {
+        return;
+      }
+
       if (!checkoutCart.canCheckout) {
         setState(() {
           _error =
@@ -224,6 +236,40 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       }
 
       final repository = ref.read(checkoutRepositoryProvider);
+      String? confirmedCouponCode;
+      if (_coupon != null) {
+        try {
+          final confirmedCoupon = await repository.validateCoupon(
+            sessionId: checkoutCart.sessionId,
+            couponCode: _coupon!.code,
+          );
+          if (!mounted) {
+            return;
+          }
+          confirmedCouponCode = confirmedCoupon.code;
+          setState(() {
+            _coupon = confirmedCoupon;
+            _couponCode.text = confirmedCoupon.code;
+            _couponError = null;
+          });
+        } on DioException catch (error) {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _coupon = null;
+            _couponError = _messageFrom(
+              error,
+              'Coupon is no longer valid for the latest cart.',
+            );
+            _error =
+                'Your cart or promotion changed. Review the updated checkout before continuing.';
+            _submitting = false;
+          });
+          return;
+        }
+      }
+
       createdOrder = await repository.createOrder(
         CheckoutInput(
           sessionId: checkoutCart.sessionId,
@@ -235,15 +281,20 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           city: _city.text,
           state: _state.text,
           postcode: _postcode.text,
-          couponCode: _coupon?.code,
+          couponCode: confirmedCouponCode,
         ),
       );
 
       // From this point onward the order already exists and owns the
       // 30-minute reservation. Never submit Checkout again to recover a
       // payment failure; recovery belongs to the order details screen.
+      //
+      // The reservation changes server-authoritative available inventory
+      // immediately, so discard product snapshots now instead of waiting for
+      // a manual refresh or an app lifecycle event.
       ref.invalidate(customerCartProvider);
       ref.invalidate(customerOrdersProvider);
+      _invalidateInventoryViews();
 
       final payment = await repository.createPayment(
         orderNumber: createdOrder.orderNumber,
@@ -283,7 +334,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       // state after the customer returns from Stripe.
       context.go('/orders/${createdOrder.orderNumber}');
     } on DioException catch (error) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       if (createdOrder != null) {
         await _showPaymentRecovery(
           createdOrder,
@@ -291,12 +344,19 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         );
         return;
       }
+
+      await _syncCartAfterCheckoutFailure();
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _error = _messageFrom(error, 'Checkout could not be completed.');
         _submitting = false;
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       final message = error is StateError
           ? error.message
           : 'Checkout could not be completed.';
@@ -304,10 +364,24 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         await _showPaymentRecovery(createdOrder, message);
         return;
       }
+
+      await _syncCartAfterCheckoutFailure();
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _error = message;
         _submitting = false;
       });
+    }
+  }
+
+  Future<void> _syncCartAfterCheckoutFailure() async {
+    ref.invalidate(customerCartProvider);
+    try {
+      await ref.read(customerCartProvider.future);
+    } catch (_) {
+      // The checkout page's cart state will surface a refresh failure.
     }
   }
 

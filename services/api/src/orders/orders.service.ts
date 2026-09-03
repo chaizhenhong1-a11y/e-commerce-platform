@@ -103,6 +103,8 @@ export class OrdersService {
       createdAt: order.createdAt,
       courierName: order.courierName,
       trackingNumber: order.trackingNumber,
+      trackingUrl: order.trackingUrl,
+      processingAt: order.processingAt,
       shippedAt: order.shippedAt,
       deliveredAt: order.deliveredAt,
       itemCount: order.items.reduce(

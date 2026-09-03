@@ -41,13 +41,23 @@ class AuthController extends StateNotifier<AuthState> {
   final AuthRepository _repository;
 
   Future<void> _restore() async {
-    final user = await _repository.restoreSession();
-    if (!mounted) return;
-    state = AuthState(
-      status:
-          user == null ? AuthStatus.unauthenticated : AuthStatus.authenticated,
-      user: user,
-    );
+    try {
+      final user = await _repository.restoreSession();
+      if (!mounted) {
+        return;
+      }
+      state = AuthState(
+        status: user == null
+            ? AuthStatus.unauthenticated
+            : AuthStatus.authenticated,
+        user: user,
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      state = const AuthState(status: AuthStatus.unauthenticated);
+    }
   }
 
   Future<bool> login({
@@ -57,6 +67,9 @@ class AuthController extends StateNotifier<AuthState> {
     state = state.copyWith(isSubmitting: true, clearMessage: true);
     try {
       final session = await _repository.login(email: email, password: password);
+      if (!mounted) {
+        return false;
+      }
       state = AuthState(
         status: AuthStatus.authenticated,
         user: session.user,
@@ -94,6 +107,9 @@ class AuthController extends StateNotifier<AuthState> {
         firstName: firstName,
         lastName: lastName,
       );
+      if (!mounted) {
+        return false;
+      }
       state = AuthState(
         status: AuthStatus.authenticated,
         user: session.user,
@@ -119,8 +135,13 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> logout() async {
     state = state.copyWith(isSubmitting: true, clearMessage: true);
-    await _repository.logout();
-    state = const AuthState(status: AuthStatus.unauthenticated);
+    try {
+      await _repository.logout();
+    } finally {
+      if (mounted) {
+        state = const AuthState(status: AuthStatus.unauthenticated);
+      }
+    }
   }
 
   Future<void> resendVerification() async {
@@ -132,9 +153,20 @@ class AuthController extends StateNotifier<AuthState> {
         message: 'Verification email requested.',
       );
     } on DioException catch (error) {
+      if (!mounted) {
+        return;
+      }
       state = state.copyWith(
         isSubmitting: false,
         message: _messageFrom(error, 'Unable to resend verification email.'),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      state = state.copyWith(
+        isSubmitting: false,
+        message: 'Unable to resend verification email.',
       );
     }
   }
@@ -143,9 +175,14 @@ class AuthController extends StateNotifier<AuthState> {
     if (!state.isAuthenticated) return;
     try {
       final user = await _repository.refreshCurrentUser();
+      if (!mounted) {
+        return;
+      }
       state = state.copyWith(user: user, clearMessage: true);
     } on DioException {
       // The API client will clear invalid credentials when refresh fails.
+    } catch (_) {
+      // Keep the last known account state when a non-HTTP refresh fails.
     }
   }
 
@@ -155,6 +192,8 @@ class AuthController extends StateNotifier<AuthState> {
       return null;
     } on DioException catch (error) {
       return _messageFrom(error, 'Unable to request password reset.');
+    } catch (_) {
+      return 'Unable to request password reset.';
     }
   }
 

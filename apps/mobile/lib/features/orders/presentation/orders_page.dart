@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,11 +9,76 @@ import '../../auth/presentation/auth_providers.dart';
 import '../domain/customer_order.dart';
 import 'order_providers.dart';
 
-class OrdersPage extends ConsumerWidget {
+class OrdersPage extends ConsumerStatefulWidget {
   const OrdersPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<OrdersPage> createState() => _OrdersPageState();
+}
+
+class _OrdersPageState extends ConsumerState<OrdersPage>
+    with WidgetsBindingObserver {
+  Timer? _liveRefreshTimer;
+  bool _refreshInFlight = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _startLiveRefresh();
+  }
+
+  @override
+  void dispose() {
+    _liveRefreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _startLiveRefresh();
+      unawaited(_refreshOrders());
+    } else if (state == AppLifecycleState.detached) {
+      _liveRefreshTimer?.cancel();
+      _liveRefreshTimer = null;
+    }
+  }
+
+  void _startLiveRefresh() {
+    if (_liveRefreshTimer?.isActive ?? false) {
+      return;
+    }
+
+    _liveRefreshTimer = Timer.periodic(
+      const Duration(seconds: 4),
+      (_) => unawaited(_refreshOrders()),
+    );
+  }
+
+  Future<void> _refreshOrders() async {
+    if (!mounted || _refreshInFlight) {
+      return;
+    }
+
+    final auth = ref.read(authControllerProvider);
+    if (!auth.isAuthenticated) {
+      return;
+    }
+
+    _refreshInFlight = true;
+    try {
+      await ref.refresh(customerOrdersProvider.future).then<void>((_) {});
+    } catch (_) {
+      // Keep the last successful list state visible and retry next interval.
+    } finally {
+      _refreshInFlight = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
 
     if (auth.status == AuthStatus.checking) {
@@ -38,13 +105,13 @@ class OrdersPage extends ConsumerWidget {
         actions: <Widget>[
           IconButton(
             tooltip: 'Refresh',
-            onPressed: () => ref.invalidate(customerOrdersProvider),
+            onPressed: _refreshOrders,
             icon: const Icon(Icons.refresh_rounded),
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref.refresh(customerOrdersProvider.future),
+        onRefresh: _refreshOrders,
         child: orders.when(
           loading: () => const _OrdersLoading(),
           error: (error, stackTrace) => _OrdersError(

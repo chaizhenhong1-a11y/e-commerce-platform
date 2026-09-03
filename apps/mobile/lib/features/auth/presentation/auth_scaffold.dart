@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class AuthScaffold extends StatelessWidget {
   const AuthScaffold({
@@ -68,7 +69,10 @@ class AuthScaffold extends StatelessWidget {
     final navigator = Navigator.of(context);
     if (navigator.canPop()) {
       navigator.pop();
+      return;
     }
+
+    context.go('/');
   }
 }
 

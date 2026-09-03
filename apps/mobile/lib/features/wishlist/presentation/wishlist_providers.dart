@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/presentation/auth_providers.dart';
+import '../../products/domain/product.dart';
+import '../../products/presentation/product_providers.dart';
 import '../data/wishlist_repository.dart';
 
 final wishlistRepositoryProvider = Provider<WishlistRepository>((ref) {
@@ -12,6 +14,18 @@ final wishlistProductIdsProvider =
 
 final wishlistCountProvider = Provider<int>((ref) {
   return ref.watch(wishlistProductIdsProvider).valueOrNull?.length ?? 0;
+});
+
+final wishlistProductsProvider = FutureProvider<List<Product>>((ref) async {
+  final ids = await ref.watch(wishlistProductIdsProvider.future);
+  if (ids.isEmpty) {
+    return const <Product>[];
+  }
+
+  final products = await ref.watch(productRepositoryProvider).getProducts();
+  return products
+      .where((product) => ids.contains(product.id))
+      .toList(growable: false);
 });
 
 class WishlistController extends AsyncNotifier<Set<String>> {

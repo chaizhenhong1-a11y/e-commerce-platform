@@ -55,6 +55,30 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function OrderItemImage({
+  src,
+  alt,
+}: {
+  src: string | null | undefined;
+  alt: string;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return <span aria-hidden="true">T</span>;
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      sizes="84px"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export function OrdersCenter() {
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [filter, setFilter] = useState<OrderFilter>("ALL");
@@ -243,16 +267,10 @@ export function OrdersCenter() {
                 {order.items.map((item) => (
                   <div className="order-center-item" key={item.id}>
                     <div className="order-center-item__media">
-                      {item.imageUrl ? (
-                        <Image
-                          src={item.imageUrl}
-                          alt={item.productName}
-                          fill
-                          sizes="84px"
-                        />
-                      ) : (
-                        <span aria-hidden="true">T</span>
-                      )}
+                      <OrderItemImage
+                        src={item.imageUrl}
+                        alt={item.productName}
+                      />
                     </div>
 
                     <div className="order-center-item__copy">

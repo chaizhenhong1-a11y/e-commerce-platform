@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../auth/presentation/auth_providers.dart';
-import '../../products/presentation/product_providers.dart';
 import '../../products/presentation/widgets/product_card.dart';
 import 'wishlist_providers.dart';
 
@@ -26,8 +25,12 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
 
   Future<void> _refresh() async {
     await ref.read(wishlistProductIdsProvider.notifier).refreshFromServer();
-    ref.invalidate(productsProvider);
-    await ref.read(productsProvider.future);
+    ref.invalidate(wishlistProductsProvider);
+    try {
+      await ref.read(wishlistProductsProvider.future);
+    } catch (_) {
+      // The wishlist product state below will surface refresh failures.
+    }
   }
 
   @override
@@ -59,7 +62,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
       );
     }
     final wishlist = ref.watch(wishlistProductIdsProvider);
-    final products = ref.watch(productsProvider);
+    final products = ref.watch(wishlistProductsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -94,12 +97,8 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
                 child: const Text('Try again'),
               ),
             ),
-            data: (catalog) {
-              final saved = catalog.items
-                  .where((product) => ids.contains(product.id))
-                  .toList(growable: false);
-
-              if (saved.isEmpty) {
+            data: (saved) {
+              if (ids.isEmpty || saved.isEmpty) {
                 return const _EmptyWishlist();
               }
 

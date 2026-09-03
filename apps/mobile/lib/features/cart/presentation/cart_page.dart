@@ -150,35 +150,80 @@ class _CartItemCardState extends ConsumerState<_CartItemCard> {
   bool _busy = false;
 
   Future<void> _update(int quantity) async {
-    if (_busy || quantity < 1) return;
+    if (_busy || quantity < 1) {
+      return;
+    }
+
+    final item = widget.item;
+    final maxQuantity = item.availableStock.clamp(0, 99);
+    if (!item.productActive ||
+        !item.variantActive ||
+        maxQuantity <= 0 ||
+        quantity > maxQuantity) {
+      _showMessage(
+        maxQuantity <= 0
+            ? 'This item is out of stock.'
+            : 'Only $maxQuantity available.',
+      );
+      await _refreshCart();
+      return;
+    }
+
     setState(() => _busy = true);
     try {
       await ref
           .read(cartRepositoryProvider)
           .updateItem(widget.item.id, quantity);
-      ref.invalidate(customerCartProvider);
+      await _refreshCart();
     } on DioException catch (error) {
-      ref.invalidate(customerCartProvider);
+      await _refreshCart();
       if (mounted) {
         _showMessage(_messageFrom(error, 'Unable to update cart.'));
       }
+    } catch (_) {
+      await _refreshCart();
+      if (mounted) {
+        _showMessage('Unable to update cart.');
+      }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() => _busy = false);
+      }
     }
   }
 
   Future<void> _remove() async {
-    if (_busy) return;
+    if (_busy) {
+      return;
+    }
+
     setState(() => _busy = true);
     try {
       await ref.read(cartRepositoryProvider).removeItem(widget.item.id);
-      ref.invalidate(customerCartProvider);
+      await _refreshCart();
     } on DioException catch (error) {
+      await _refreshCart();
       if (mounted) {
         _showMessage(_messageFrom(error, 'Unable to remove item.'));
       }
+    } catch (_) {
+      await _refreshCart();
+      if (mounted) {
+        _showMessage('Unable to remove item.');
+      }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  Future<void> _refreshCart() async {
+    ref.invalidate(customerCartProvider);
+    try {
+      await ref.read(customerCartProvider.future);
+    } catch (_) {
+      // The page-level cart error state will surface refresh failures.
     }
   }
 

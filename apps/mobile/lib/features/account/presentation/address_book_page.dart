@@ -101,8 +101,8 @@ class AddressBookPage extends ConsumerWidget {
       builder: (context) => _AddressEditor(address: address),
     );
 
-    if (saved == true) {
-      ref.invalidate(customerAddressesProvider);
+    if (saved == true && context.mounted) {
+      await _refreshAddresses(ref);
     }
   }
 
@@ -113,7 +113,10 @@ class AddressBookPage extends ConsumerWidget {
   ) async {
     try {
       await ref.read(customerRepositoryProvider).setDefaultAddress(address.id);
-      ref.invalidate(customerAddressesProvider);
+      if (!context.mounted) {
+        return;
+      }
+      await _refreshAddresses(ref);
     } on DioException catch (error) {
       if (!context.mounted) return;
       _showMessage(context, _messageFrom(error, 'Unable to update address.'));
@@ -145,14 +148,28 @@ class AddressBookPage extends ConsumerWidget {
       ),
     );
 
-    if (confirmed != true) return;
+    if (!context.mounted || confirmed != true) {
+      return;
+    }
 
     try {
       await ref.read(customerRepositoryProvider).deleteAddress(address.id);
-      ref.invalidate(customerAddressesProvider);
+      if (!context.mounted) {
+        return;
+      }
+      await _refreshAddresses(ref);
     } on DioException catch (error) {
       if (!context.mounted) return;
       _showMessage(context, _messageFrom(error, 'Unable to remove address.'));
+    }
+  }
+
+  Future<void> _refreshAddresses(WidgetRef ref) async {
+    ref.invalidate(customerAddressesProvider);
+    try {
+      await ref.read(customerAddressesProvider.future);
+    } catch (_) {
+      // The address-book provider will surface the refreshed error state.
     }
   }
 

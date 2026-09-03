@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,15 +29,19 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
   bool _paying = false;
   bool _refunding = false;
   bool _returning = false;
+  bool _liveRefreshInFlight = false;
+  Timer? _liveRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _startLiveRefresh();
   }
 
   @override
   void dispose() {
+    _liveRefreshTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -43,8 +49,63 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      _startLiveRefresh();
+      unawaited(_refreshOrderState(widget.orderNumber));
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      _liveRefreshTimer?.cancel();
+      _liveRefreshTimer = null;
+    }
+  }
+
+  void _startLiveRefresh() {
+    if (_liveRefreshTimer?.isActive ?? false) {
+      return;
+    }
+
+    _liveRefreshTimer = Timer.periodic(
+      const Duration(seconds: 4),
+      (_) => unawaited(_refreshFulfillmentIfNeeded()),
+    );
+  }
+
+  Future<void> _refreshFulfillmentIfNeeded() async {
+    if (!mounted || _liveRefreshInFlight) {
+      return;
+    }
+
+    final current = ref.read(orderDetailsProvider(widget.orderNumber));
+    final status = current.valueOrNull?.status;
+    if (status == 'DELIVERED' ||
+        status == 'FULFILLED' ||
+        status == 'CANCELLED' ||
+        status == 'REFUNDED') {
+      _liveRefreshTimer?.cancel();
+      _liveRefreshTimer = null;
+      return;
+    }
+
+    _liveRefreshInFlight = true;
+    try {
       ref.invalidate(orderDetailsProvider(widget.orderNumber));
       ref.invalidate(customerOrdersProvider);
+
+      final refreshed =
+          await ref.read(orderDetailsProvider(widget.orderNumber).future);
+      await ref.read(customerOrdersProvider.future);
+
+      if (refreshed.status == 'DELIVERED' ||
+          refreshed.status == 'FULFILLED' ||
+          refreshed.status == 'CANCELLED' ||
+          refreshed.status == 'REFUNDED') {
+        _liveRefreshTimer?.cancel();
+        _liveRefreshTimer = null;
+      }
+    } catch (_) {
+      // Keep the last successful order state visible. The next interval retries.
+    } finally {
+      _liveRefreshInFlight = false;
     }
   }
 
@@ -71,15 +132,13 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
         actions: <Widget>[
           IconButton(
             tooltip: 'Refresh',
-            onPressed: () =>
-                ref.invalidate(orderDetailsProvider(widget.orderNumber)),
+            onPressed: () => _refreshOrderState(widget.orderNumber),
             icon: const Icon(Icons.refresh_rounded),
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () =>
-            ref.refresh(orderDetailsProvider(widget.orderNumber).future),
+        onRefresh: () => _refreshOrderState(widget.orderNumber),
         child: details.when(
           loading: () => const _ScrollableState(
             child: CircularProgressIndicator(),
@@ -149,8 +208,24 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
     );
   }
 
+  Future<void> _refreshOrderState(String orderNumber) async {
+    ref.invalidate(orderDetailsProvider(orderNumber));
+    ref.invalidate(customerOrdersProvider);
+
+    await Future.wait<void>(<Future<void>>[
+      ref.read(orderDetailsProvider(orderNumber).future).then((_) {}),
+      ref.read(customerOrdersProvider.future).then((_) {}),
+    ]);
+
+    if (mounted) {
+      _startLiveRefresh();
+    }
+  }
+
   Future<void> _continuePayment(OrderDetails order) async {
-    if (_paying) return;
+    if (_paying || _cancelling) {
+      return;
+    }
 
     setState(() => _paying = true);
 
@@ -175,15 +250,13 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
       }
 
       if (payment.status == 'PAID') {
-        ref.invalidate(orderDetailsProvider(order.orderNumber));
-        ref.invalidate(customerOrdersProvider);
+        await _refreshOrderState(order.orderNumber);
         return;
       }
 
       if (payment.provider == 'MANUAL_TEST') {
         await repository.confirmDevelopmentPayment(payment.id);
-        ref.invalidate(orderDetailsProvider(order.orderNumber));
-        ref.invalidate(customerOrdersProvider);
+        await _refreshOrderState(order.orderNumber);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Development payment completed.')),
@@ -285,7 +358,9 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
       ),
     );
 
-    if (confirmed != true || _returning || selected.isEmpty) return;
+    if (!mounted || confirmed != true || _returning || selected.isEmpty) {
+      return;
+    }
     setState(() => _returning = true);
 
     try {
@@ -301,8 +376,7 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
       await ref
           .read(ordersRepositoryProvider)
           .requestReturn(order.orderNumber, items);
-      ref.invalidate(customerOrdersProvider);
-      ref.invalidate(orderDetailsProvider(order.orderNumber));
+      await _refreshOrderState(order.orderNumber);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Return request submitted.')),
@@ -339,12 +413,13 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
         ],
       ),
     );
-    if (confirmed != true || _refunding) return;
+    if (!mounted || confirmed != true || _refunding) {
+      return;
+    }
     setState(() => _refunding = true);
     try {
       await ref.read(ordersRepositoryProvider).requestRefund(order.orderNumber);
-      ref.invalidate(customerOrdersProvider);
-      ref.invalidate(orderDetailsProvider(order.orderNumber));
+      await _refreshOrderState(order.orderNumber);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Refund request submitted.')),
@@ -382,14 +457,15 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
       ),
     );
 
-    if (confirmed != true || _cancelling) return;
+    if (!mounted || confirmed != true || _cancelling || _paying) {
+      return;
+    }
 
     setState(() => _cancelling = true);
 
     try {
       await ref.read(ordersRepositoryProvider).cancelOrder(order.orderNumber);
-      ref.invalidate(customerOrdersProvider);
-      ref.invalidate(orderDetailsProvider(order.orderNumber));
+      await _refreshOrderState(order.orderNumber);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -898,6 +974,10 @@ class _DeliveryCard extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                   ),
             ),
+            if (delivery.processingAt != null) ...<Widget>[
+              const SizedBox(height: 14),
+              Text('Processing: ${_formatDateTime(delivery.processingAt!)}'),
+            ],
             if (delivery.courierName != null) ...<Widget>[
               const SizedBox(height: 14),
               Text('Courier: ${delivery.courierName}'),
@@ -911,19 +991,36 @@ class _DeliveryCard extends StatelessWidget {
             ],
             if (delivery.shippedAt != null) ...<Widget>[
               const SizedBox(height: 6),
-              Text('Shipped: ${_formatDate(delivery.shippedAt!)}'),
+              Text('Shipped: ${_formatDateTime(delivery.shippedAt!)}'),
             ],
             if (delivery.deliveredAt != null) ...<Widget>[
               const SizedBox(height: 6),
-              Text('Delivered: ${_formatDate(delivery.deliveredAt!)}'),
+              Text('Delivered: ${_formatDateTime(delivery.deliveredAt!)}'),
             ],
-            if (delivery.trackingUrl != null) ...<Widget>[
+            if (_trackingUri(delivery.trackingUrl) case final uri?) ...<Widget>[
               const SizedBox(height: 14),
               FilledButton.tonalIcon(
                 onPressed: () async {
-                  final uri = Uri.tryParse(delivery.trackingUrl!);
-                  if (uri != null) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  try {
+                    final opened = await launchUrl(
+                      uri,
+                      mode: LaunchMode.externalApplication,
+                    );
+                    if (!opened && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Unable to open tracking link.'),
+                        ),
+                      );
+                    }
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Unable to open tracking link.'),
+                        ),
+                      );
+                    }
                   }
                 },
                 icon: const Icon(Icons.local_shipping_outlined),
@@ -1093,4 +1190,26 @@ String _formatDate(DateTime value) {
   final day = value.day.toString().padLeft(2, '0');
   final month = value.month.toString().padLeft(2, '0');
   return '$day/$month/${value.year}';
+}
+
+String _formatDateTime(DateTime value) {
+  final hour = value.hour.toString().padLeft(2, '0');
+  final minute = value.minute.toString().padLeft(2, '0');
+  return '${_formatDate(value)} $hour:$minute';
+}
+
+Uri? _trackingUri(String? rawUrl) {
+  final value = rawUrl?.trim();
+  if (value == null || value.isEmpty) {
+    return null;
+  }
+
+  final uri = Uri.tryParse(value);
+  if (uri == null ||
+      (uri.scheme != 'https' && uri.scheme != 'http') ||
+      uri.host.isEmpty) {
+    return null;
+  }
+
+  return uri;
 }

@@ -48,15 +48,21 @@ export function OrdersConsole() {
     if (status !== "ALL") params.set("status", status);
     if (payment !== "ALL") params.set("paymentStatus", payment);
     if (appliedQuery) params.set("q", appliedQuery);
-    const response = await fetch(`/api/staff/orders?${params}`, { cache: "no-store" });
-    const body = await response.json().catch(() => null);
-    if (!response.ok) {
+    try {
+      const response = await fetch(`/api/staff/orders?${params}`, { cache: "no-store" });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        setOrders([]);
+        setError(body?.message ?? "Unable to load orders.");
+      } else {
+        setOrders(body);
+      }
+    } catch {
       setOrders([]);
-      setError(body?.message ?? "Unable to load orders.");
-    } else {
-      setOrders(body);
+      setError("Unable to reach the order service.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [status, payment, appliedQuery]);
 
   useEffect(() => {
@@ -76,41 +82,60 @@ export function OrdersConsole() {
 
     setBusy(order.orderNumber);
     setError(null);
-    const response = await fetch(
-      `/api/staff/orders/${encodeURIComponent(order.orderNumber)}/${action}`,
-      { method: "POST" },
-    );
-    const body = await response.json().catch(() => null);
-    if (!response.ok) setError(body?.message ?? `Unable to ${action} order.`);
-    else await load();
-    setBusy(null);
+    try {
+      const response = await fetch(
+        `/api/staff/orders/${encodeURIComponent(order.orderNumber)}/${action}`,
+        { method: "POST" },
+      );
+      const body = await response.json().catch(() => null);
+      if (!response.ok) setError(body?.message ?? `Unable to ${action} order.`);
+      else await load();
+    } catch {
+      setError(`Unable to ${action} order because the order service could not be reached.`);
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function ship(event: FormEvent) {
     event.preventDefault();
     if (!shipping) return;
+    const courierName = shipping.courierName.trim();
+    const trackingNumber = shipping.trackingNumber.trim();
+    const trackingUrl = shipping.trackingUrl.trim();
+
+    if (!courierName || !trackingNumber) {
+      setError("Courier and tracking number are required before shipping.");
+      return;
+    }
+
     setBusy(shipping.orderNumber);
     setError(null);
-    const response = await fetch(
-      `/api/staff/orders/${encodeURIComponent(shipping.orderNumber)}/ship`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          courierName: shipping.courierName,
-          trackingNumber: shipping.trackingNumber,
-          trackingUrl: shipping.trackingUrl || undefined,
-        }),
-      },
-    );
-    const body = await response.json().catch(() => null);
-    if (!response.ok) {
-      setError(body?.message ?? "Unable to mark order as shipped.");
-    } else {
-      setShipping(null);
-      await load();
+    try {
+      const response = await fetch(
+        `/api/staff/orders/${encodeURIComponent(shipping.orderNumber)}/ship`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            courierName,
+            trackingNumber,
+            trackingUrl: trackingUrl || undefined,
+          }),
+        },
+      );
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        setError(body?.message ?? "Unable to mark order as shipped.");
+      } else {
+        setShipping(null);
+        await load();
+      }
+    } catch {
+      setError("Unable to mark order as shipped because the order service could not be reached.");
+    } finally {
+      setBusy(null);
     }
-    setBusy(null);
   }
 
   return (
@@ -160,8 +185,20 @@ export function OrdersConsole() {
               <strong className={styles.total}>{money(order.totalCents, order.currency)}</strong>
             </div>
 
+            {order.processingAt ? (
+              <p className={styles.signal}>Processing since {new Date(order.processingAt).toLocaleString("en-MY")}</p>
+            ) : null}
             {order.trackingNumber ? (
-              <p className={styles.signal}>Delivery: {order.courierName} · {order.trackingNumber}</p>
+              <p className={styles.signal}>
+                Delivery: {order.courierName} · {order.trackingNumber}
+                {order.trackingUrl ? <> · <a href={order.trackingUrl} target="_blank" rel="noreferrer">Track parcel</a></> : null}
+              </p>
+            ) : null}
+            {order.shippedAt ? (
+              <p className={styles.signal}>Shipped {new Date(order.shippedAt).toLocaleString("en-MY")}</p>
+            ) : null}
+            {order.deliveredAt ? (
+              <p className={styles.signal}>Delivered {new Date(order.deliveredAt).toLocaleString("en-MY")}</p>
             ) : null}
             {order.latestReturn ? <p className={styles.signal}>Return: {order.latestReturn.status}</p> : null}
             {order.latestRefund ? <p className={styles.signal}>Refund: {order.latestRefund.status} · {money(order.latestRefund.amountCents, order.currency)}</p> : null}

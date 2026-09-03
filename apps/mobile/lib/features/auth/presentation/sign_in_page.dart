@@ -19,6 +19,25 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  String get _safeReturnTo {
+    final target = widget.returnTo;
+    if (target == null ||
+        !target.startsWith('/') ||
+        target.startsWith('/sign-in') ||
+        target.startsWith('/register') ||
+        target.startsWith('/forgot-password')) {
+      return '/profile';
+    }
+    return target;
+  }
+
+  String _registerLocation() {
+    return Uri(
+      path: '/register',
+      queryParameters: <String, String>{'returnTo': _safeReturnTo},
+    ).toString();
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -33,9 +52,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
           password: _passwordController.text,
         );
     if (success && mounted) {
-      final target = widget.returnTo;
-      context
-          .go(target != null && target.startsWith('/') ? target : '/profile');
+      context.go(_safeReturnTo);
     }
   }
 
@@ -105,7 +122,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
             TextButton(
               style: TextButton.styleFrom(
                   foregroundColor: const Color(0xFF171717)),
-              onPressed: () => context.push('/register'),
+              onPressed: () => context.push(_registerLocation()),
               child: const Text('Create a TextShop account'),
             ),
           ],

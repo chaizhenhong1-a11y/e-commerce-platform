@@ -175,17 +175,32 @@ class OrderFulfillmentDetails {
   });
 
   factory OrderFulfillmentDetails.fromJson(Map<String, dynamic> json) {
-    DateTime? parse(String key) => json[key] == null
-        ? null
-        : DateTime.parse(json[key] as String).toLocal();
+    String? readOptionalString(String key) {
+      final value = json[key];
+      if (value is! String) {
+        return null;
+      }
+
+      final trimmed = value.trim();
+      return trimmed.isEmpty ? null : trimmed;
+    }
+
+    DateTime? parseDate(String key) {
+      final value = json[key];
+      if (value is! String || value.trim().isEmpty) {
+        return null;
+      }
+
+      return DateTime.tryParse(value)?.toLocal();
+    }
 
     return OrderFulfillmentDetails(
-      courierName: json['courierName'] as String?,
-      trackingNumber: json['trackingNumber'] as String?,
-      trackingUrl: json['trackingUrl'] as String?,
-      processingAt: parse('processingAt'),
-      shippedAt: parse('shippedAt'),
-      deliveredAt: parse('deliveredAt'),
+      courierName: readOptionalString('courierName'),
+      trackingNumber: readOptionalString('trackingNumber'),
+      trackingUrl: readOptionalString('trackingUrl'),
+      processingAt: parseDate('processingAt'),
+      shippedAt: parseDate('shippedAt'),
+      deliveredAt: parseDate('deliveredAt'),
     );
   }
 
