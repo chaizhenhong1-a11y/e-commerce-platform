@@ -1,3 +1,268 @@
+## 0.51.44 - Phase 054.31.16: Web Wishlist + Updates professional polish
+
+- Refined Wishlist with a TextShop black/lime page header, cleaner saved-product presentation, and more polished signed-out, loading, and empty states.
+- Kept the existing ProductCard, wishlist synchronization, refresh, authentication, and product navigation behavior unchanged.
+- Reworked Updates / Notifications with a branded header, cleaner unread treatment, restrained `NEW` state, improved action hierarchy, and a more intentional empty state.
+- Updated the notification bell unread badge to the established TextShop fluorescent-lime (`#DBFF4B`) accent.
+- Preserved notification loading, mark-read, mark-all-read, action links, authentication, and API behavior.
+- Added responsive adjustments for tablet and mobile without changing business logic.
+
+## 0.51.43 - Phase 054.31.15: Web Orders / Purchases professional polish
+
+- Refined the customer Purchases page with a TextShop black/lime header, cleaner search and status filters, and more structured order cards.
+- Improved product rows, delivery/order totals, payment/status pills, refresh, empty, loading, and error states without changing order data or refresh behavior.
+- Reworked Order Details into a clearer lifecycle layout with a stronger order identity block, more readable timeline, consistent totals, delivery, refund, return, and shipping panels.
+- Kept order-detail content in normal document flow with no sticky sidebar behavior.
+- Preserved payment recovery, cancellation, refund, return, fulfillment tracking, account order loading, product links, and all API/business logic.
+
+## 0.51.42 - Phase 054.31.14: Web Checkout professional polish
+
+- Refined the Checkout page into the established TextShop off-white, black, and fluorescent-lime visual system without changing checkout business logic.
+- Added a stronger secure-checkout header, clearer numbered checkout sections, more polished form fields, and improved focus states.
+- Refined saved-address and delivery-method selection so selected states use controlled black/lime emphasis instead of excessive green decoration.
+- Reworked the order-review card, product rows, coupon controls, totals hierarchy, checkout CTA, and trust messaging for a more production-grade commerce presentation.
+- Kept the order-review card in normal document flow rather than sticky scrolling.
+- Improved responsive behavior for tablet and mobile layouts.
+- No cart validation, inventory refresh, promotion/coupon selection, order creation, payment routing, address data, or API behavior changed.
+
+## 0.51.41 - Phase 054.31.13: Web Cart professional redesign
+
+- Rebuilt the Cart page presentation into a production-style commerce layout while preserving existing cart data flow, quantity updates, item removal, stock validation, checkout eligibility, and API behavior.
+- Added a black/lime delivery-benefit banner with real progress toward the RM150 free-delivery threshold.
+- Redesigned cart item cards with stronger product hierarchy, cleaner stock states, improved quantity controls, clearer line pricing, and a compact remove action.
+- Reworked Order Summary into a calmer premium card with subtotal, delivery, estimated total, checkout CTA, issue messaging, and supporting checkout assurances.
+- Improved signed-out, loading, error, and empty-cart states to match the established TextShop visual system.
+- Added responsive tablet/mobile layouts without changing routing or business logic.
+
+## 0.51.40.3 - Phase 054.31.12.3: Product info card full-height alignment
+
+- Extended the desktop Product Details information card to match the height of the media-gallery column.
+- Removed the awkward empty lower-right area while keeping both columns in normal scroll flow.
+- Tablet and mobile layouts continue using natural content height.
+- No product, variant, cart, wishlist, inventory, review, API, or routing behavior changed.
+
+## 0.51.40.2 - Phase 054.31.12.2: Product info panel scroll behavior correction
+
+- Removed the sticky positioning from the Product Details information card.
+- The left media gallery and right product information now scroll together in normal document flow.
+- Preserved all Product Details layout, variant, cart, wishlist, inventory, review, and API behavior.
+
+## 0.51.40.1 - Phase 054.31.12.1: Product gallery width regression fix
+
+- Fixed the Product Details media gallery being compressed by the legacy `grid-template-columns: 1fr 88px` gallery layout.
+- The main product image now uses the full gallery width, with thumbnails displayed underneath as intended by Phase 054.31.12.
+- No product media selection, variant, wishlist, cart, inventory, review, API, or routing logic changed.
+
+## 0.51.40 - Phase 054.31.12: Web Product Details professional polish
+
+- Refined Product Details into a clearer desktop commerce layout while preserving product, variant, stock, cart, wishlist, image-gallery, and review behavior.
+- Upgraded the media gallery with a calmer product stage, compact thumbnails, and a single black/lime selected-image treatment.
+- Rebalanced the product information panel with stronger title/price hierarchy, category context, product-detail/review shortcuts, clearer variant controls, and a more structured purchase area.
+- Consolidated delivery and assurance information into quieter supporting surfaces instead of competing with the primary purchase action.
+- Restyled Product details and Customer reviews as consistent full-width content modules using the established TextShop light canvas, black primary, and `#DBFF4B` accent system.
+- Added responsive behavior for tablet/mobile without changing commerce APIs or business logic.
+
+## 0.51.39.3 - Phase 054.31.11.3: Default address visual cleanup
+
+- Removed the fluorescent-lime left-edge treatment from the default saved-address card.
+- Kept the `Default` badge as the single black/lime visual indicator for the default address.
+- Preserved address content, Edit/Remove actions, form behavior, and all account logic.
+
+## 0.51.39.2 - Phase 054.31.11.2: Account page final layout correction
+
+- Removed the duplicated Purchases, Wishlist, Addresses, and Updates shortcut cards from My Account because the global storefront header already provides those destinations.
+- Removed the entire Recent orders / View all orders module from My Account; order history remains available through the header Purchases entry.
+- Changed Personal details and Saved addresses from a side-by-side split into separate full-width rows, with Saved addresses directly below Personal details.
+- Preserved the existing internal Personal details form and Saved addresses card layouts.
+- Corrected the verification surface to the established TextShop fluorescent-lime (`#DBFF4B`) family.
+- No account, address, authentication, order, API, or routing behavior changed.
+
+## 0.51.39 - Phase 054.31.11: Web account dashboard redesign
+
+- Reworked My Account into a clear customer dashboard while preserving all existing profile, verification, address, order, staff-role, and sign-out behavior.
+- Added a compact black/lime identity hero and account shortcuts for Purchases, Wishlist, Addresses, and Updates.
+- Reduced the visual weight of email verification and rebalanced the desktop profile/address layout.
+- Changed Add address from a permanently expanded form into an explicit action that expands only when adding or editing an address.
+- Preserved destructive action semantics and the established TextShop light/black/lime visual system.
+
+## 0.51.38.2 - Phase 054.31.10.2: AliCDN order image support
+
+- Added `img.alicdn.com` to the Next.js remote image allowlist.
+- Fixes `next/image` runtime crashes on Account Orders when an order item snapshot uses an AliCDN product image.
+- Preserved the existing Bing image host and all order, catalog, checkout, and image rendering behavior.
+
+## 0.51.38.1 - Phase 054.31.10.1: Header category navigation fix
+
+- Fixed the storefront category navigation where every category previously linked to the same unfiltered `/#shop` anchor.
+- Women, Men, Home, Lifestyle, Accessories, and Sale now pass their category into the existing homepage catalog filter and jump directly to the catalog.
+- New arrivals continues to open the default newest-sorted catalog.
+- No catalog API, product data, search, cart, checkout, or visual layout behavior changed.
+
+## 0.51.38 - Phase 054.31.10: Homepage category duplication cleanup
+
+- Removed the oversized `Shop by category` card section because category discovery is already available in the storefront navigation.
+- Changed the secondary hero action from the now-duplicated category anchor to the primary product catalog.
+- Tightened the vertical transition into the catalog so products appear earlier on the homepage.
+- Preserved the existing hero, catalog controls, product data, routing, and TextShop black/lime visual system.
+
+## 0.51.37.1 - Phase 054.31.9.1: Revert homepage redesign
+
+- Reverted the Phase 054.31.9 homepage layout redesign after visual review.
+- Restored the storefront homepage structure from the user's current pre-redesign source.
+- Kept the Phase 054.31.8 TextShop black/lime visual consistency layer intact.
+- No commerce, API, routing, catalog, cart, checkout, order, payment, account, or staff behavior changed.
+
+## 0.51.38 - Phase 054.31.9: Professional web home redesign
+
+- Rebuilt the storefront home page into a clearer editorial commerce layout instead of stacking generic promo and card sections.
+- Introduced a high-impact black/lime hero, compact service rail, asymmetric category discovery grid, cleaner catalog introduction, editorial brand story blocks, and a simplified trust/principles section.
+- Preserved the existing live catalog search, category, price, stock, and sorting controls plus the existing ProductCard data flow.
+- Kept the TextShop light-canvas + black + `#DBFF4B` brand system and added responsive layouts for desktop, tablet, and mobile.
+- No API, catalog data contract, cart, checkout, payment, order, authentication, or staff business logic was changed.
+
+## 0.51.37 - Phase 054.31.8: Storefront black/lime visual consistency
+
+- Unified the Next.js storefront with the established TextShop light-canvas, black-primary, fluorescent-lime (`#DBFF4B`) visual system used by the mobile app.
+- Reworked global brand surfaces including header, search, hero, promotional cards, category/product surfaces, campaigns, focus states, and footer without changing commerce behavior.
+- Unified Staff Web console and Returns visual tokens from the previous blue-gray treatment to TextShop black/lime while preserving semantic success, error, reject, and destructive colors.
+- Kept the website desktop-responsive layout intact; no API, cart, checkout, payment, order, catalog, or staff business logic was changed.
+
+## 0.51.36.1 - Phase 054.31.7: Staff Center live auto-refresh
+
+- Added a guarded 5-second live refresh loop to Staff Center commerce summary data.
+- Refreshes immediately again when the app/browser resumes.
+- Reuses the same refresh path for pull-to-refresh and the toolbar refresh action.
+- Prevents overlapping summary requests while preserving the existing Staff Center UI and business logic.
+
+## 0.51.31.6 - Phase 054.31.6: Staff Center Workspace UI Polish
+
+### Changed
+- Reworked the Flutter Staff Center from a long stack of similar cards into a structured operations dashboard while preserving the established TextShop off-white, black and fluorescent-lime visual language.
+- Added a compact black Staff Commerce hero with live order, fulfillment, return and low-stock highlights.
+- Grouped Orders & fulfillment, Returns operations, and Catalog & inventory into a dedicated workspace section with action-aware lime badges instead of mixing navigation and metrics together.
+- Replaced the seven full-width summary rows with a responsive two-column mobile / four-column wide commerce-health grid, highlighting operational metrics only when they need attention.
+- Added a concise operational-attention panel and removed the obsolete Staff Center information copy that said fulfillment actions remained web-only.
+
+### Preserved
+- Existing Staff Center summary provider, pull-to-refresh, manual refresh, Staff routes, Orders, Returns, Catalog, inventory, product editing, authentication, API contracts, and business logic remain unchanged.
+- No customer-facing UI, backend, Prisma schema, database, or navigation contract changes are included.
+
+## 0.51.31.5 - Phase 054.31.5: Staff Black/Lime UI Consistency Pass
+
+### Changed
+- Added a Staff-only visual theme that preserves the TextShop light/off-white canvas while standardising operational surfaces around black primary actions and fluorescent-lime accents.
+- Unified Staff Center, Orders, Returns, Catalog & inventory, and Product Editor primary actions, inputs, app bars, dividers, and chip styling.
+- Standardised Staff product-media `Upload image` and `Add by URL` actions as matching black buttons with white icon/text.
+- Preserved destructive semantics: return rejection and product/SKU removal remain visually destructive instead of being recolored as ordinary brand actions.
+
+### Preserved
+- No Staff API, repository, domain model, route, authentication, inventory, fulfillment, returns, catalog, product-media, or upload behavior is changed.
+- Customer-facing Home, Cart, Orders, Profile, Product Details, bottom navigation, and established TextShop visual language remain unchanged.
+
+## 0.51.34.1 - Phase 054.31.4.1: Staff media action button consistency
+
+### Changed
+- Unified the Flutter Staff product-media `Upload image` and `Add by URL` actions with the same dark filled button treatment and white icon/text.
+- Presentation-only adjustment; device upload, URL media creation, product synchronization, API behavior, and customer UI remain unchanged.
+
+## 0.51.34 - Phase 054.31.4: Flutter Staff device image upload
+
+### Added
+- Added direct device image selection to the Flutter Staff product editor using `file_picker`.
+- Staff can now choose JPG, PNG, or WebP images from Android, iOS, Web/Edge, or desktop file pickers and upload them through the existing protected product-media upload API.
+- Added client-side 5 MB validation, MIME mapping, alt text, shared/SKU assignment, and optional primary-image selection before upload.
+- Device upload is now the primary media action; URL-based media creation remains available as an optional fallback for existing workflows.
+
+### Synchronization
+- Successful uploads reload the authoritative Staff product and invalidate customer catalog/product-detail providers, preserving the Phase 054.31.3 media synchronization behavior.
+- Existing primary-image, edit, remove, sort-order, and variant-media management remain unchanged.
+
+### Scope
+- Reuses the existing protected `POST /staff/catalog/products/:productId/images/upload` backend endpoint; no API, Prisma schema, database, storage-adapter, or customer UI change is included.
+- `pubspec.yaml` adds `file_picker`; run `flutter pub get` after applying this increment.
+
+## 0.51.31.3 - Phase 054.31.3: Product media synchronization fix
+
+### Fixed
+- Product details now preserves the backend's authoritative product-media ordering, so a Staff-selected primary image stays first even when shared and SKU-specific images are mixed.
+- Product details automatically refreshes its product snapshot when the app/browser tab resumes, so Staff image changes and removals no longer require a manual customer-page refresh.
+- The family product-details provider now auto-disposes after its page is no longer watched, preventing old product media snapshots from lingering across later visits.
+- Flutter Staff product reloads now invalidate the customer catalog and matching product-details cache after product/media mutations.
+
+### Preserved
+- Existing product image storage, Staff media CRUD endpoints, variant media assignment, cart, wishlist, pricing, inventory, checkout, and TextShop visual language remain unchanged.
+- No Prisma schema or database migration is included.
+
+## 0.51.31.2.3 - Phase 054.31.2.3: Four-column mobile catalog density
+
+### Changed
+- Home product discovery now uses four columns at phone and compact-window widths, five columns on wider tablet/desktop widths, and six columns on large layouts.
+- Reduced product-card controls, typography, padding, and fallback icon sizing so four-column cards remain readable without changing product, wishlist, inventory, search, filter, pagination, or navigation behavior.
+- Kept the established TextShop light canvas, dark primary treatment, and fluorescent-lime accent unchanged.
+
+### Preserved
+- No API, domain model, catalog query, inventory, wishlist, authentication, checkout, order, or database behavior changes.
+- Bottom navigation and existing Home interactions remain unchanged.
+
+## 0.51.31.2.2 - Phase 054.31.2.2: Home true compact card density
+
+### Changed
+- Reworked the Home product-grid density more aggressively after the previous correction still rendered oversized cards on narrow/mobile logical widths.
+- Two-column cards now use a landscape-leaning 1.12 aspect ratio instead of a tall portrait ratio, substantially reducing card height while keeping image, category, title, price, stock and wishlist actions visible.
+- Medium logical widths switch to three columns from 560px, with tighter 8px grid gaps so web/device previews do not remain on oversized two-column cards.
+- Reduced wishlist control, stock badge, card-content typography/padding and hero height to match the denser catalog presentation.
+
+### Preserved
+- Existing search, filters, sorting, pagination, wishlist, inventory, product navigation, refresh behavior, API contracts, commerce logic and bottom navigation remain unchanged.
+- Existing TextShop off-white / black / fluorescent-lime visual language is preserved; this increment changes density only.
+
+## 0.51.31.2.1 - Phase 054.31.2.1: Home compact-density correction
+
+### Changed
+- Reduced the narrow-screen product-card height again so two-column phone cards occupy substantially less vertical space.
+- Lowered the responsive three-column breakpoint to 680px so medium-width mobile/web previews no longer render oversized two-column cards.
+- Tightened product-card badge, content, title, price, grid-gap, and Home hero sizing without changing the established TextShop visual language.
+
+### Preserved
+- Existing search, filters, sorting, pagination, wishlist, inventory, product navigation, refresh behavior, API contracts, and bottom navigation remain unchanged.
+- This is a presentation-density correction only; no commerce or backend behavior is changed.
+
+## 0.51.31.2 - Phase 054.31.2: Home density polish
+
+### Changed
+- Reduced Home product-card height and tightened grid spacing so more catalog content is visible per screen without changing the two-column mobile layout.
+- Reduced product-card image dominance and compacted category, title, price, stock badge, and wishlist spacing while preserving the existing card structure and interactions.
+- Tightened Home hero, search, category, and section spacing to improve mobile information density while preserving the established TextShop light / black / fluorescent-lime visual language.
+
+### Preserved
+- Existing search debounce, server-backed filters, sorting, pagination/infinite loading, wishlist behavior, live inventory presentation, product navigation, refresh behavior, and bottom navigation are unchanged.
+- No API, domain model, provider, database, checkout, order, authentication, or Staff behavior changes are included.
+
+## 0.51.34.1 - Phase 054.31.1: Bottom navigation branch reset fix
+
+### Fixed
+- Bottom-navigation destinations now always reopen at their branch root instead of restoring a previously pushed child screen.
+- Returning to Profile after opening Wishlist, Addresses, Updates, Staff Center, or another nested screen now shows the Profile root instead of a stale child page.
+- The same predictable reset applies when switching back to Home, Cart, or Orders, preventing product/order-detail screens from unexpectedly reappearing after changing tabs.
+
+### Preserved
+- Existing routes, authentication guards, customer commerce behavior, Staff/Admin access rules, and TextShop visual styling are unchanged.
+- No API, Prisma schema, database, or page UI changes are included.
+
+## 0.51.34 - Phase 054.31: Profile UI Polish
+
+### Improved
+- Refined the Flutter Profile page into a stronger TextShop account hub while preserving the established light/off-white, black, and fluorescent-lime visual language.
+- Added a branded signed-in identity panel with account verification and Staff/Admin role visibility.
+- Added compact shortcuts for Orders, Wishlist, Addresses, and Updates without changing their existing routes or ownership rules.
+- Elevated the existing Staff Center entry for Staff/Admin accounts while preserving backend-authoritative role protection.
+- Reorganized account activity and sign-out presentation for clearer visual hierarchy.
+- Refined the signed-out Profile state with clearer sign-in and registration guidance.
+
+### Preserved
+- Existing authentication/session behavior, email verification resend, logout invalidation, Staff/Admin access rules, account routes, bottom navigation, commerce APIs, and database behavior are unchanged.
+- No global theme replacement or full-dark redesign is introduced.
+
 ## 0.51.31 - Phase 054.28: TextShop V1 Final Gate
 
 ### Status

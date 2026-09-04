@@ -161,7 +161,8 @@ final productCatalogMetadataProvider =
   return ref.watch(productRepositoryProvider).getCatalogMetadata();
 });
 
-final productProvider = FutureProvider.family<Product?, String>((ref, id) {
+final productProvider =
+    FutureProvider.autoDispose.family<Product?, String>((ref, id) {
   return ref.watch(productRepositoryProvider).getProductById(id);
 });
 

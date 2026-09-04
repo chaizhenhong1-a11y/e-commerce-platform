@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/staff_repository.dart';
 import '../domain/staff_order.dart';
 import 'staff_providers.dart';
+import 'staff_ui_theme.dart';
 
 class StaffOrdersPage extends ConsumerStatefulWidget {
   const StaffOrdersPage({super.key});
@@ -181,7 +182,8 @@ class _StaffOrdersPageState extends ConsumerState<StaffOrdersPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return StaffUiTheme(
+        child: Scaffold(
       appBar: AppBar(
         title: const Text('Orders & fulfillment'),
         actions: <Widget>[
@@ -289,7 +291,7 @@ class _StaffOrdersPageState extends ConsumerState<StaffOrdersPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _orderCard(StaffOrder order) {
@@ -376,7 +378,7 @@ class _StaffOrdersPageState extends ConsumerState<StaffOrdersPage> {
                 runSpacing: 8,
                 children: <Widget>[
                   if (order.canProcess)
-                    FilledButton.tonal(
+                    FilledButton(
                       onPressed: busy
                           ? null
                           : () => _runTransition(
@@ -390,12 +392,12 @@ class _StaffOrdersPageState extends ConsumerState<StaffOrdersPage> {
                       child: const Text('Start processing'),
                     ),
                   if (order.canShip)
-                    FilledButton.tonal(
+                    FilledButton(
                       onPressed: busy ? null : () => _openShipping(order),
                       child: const Text('Ship order'),
                     ),
                   if (order.canDeliver)
-                    FilledButton.tonal(
+                    FilledButton(
                       onPressed: busy
                           ? null
                           : () => _runTransition(

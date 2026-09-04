@@ -130,18 +130,17 @@ class Product {
   }
 
   List<ProductImage> imagesForVariant(String variantId) {
-    final variantImages = images
-        .where((image) => image.variantId == variantId)
-        .toList(growable: false);
-    final sharedImages = images
-        .where((image) => image.variantId == null)
+    final eligibleImages = images
+        .where(
+          (image) => image.variantId == null || image.variantId == variantId,
+        )
         .toList(growable: false);
 
-    if (variantImages.isNotEmpty) {
-      return <ProductImage>[...variantImages, ...sharedImages];
-    }
-
-    return sharedImages.isNotEmpty ? sharedImages : images;
+    // The API already orders product media with the primary image first.
+    // Preserve that authoritative order instead of regrouping variant images
+    // ahead of shared images, which could move the selected primary image
+    // into a later thumbnail position.
+    return eligibleImages.isNotEmpty ? eligibleImages : images;
   }
 
   String? get imageUrl {

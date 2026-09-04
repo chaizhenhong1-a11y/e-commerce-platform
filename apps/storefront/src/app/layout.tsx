@@ -17,13 +17,13 @@ export const metadata: Metadata = {
 };
 
 const categories = [
-  "New arrivals",
-  "Women",
-  "Men",
-  "Home",
-  "Lifestyle",
-  "Accessories",
-  "Sale",
+  { label: "New arrivals", href: "/#shop" },
+  { label: "Women", href: "/?category=Women#shop" },
+  { label: "Men", href: "/?category=Men#shop" },
+  { label: "Home", href: "/?category=Home#shop" },
+  { label: "Lifestyle", href: "/?category=Lifestyle#shop" },
+  { label: "Accessories", href: "/?category=Accessories#shop" },
+  { label: "Sale", href: "/?category=Sale#shop" },
 ];
 
 export default function RootLayout({
@@ -83,8 +83,8 @@ export default function RootLayout({
           <div className="category-nav">
             <div className="shell category-nav__inner">
               {categories.map((category) => (
-                <Link href="/#shop" key={category}>
-                  {category}
+                <Link href={category.href} key={category.label}>
+                  {category.label}
                 </Link>
               ))}
             </div>

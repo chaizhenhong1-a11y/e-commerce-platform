@@ -9,14 +9,6 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const categoryTiles = [
-  { label: "Women", note: "New season", mark: "W" },
-  { label: "Men", note: "Everyday edit", mark: "M" },
-  { label: "Home", note: "Modern living", mark: "H" },
-  { label: "Lifestyle", note: "Daily essentials", mark: "L" },
-  { label: "Accessories", note: "Finishing touches", mark: "A" },
-  { label: "Sale", note: "Limited offers", mark: "%" },
-];
 
 type HomePageProps = {
   searchParams: Promise<{
@@ -70,8 +62,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <Link className="button button--primary" href="#shop">
                 Shop new arrivals
               </Link>
-              <Link className="button button--light" href="#categories">
-                Browse categories
+              <Link className="button button--light" href="#shop">
+                Browse products
               </Link>
             </div>
           </div>
@@ -106,33 +98,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
       </section>
 
-      <section className="shell section-market" id="categories">
-        <div className="market-heading">
-          <div>
-            <span className="section-kicker">DISCOVER</span>
-            <h2>Shop by category</h2>
-          </div>
-          <Link href="#shop">View all products →</Link>
-        </div>
-
-        <div className="category-grid">
-          {categoryTiles.map((item) => (
-            <Link
-              className="category-tile"
-              href={`/?category=${encodeURIComponent(item.label)}#shop`}
-              key={item.label}
-            >
-              <div className="category-tile__art">{item.mark}</div>
-              <div>
-                <strong>{item.label}</strong>
-                <span>{item.note}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="shell section-market" id="shop">
+      <section className="shell section-market section-market--catalog" id="shop">
         <div className="market-heading">
           <div>
             <span className="section-kicker">CATALOG</span>

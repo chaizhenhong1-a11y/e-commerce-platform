@@ -58,7 +58,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
         />
 
         <div className="product-info-panel">
-          <span className="product-brand">TEXTSHOP SELECT</span>
+          <div className="product-info-panel__eyebrow">
+            <span className="product-brand">TEXTSHOP SELECT</span>
+            <span className="product-category-label">{product.category}</span>
+          </div>
           <div className="product-title-row">
             <h1>{product.name}</h1>
             <WishlistButton
@@ -69,6 +72,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
 
           <p className="product-description">{product.description}</p>
+
+          <div className="product-jump-links" aria-label="Product information">
+            <a href="#details">Product details</a>
+            <a href="#reviews">Customer reviews</a>
+          </div>
 
           <VariantPurchasePanel variants={product.variants} />
 

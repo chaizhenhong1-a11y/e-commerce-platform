@@ -7,6 +7,12 @@ import '../../auth/presentation/auth_providers.dart';
 import '../domain/customer_cart.dart';
 import 'cart_providers.dart';
 
+const Color _textShopInk = Color(0xFF171717);
+const Color _textShopAccent = Color(0xFFDBFF4B);
+const Color _textShopMuted = Color(0xFF70706B);
+const Color _textShopBorder = Color(0xFFE5E5DF);
+const Color _textShopSoft = Color(0xFFF1F1EC);
+
 class CartPage extends ConsumerWidget {
   const CartPage({super.key});
 
@@ -16,30 +22,10 @@ class CartPage extends ConsumerWidget {
     if (!auth.isAuthenticated) {
       return Scaffold(
         appBar: AppBar(title: const Text('Cart')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const Icon(Icons.lock_outline_rounded, size: 56),
-                const SizedBox(height: 16),
-                const Text('Sign in to use your cart',
-                    style:
-                        TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
-                const SizedBox(height: 8),
-                const Text('Your cart is private and belongs to your account.',
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 18),
-                FilledButton(
-                    onPressed: () => context.push('/sign-in?returnTo=%2Fcart'),
-                    child: const Text('Sign in')),
-              ],
-            ),
-          ),
-        ),
+        body: const _SignedOutCart(),
       );
     }
+
     final cart = ref.watch(customerCartProvider);
 
     return Scaffold(
@@ -70,6 +56,84 @@ class CartPage extends ConsumerWidget {
   }
 }
 
+class _SignedOutCart extends StatelessWidget {
+  const _SignedOutCart();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 40),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: _textShopBorder),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  width: 68,
+                  height: 68,
+                  decoration: const BoxDecoration(
+                    color: _textShopAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.shopping_bag_outlined,
+                    color: _textShopInk,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Your bag follows you',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _textShopInk,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 24,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Sign in to keep your cart private and synced across TextShop.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _textShopMuted,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _textShopInk,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: () => context.push('/sign-in?returnTo=%2Fcart'),
+                    child: const Text(
+                      'Sign in to continue',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _CartContent extends ConsumerWidget {
   const _CartContent({required this.cart});
 
@@ -79,57 +143,353 @@ class _CartContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 36),
       children: <Widget>[
+        _CartHero(cart: cart),
+        const SizedBox(height: 22),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'IN YOUR BAG',
+                    style: TextStyle(
+                      color: _textShopMuted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.3,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Ready when you are.',
+                    style: TextStyle(
+                      color: _textShopInk,
+                      fontSize: 21,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              '${cart.items.length} line${cart.items.length == 1 ? '' : 's'}',
+              style: const TextStyle(
+                color: _textShopMuted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         ...cart.items.map(
           (item) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _CartItemCard(item: item),
           ),
         ),
-        const SizedBox(height: 8),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    '${cart.totalQuantity} item${cart.totalQuantity == 1 ? '' : 's'}',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+        if (cart.issueCount > 0) ...<Widget>[
+          const SizedBox(height: 4),
+          _AttentionBanner(issueCount: cart.issueCount),
+        ],
+        const SizedBox(height: 10),
+        _OrderSummary(cart: cart),
+      ],
+    );
+  }
+}
+
+class _CartHero extends StatelessWidget {
+  const _CartHero({required this.cart});
+
+  final CustomerCart cart;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: _textShopInk,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Stack(
+        children: <Widget>[
+          Positioned(
+            right: -16,
+            top: -28,
+            child: Container(
+              width: 108,
+              height: 108,
+              decoration: const BoxDecoration(
+                color: _textShopAccent,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 22,
+            bottom: -26,
+            child: Transform.rotate(
+              angle: -0.14,
+              child: Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  border: Border.all(color: _textShopAccent, width: 3),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                Text(
-                  'RM ${cart.subtotal.toStringAsFixed(2)}',
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Text(
+                'TEXTSHOP BAG',
+                style: TextStyle(
+                  color: _textShopAccent,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '${cart.totalQuantity} item${cart.totalQuantity == 1 ? '' : 's'} saved',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 27,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.8,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Review sizes, stock and quantities before checkout.',
+                style: TextStyle(
+                  color: Color(0xFFC8C8C2),
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 22),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+                decoration: BoxDecoration(
+                  color: _textShopAccent,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  'RM ${cart.subtotal.toStringAsFixed(2)} subtotal',
                   style: const TextStyle(
-                    fontSize: 18,
+                    color: _textShopInk,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-              ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttentionBanner extends StatelessWidget {
+  const _AttentionBanner({required this.issueCount});
+
+  final int issueCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Icon(
+            Icons.error_outline_rounded,
+            color: Theme.of(context).colorScheme.onErrorContainer,
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Text(
+              '$issueCount item${issueCount == 1 ? '' : 's'} need attention before checkout. Fix the highlighted stock issue first.',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onErrorContainer,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OrderSummary extends StatelessWidget {
+  const _OrderSummary({required this.cart});
+
+  final CustomerCart cart;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: _textShopBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text(
+            'ORDER SUMMARY',
+            style: TextStyle(
+              color: _textShopMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.3,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _SummaryRow(
+            label:
+                'Subtotal · ${cart.totalQuantity} item${cart.totalQuantity == 1 ? '' : 's'}',
+            value: 'RM ${cart.subtotal.toStringAsFixed(2)}',
+          ),
+          const SizedBox(height: 11),
+          const _SummaryRow(
+            label: 'Delivery',
+            value: 'Calculated at checkout',
+            compactValue: true,
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 17),
+            child: Divider(height: 1, color: _textShopBorder),
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'ESTIMATED TOTAL',
+                      style: TextStyle(
+                        color: _textShopMuted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Taxes and discounts confirmed next.',
+                      style: TextStyle(
+                        color: _textShopMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 18),
+              Text(
+                'RM ${cart.subtotal.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  color: _textShopInk,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor:
+                    cart.canCheckout ? _textShopInk : _textShopSoft,
+                foregroundColor:
+                    cart.canCheckout ? Colors.white : _textShopMuted,
+                disabledBackgroundColor: _textShopSoft,
+                disabledForegroundColor: _textShopMuted,
+                padding: const EdgeInsets.symmetric(vertical: 17),
+              ),
+              onPressed:
+                  cart.canCheckout ? () => context.push('/checkout') : null,
+              icon: const Icon(Icons.arrow_forward_rounded),
+              label: const Text(
+                'Continue to checkout',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+          ),
+          if (!cart.canCheckout) ...<Widget>[
+            const SizedBox(height: 10),
+            const Text(
+              'Checkout unlocks after every cart item is available.',
+              style: TextStyle(
+                color: _textShopMuted,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.compactValue = false,
+  });
+
+  final String label;
+  final String value;
+  final bool compactValue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: _textShopMuted,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        if (cart.issueCount > 0) ...<Widget>[
-          Text(
-            '${cart.issueCount} item${cart.issueCount == 1 ? '' : 's'} '
-            'need attention before checkout.',
+        const SizedBox(width: 18),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
             style: TextStyle(
-              color: Theme.of(context).colorScheme.error,
-              fontWeight: FontWeight.w700,
+              color: _textShopInk,
+              fontSize: compactValue ? 12 : 15,
+              fontWeight: FontWeight.w900,
             ),
-          ),
-          const SizedBox(height: 12),
-        ],
-        FilledButton.icon(
-          onPressed: cart.canCheckout ? () => context.push('/checkout') : null,
-          icon: const Icon(Icons.lock_outline_rounded),
-          label: const Padding(
-            padding: EdgeInsets.symmetric(vertical: 14),
-            child: Text('Checkout'),
           ),
         ),
       ],
@@ -236,116 +596,316 @@ class _CartItemCardState extends ConsumerState<_CartItemCard> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
+    final hasIssue = item.issue != null;
+    final isLowStock = item.issue == null && item.availableStock <= 5;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: SizedBox(
-                width: 76,
-                height: 76,
-                child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                    ? Image.network(
-                        item.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const _CartImageFallback(),
-                      )
-                    : const _CartImageFallback(),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    item.productName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text('${item.variantName} · ${item.sku}'),
-                  const SizedBox(height: 5),
-                  Text(
-                    item.issue ??
-                        (item.availableStock <= 5
-                            ? 'Only ${item.availableStock} left'
-                            : '${item.availableStock} available'),
-                    style: TextStyle(
-                      color: item.issue == null
-                          ? Theme.of(context).colorScheme.onSurfaceVariant
-                          : Theme.of(context).colorScheme.error,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  if (item.quantity > item.availableStock &&
-                      item.availableStock > 0 &&
-                      item.productActive &&
-                      item.variantActive) ...<Widget>[
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed:
-                          _busy ? null : () => _update(item.availableStock),
-                      icon: const Icon(Icons.inventory_2_outlined, size: 18),
-                      label: Text('Adjust to ${item.availableStock}'),
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  Text(
-                    'RM ${item.price.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: <Widget>[
-                      IconButton.filledTonal(
-                        onPressed: _busy || item.quantity <= 1
-                            ? null
-                            : () => _update(item.quantity - 1),
-                        icon: const Icon(Icons.remove_rounded),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          '${item.quantity}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      IconButton.filledTonal(
-                        onPressed: _busy ||
-                                !item.productActive ||
-                                !item.variantActive ||
-                                item.quantity >= item.availableStock ||
-                                item.quantity >= 99
-                            ? null
-                            : () => _update(item.quantity + 1),
-                        icon: const Icon(Icons.add_rounded),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        tooltip: 'Remove',
-                        onPressed: _busy ? null : _remove,
-                        icon: const Icon(Icons.delete_outline),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color:
+              hasIssue ? Theme.of(context).colorScheme.error : _textShopBorder,
         ),
       ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: SizedBox(
+              width: 92,
+              height: 112,
+              child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      item.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const _CartImageFallback(),
+                    )
+                  : const _CartImageFallback(),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        item.productName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: _textShopInk,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          height: 1.18,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    SizedBox(
+                      width: 38,
+                      height: 38,
+                      child: IconButton(
+                        tooltip: 'Remove',
+                        padding: EdgeInsets.zero,
+                        onPressed: _busy ? null : _remove,
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: <Widget>[
+                    _MetaChip(label: item.variantName),
+                    if (item.sku.isNotEmpty) _MetaChip(label: item.sku),
+                  ],
+                ),
+                const SizedBox(height: 9),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: _StockLabel(
+                        text: item.issue ??
+                            (isLowStock
+                                ? 'Only ${item.availableStock} left'
+                                : '${item.availableStock} available'),
+                        isError: hasIssue,
+                        isLowStock: isLowStock,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'RM ${item.lineTotal.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        color: _textShopInk,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'RM ${item.price.toStringAsFixed(2)} each',
+                  style: const TextStyle(
+                    color: _textShopMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (item.quantity > item.availableStock &&
+                    item.availableStock > 0 &&
+                    item.productActive &&
+                    item.variantActive) ...<Widget>[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _textShopInk,
+                        side: const BorderSide(color: _textShopInk),
+                      ),
+                      onPressed:
+                          _busy ? null : () => _update(item.availableStock),
+                      icon: const Icon(Icons.inventory_2_outlined, size: 17),
+                      label: Text('Adjust to ${item.availableStock}'),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Row(
+                  children: <Widget>[
+                    _QuantityControl(
+                      quantity: item.quantity,
+                      busy: _busy,
+                      canDecrease: item.quantity > 1,
+                      canIncrease: item.productActive &&
+                          item.variantActive &&
+                          item.quantity < item.availableStock &&
+                          item.quantity < 99,
+                      onDecrease: () => _update(item.quantity - 1),
+                      onIncrease: () => _update(item.quantity + 1),
+                    ),
+                    if (_busy) ...<Widget>[
+                      const SizedBox(width: 12),
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: _textShopSoft,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: _textShopMuted,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _StockLabel extends StatelessWidget {
+  const _StockLabel({
+    required this.text,
+    required this.isError,
+    required this.isLowStock,
+  });
+
+  final String text;
+  final bool isError;
+  final bool isLowStock;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isError
+        ? Theme.of(context).colorScheme.error
+        : isLowStock
+            ? _textShopInk
+            : _textShopMuted;
+
+    return Row(
+      children: <Widget>[
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(
+            color: isError
+                ? Theme.of(context).colorScheme.error
+                : isLowStock
+                    ? _textShopAccent
+                    : const Color(0xFFB8B8B1),
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuantityControl extends StatelessWidget {
+  const _QuantityControl({
+    required this.quantity,
+    required this.busy,
+    required this.canDecrease,
+    required this.canIncrease,
+    required this.onDecrease,
+    required this.onIncrease,
+  });
+
+  final int quantity;
+  final bool busy;
+  final bool canDecrease;
+  final bool canIncrease;
+  final VoidCallback onDecrease;
+  final VoidCallback onIncrease;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _textShopSoft,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          _QuantityButton(
+            icon: Icons.remove_rounded,
+            enabled: !busy && canDecrease,
+            onTap: onDecrease,
+          ),
+          SizedBox(
+            width: 36,
+            child: Text(
+              '$quantity',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: _textShopInk,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          _QuantityButton(
+            icon: Icons.add_rounded,
+            enabled: !busy && canIncrease,
+            onTap: onIncrease,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuantityButton extends StatelessWidget {
+  const _QuantityButton({
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      constraints: const BoxConstraints.tightFor(width: 38, height: 38),
+      padding: EdgeInsets.zero,
+      onPressed: enabled ? onTap : null,
+      icon: Icon(icon, size: 18),
+      color: _textShopInk,
+      disabledColor: const Color(0xFFB8B8B1),
     );
   }
 }
@@ -357,24 +917,57 @@ class _EmptyCart extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.fromLTRB(24, 70, 24, 40),
       children: <Widget>[
-        const SizedBox(height: 90),
-        const Icon(Icons.shopping_bag_outlined, size: 56),
-        const SizedBox(height: 16),
-        Text(
-          'Your cart is empty',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+        Center(
+          child: Container(
+            width: 82,
+            height: 82,
+            decoration: const BoxDecoration(
+              color: _textShopAccent,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.shopping_bag_outlined,
+              color: _textShopInk,
+              size: 38,
+            ),
+          ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Items added while signed in sync across the website and app.',
+        const SizedBox(height: 22),
+        const Text(
+          'Nothing in your bag yet',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            color: _textShopInk,
+            fontSize: 25,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.6,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Find something you like, choose a variant, and it will stay synced with your TextShop account.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: _textShopMuted,
+            height: 1.45,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Center(
+          child: FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: _textShopInk,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
+            ),
+            onPressed: () => context.go('/'),
+            icon: const Icon(Icons.arrow_back_rounded),
+            label: const Text(
+              'Browse products',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
         ),
       ],
@@ -389,10 +982,18 @@ class _CartLoading extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(28),
-      children: const <Widget>[
-        SizedBox(height: 120),
-        Center(child: CircularProgressIndicator()),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 32),
+      children: <Widget>[
+        Container(
+          height: 176,
+          decoration: BoxDecoration(
+            color: _textShopInk,
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(color: _textShopAccent),
+          ),
+        ),
       ],
     );
   }
@@ -411,24 +1012,37 @@ class _CartError extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.fromLTRB(24, 72, 24, 40),
       children: <Widget>[
-        const SizedBox(height: 80),
-        const Icon(Icons.cloud_off_outlined, size: 52),
+        const Center(
+          child: Icon(Icons.cloud_off_outlined, size: 52),
+        ),
         const SizedBox(height: 16),
-        Text(
+        const Text(
           'Could not load cart',
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+          style: TextStyle(
+            color: _textShopInk,
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+          ),
         ),
-        const SizedBox(height: 12),
-        Text(message, textAlign: TextAlign.center),
+        const SizedBox(height: 10),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: _textShopMuted),
+        ),
         const SizedBox(height: 20),
-        FilledButton.tonal(
-          onPressed: onRetry,
-          child: const Text('Try again'),
+        Center(
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: _textShopInk,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: onRetry,
+            child: const Text('Try again'),
+          ),
         ),
       ],
     );
@@ -440,9 +1054,14 @@ class _CartImageFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: const Center(child: Icon(Icons.inventory_2_outlined)),
+    return const ColoredBox(
+      color: _textShopSoft,
+      child: Center(
+        child: Icon(
+          Icons.inventory_2_outlined,
+          color: _textShopMuted,
+        ),
+      ),
     );
   }
 }

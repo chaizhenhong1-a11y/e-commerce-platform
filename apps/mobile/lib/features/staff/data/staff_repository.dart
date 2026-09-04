@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../../core/network/api_client.dart';
 import '../domain/staff_commerce_summary.dart';
 import '../domain/staff_catalog.dart';
@@ -331,6 +333,33 @@ class StaffRepository {
     );
     return StaffVariantMatrixResult.fromJson(
       response.data ?? const <String, dynamic>{},
+    );
+  }
+
+  Future<void> uploadProductImage({
+    required String productId,
+    required List<int> fileBytes,
+    required String fileName,
+    required String contentType,
+    String? altText,
+    String? variantId,
+    required bool isPrimary,
+  }) async {
+    final formData = FormData.fromMap(<String, dynamic>{
+      'file': MultipartFile.fromBytes(
+        fileBytes,
+        filename: fileName,
+        contentType: DioMediaType.parse(contentType),
+      ),
+      'altText': altText?.trim() ?? '',
+      'variantId': variantId ?? '',
+      'isPrimary': isPrimary.toString(),
+    });
+
+    await _apiClient.dio.post<void>(
+      '/staff/catalog/products/${Uri.encodeComponent(productId)}/images/upload',
+      data: formData,
+      options: Options(contentType: 'multipart/form-data'),
     );
   }
 

@@ -34,21 +34,19 @@ export function CartView() {
         if (active) setError(cause instanceof Error ? cause.message : "Unable to load cart.");
       }
     })();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function changeQuantity(itemId: string, quantity: number) {
     if (!cart || quantity < 1) return;
-
     setBusyItemId(itemId);
     setError("");
-
     try {
       setCart(await updateCartItem(cart.sessionId, itemId, quantity));
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "Unable to update cart.",
-      );
+      setError(cause instanceof Error ? cause.message : "Unable to update cart.");
       try {
         setCart(await getCart(cart.sessionId));
       } catch {
@@ -61,16 +59,12 @@ export function CartView() {
 
   async function remove(itemId: string) {
     if (!cart) return;
-
     setBusyItemId(itemId);
     setError("");
-
     try {
       setCart(await removeCartItem(cart.sessionId, itemId));
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "Unable to remove item.",
-      );
+      setError(cause instanceof Error ? cause.message : "Unable to remove item.");
     } finally {
       setBusyItemId(null);
     }
@@ -78,212 +72,173 @@ export function CartView() {
 
   if (signedOut) {
     return (
-      <div className="empty-cart-card">
-        <span className="empty-cart-card__icon">🔒</span>
+      <section className="cart-state-card">
+        <div className="cart-state-card__icon">LOCK</div>
+        <span className="section-kicker">ACCOUNT REQUIRED</span>
         <h2>Sign in to use your cart</h2>
-        <p>Your cart belongs to your TextShop account and stays private across devices.</p>
-        <Link className="button button--primary" href="/account/sign-in?returnTo=%2Fcart">Sign in</Link>
-      </div>
+        <p>Your TextShop cart stays private and follows your account across devices.</p>
+        <Link className="button button--primary" href="/account/sign-in?returnTo=%2Fcart">
+          Sign in
+        </Link>
+      </section>
     );
   }
 
   if (!cart && !error) {
     return (
-      <div className="cart-loading-card">
+      <section className="cart-state-card">
         <div className="loading-spinner" />
         <span>Loading your cart…</span>
-      </div>
+      </section>
     );
   }
 
   if (!cart) {
     return (
-      <div className="empty-cart-card">
-        <span className="empty-cart-card__icon">!</span>
-        <h2>We couldn&apos;t load your cart.</h2>
+      <section className="cart-state-card">
+        <div className="cart-state-card__icon">!</div>
+        <span className="section-kicker">CART UNAVAILABLE</span>
+        <h2>We couldn&apos;t load your cart</h2>
         <p className="form-error">{error}</p>
-      </div>
+      </section>
     );
   }
 
   if (cart.items.length === 0) {
     return (
-      <div className="empty-cart-card">
-        <span className="empty-cart-card__icon">🛒</span>
+      <section className="cart-state-card">
+        <div className="cart-state-card__icon">BAG</div>
+        <span className="section-kicker">YOUR BAG</span>
         <h2>Your cart is empty</h2>
-        <p>
-          Looks like you haven&apos;t added anything yet. Explore our latest
-          products and find something you like.
-        </p>
+        <p>Looks like you haven&apos;t added anything yet. Explore the latest TextShop collection and find something you like.</p>
         <Link className="button button--primary" href="/#shop">
           Start shopping
         </Link>
-      </div>
+      </section>
     );
   }
 
+  const deliveryUnlocked = cart.subtotal >= 150;
+  const delivery = deliveryUnlocked ? 0 : 10;
+  const total = cart.subtotal + delivery;
+
   return (
     <>
-      <div className="cart-progress">
-        <strong>
-          {cart.subtotal >= 150
-            ? "You unlocked free delivery"
-            : `Add RM ${(150 - cart.subtotal).toFixed(2)} more for free delivery`}
-        </strong>
-        <div className="cart-progress__track">
-          <span
-            style={{
-              width: `${Math.min((cart.subtotal / 150) * 100, 100)}%`,
-            }}
-          />
+      <section className={`cart-delivery-banner${deliveryUnlocked ? " cart-delivery-banner--unlocked" : ""}`}>
+        <div className="cart-delivery-banner__copy">
+          <span className="cart-delivery-banner__eyebrow">DELIVERY BENEFIT</span>
+          <strong>{deliveryUnlocked ? "Free delivery unlocked" : `Spend RM ${(150 - cart.subtotal).toFixed(2)} more to unlock free delivery`}</strong>
+          <span>{deliveryUnlocked ? "Your order qualifies for complimentary standard delivery." : "Every eligible item in this cart counts toward the RM150 threshold."}</span>
         </div>
-      </div>
+        <div className="cart-delivery-meter" aria-label="Free delivery progress">
+          <div className="cart-delivery-meter__track">
+            <span style={{ width: `${Math.min((cart.subtotal / 150) * 100, 100)}%` }} />
+          </div>
+          <b>{deliveryUnlocked ? "RM150 reached" : `RM ${cart.subtotal.toFixed(2)} / RM150`}</b>
+        </div>
+      </section>
 
       <div className="cart-market-layout">
-        <div className="cart-market-list">
-          <div className="cart-list-heading">
-            <strong>Items</strong>
-            <span>{cart.totalQuantity} in your cart</span>
-          </div>
+        <section className="cart-market-list">
+          <header className="cart-list-heading cart-list-heading--card">
+            <div>
+              <span className="section-kicker">SHOPPING BAG</span>
+              <strong>Items in your cart</strong>
+            </div>
+            <span>{cart.totalQuantity} item{cart.totalQuantity === 1 ? "" : "s"}</span>
+          </header>
 
-          {cart.items.map((item) => {
-            const busy = busyItemId === item.id;
+          <div className="cart-market-list__body">
+            {cart.items.map((item) => {
+              const busy = busyItemId === item.id;
+              const lineTotal = item.price * item.quantity;
 
-            return (
-              <article className="cart-market-item" key={item.id}>
-                <Link
-                  href={`/products/${item.slug}`}
-                  className="cart-market-item__media"
-                  aria-label={item.productName}
-                >
-                  {item.imageUrl ? (
-                    <img src={item.imageUrl} alt="" />
-                  ) : (
-                    <span>{item.productName.slice(0, 1)}</span>
-                  )}
-                </Link>
-
-                <div className="cart-market-item__info">
-                  <span className="cart-market-item__brand">TEXTSHOP SELECT</span>
-                  <Link href={`/products/${item.slug}`}>
-                    <h3>{item.productName}</h3>
+              return (
+                <article className="cart-market-item" key={item.id}>
+                  <Link href={`/products/${item.slug}`} className="cart-market-item__media" aria-label={item.productName}>
+                    {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <span>{item.productName.slice(0, 1)}</span>}
                   </Link>
-                  <span className="cart-market-item__variant">
-                    {item.variantName} · {item.sku}
-                  </span>
-                  {item.issue ? (
-                    <span className="cart-item-issue">{item.issue}</span>
-                  ) : (
-                    <span className="cart-item-stock">
-                      {item.availableStock <= 5
-                        ? `Only ${item.availableStock} left`
-                        : `${item.availableStock} available`}
-                    </span>
-                  )}
-                  {item.quantity > item.availableStock &&
-                  item.availableStock > 0 &&
-                  item.productActive &&
-                  item.variantActive ? (
-                    <button
-                      className="remove-link"
-                      type="button"
-                      disabled={busy}
-                      onClick={() => changeQuantity(item.id, item.availableStock)}
-                    >
-                      Adjust quantity to {item.availableStock}
-                    </button>
-                  ) : null}
-                  <strong className="cart-market-item__price">
-                    RM {item.price.toFixed(2)}
-                  </strong>
 
-                  <div className="cart-market-item__footer">
-                    <div className="quantity-stepper">
-                      <button
-                        type="button"
-                        disabled={busy || item.quantity <= 1}
-                        onClick={() => changeQuantity(item.id, item.quantity - 1)}
-                      >
-                        −
-                      </button>
-                      <span>{item.quantity}</span>
-                      <button
-                        type="button"
-                        disabled={
-                          busy ||
-                          !item.productActive ||
-                          !item.variantActive ||
-                          !!item.issue ||
-                          item.quantity >= item.availableStock ||
-                          item.quantity >= 99
-                        }
-                        onClick={() => changeQuantity(item.id, item.quantity + 1)}
-                      >
-                        +
+                  <div className="cart-market-item__info">
+                    <div className="cart-market-item__topline">
+                      <span className="cart-market-item__brand">TEXTSHOP SELECT</span>
+                      <button className="cart-remove-icon" type="button" disabled={busy} onClick={() => remove(item.id)} aria-label={`Remove ${item.productName}`}>
+                        ×
                       </button>
                     </div>
+                    <Link href={`/products/${item.slug}`}>
+                      <h3>{item.productName}</h3>
+                    </Link>
+                    <span className="cart-market-item__variant">{item.variantName} · {item.sku}</span>
 
-                    <button
-                      className="remove-link"
-                      type="button"
-                      disabled={busy}
-                      onClick={() => remove(item.id)}
-                    >
-                      Remove
-                    </button>
+                    {item.issue ? (
+                      <div className="cart-status-row cart-status-row--issue">{item.issue}</div>
+                    ) : (
+                      <div className="cart-status-row">
+                        <span className="cart-status-row__dot" />
+                        {item.availableStock <= 5 ? `Only ${item.availableStock} left` : `${item.availableStock} available`}
+                      </div>
+                    )}
+
+                    {item.quantity > item.availableStock && item.availableStock > 0 && item.productActive && item.variantActive ? (
+                      <button className="cart-adjust-link" type="button" disabled={busy} onClick={() => changeQuantity(item.id, item.availableStock)}>
+                        Adjust quantity to {item.availableStock}
+                      </button>
+                    ) : null}
+
+                    <div className="cart-market-item__actions">
+                      <div className="quantity-stepper" aria-label={`Quantity for ${item.productName}`}>
+                        <button type="button" disabled={busy || item.quantity <= 1} onClick={() => changeQuantity(item.id, item.quantity - 1)} aria-label="Decrease quantity">−</button>
+                        <span>{item.quantity}</span>
+                        <button type="button" disabled={busy || !item.productActive || !item.variantActive || !!item.issue || item.quantity >= item.availableStock || item.quantity >= 99} onClick={() => changeQuantity(item.id, item.quantity + 1)} aria-label="Increase quantity">+</button>
+                      </div>
+                      <button className="remove-link" type="button" disabled={busy} onClick={() => remove(item.id)}>Remove</button>
+                    </div>
                   </div>
-                </div>
 
-                <strong className="cart-market-item__total">
-                  RM {(item.price * item.quantity).toFixed(2)}
-                </strong>
-              </article>
-            );
-          })}
-        </div>
+                  <div className="cart-market-item__pricing">
+                    <span>RM {item.price.toFixed(2)} each</span>
+                    <strong>RM {lineTotal.toFixed(2)}</strong>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
 
         <aside className="checkout-summary">
-          <span className="section-kicker">ORDER SUMMARY</span>
-          <h2>Summary</h2>
+          <div className="checkout-summary__header">
+            <div>
+              <span className="section-kicker">ORDER SUMMARY</span>
+              <h2>Ready to checkout</h2>
+            </div>
+            <span className="checkout-summary__count">{cart.totalQuantity}</span>
+          </div>
 
           <div className="checkout-summary__rows">
-            <div>
-              <span>Subtotal</span>
-              <span>RM {cart.subtotal.toFixed(2)}</span>
-            </div>
-            <div>
-              <span>Delivery</span>
-              <span>{cart.subtotal >= 150 ? "Free" : "RM 10.00"}</span>
-            </div>
+            <div><span>Subtotal</span><strong>RM {cart.subtotal.toFixed(2)}</strong></div>
+            <div><span>Delivery</span><strong>{deliveryUnlocked ? "Free" : "RM 10.00"}</strong></div>
           </div>
 
           <div className="checkout-summary__total">
             <span>Estimated total</span>
-            <strong>
-              RM {(cart.subtotal + (cart.subtotal >= 150 ? 0 : 10)).toFixed(2)}
-            </strong>
+            <strong>RM {total.toFixed(2)}</strong>
           </div>
 
           {cart.canCheckout ? (
-            <Link className="button button--checkout" href="/checkout">
-              Proceed to checkout
-            </Link>
+            <Link className="button button--checkout" href="/checkout">Proceed to checkout</Link>
           ) : (
-            <button className="button button--checkout" type="button" disabled>
-              Resolve cart issues to checkout
-            </button>
+            <button className="button button--checkout" type="button" disabled>Resolve cart issues to checkout</button>
           )}
 
           {cart.issueCount > 0 ? (
-            <p className="cart-summary-warning">
-              {cart.issueCount} item{cart.issueCount === 1 ? "" : "s"} need
-              attention before checkout.
-            </p>
+            <p className="cart-summary-warning">{cart.issueCount} item{cart.issueCount === 1 ? "" : "s"} need attention before checkout.</p>
           ) : null}
 
-          <div className="checkout-trust">
-            <span>🔒 Secure checkout</span>
-            <span>↩ 14-day returns</span>
+          <div className="checkout-benefits">
+            <div><b>Secure checkout</b><span>Protected payment flow</span></div>
+            <div><b>14-day returns</b><span>Eligible products can be returned</span></div>
+            <div><b>Real-time stock</b><span>Inventory is checked before payment</span></div>
           </div>
 
           {error ? <p className="form-error">{error}</p> : null}

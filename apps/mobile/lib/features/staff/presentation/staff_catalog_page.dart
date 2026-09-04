@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../data/staff_repository.dart';
 import '../domain/staff_catalog.dart';
 import 'staff_providers.dart';
+import 'staff_ui_theme.dart';
 
 class StaffCatalogPage extends ConsumerStatefulWidget {
   const StaffCatalogPage({super.key});
@@ -186,7 +187,8 @@ class _StaffCatalogPageState extends ConsumerState<StaffCatalogPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return StaffUiTheme(
+        child: Scaffold(
       appBar: AppBar(
         title: const Text('Catalog & inventory'),
         actions: <Widget>[
@@ -294,7 +296,7 @@ class _StaffCatalogPageState extends ConsumerState<StaffCatalogPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _productCard(StaffCatalogProduct product) {
@@ -411,7 +413,7 @@ class _StaffCatalogPageState extends ConsumerState<StaffCatalogPage> {
             spacing: 8,
             runSpacing: 8,
             children: <Widget>[
-              FilledButton.tonal(
+              FilledButton(
                 onPressed: busy ? null : () => _adjust(product, variant),
                 child: const Text('Adjust stock'),
               ),

@@ -157,7 +157,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     Row(
                       children: <Widget>[
                         Expanded(
@@ -187,7 +187,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 7),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('In-stock products only'),
@@ -318,7 +318,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               sliver: SliverToBoxAdapter(
                 child: SearchBar(
                   controller: _searchController,
@@ -337,7 +337,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               sliver: SliverToBoxAdapter(
                 child: _CategoryStrip(
                   categories: categories,
@@ -353,7 +353,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 26, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
               sliver: SliverToBoxAdapter(
                 child: Row(
                   children: <Widget>[
@@ -443,11 +443,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                   sliver: SliverLayoutBuilder(
                     builder: (context, constraints) {
                       final width = constraints.crossAxisExtent;
-                      final count = width >= 1100
-                          ? 4
-                          : width >= 760
-                              ? 3
-                              : 2;
+                      final count = width >= 1200
+                          ? 6
+                          : width >= 900
+                              ? 5
+                              : 4;
 
                       return SliverGrid(
                         delegate: SliverChildBuilderDelegate(
@@ -475,9 +475,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: count,
-                          mainAxisSpacing: 22,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: width < 520 ? 0.67 : 0.75,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: width < 560 ? 0.72 : 0.82,
                         ),
                       );
                     },
@@ -507,8 +507,8 @@ class _HeroBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 220),
-      padding: const EdgeInsets.fromLTRB(24, 24, 18, 24),
+      constraints: const BoxConstraints(minHeight: 142),
+      padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
       decoration: BoxDecoration(
         color: AppTheme.brand,
         borderRadius: BorderRadius.circular(22),
@@ -519,8 +519,8 @@ class _HeroBanner extends StatelessWidget {
             right: -28,
             top: -42,
             child: Container(
-              width: 190,
-              height: 190,
+              width: 128,
+              height: 128,
               decoration: const BoxDecoration(
                 color: AppTheme.accent,
                 shape: BoxShape.circle,
@@ -534,7 +534,7 @@ class _HeroBanner extends StatelessWidget {
               angle: -0.12,
               child: const Icon(
                 Icons.shopping_bag_rounded,
-                size: 104,
+                size: 72,
                 color: AppTheme.brand,
               ),
             ),
@@ -553,7 +553,7 @@ class _HeroBanner extends StatelessWidget {
                     letterSpacing: 1.1,
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 7),
                 Text(
                   'Find your next\neveryday favorite.',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -562,12 +562,12 @@ class _HeroBanner extends StatelessWidget {
                         height: 1.02,
                       ),
                 ),
-                const SizedBox(height: 11),
+                const SizedBox(height: 8),
                 const Text(
                   'Clean picks, real inventory and secure checkout.',
                   style: TextStyle(color: Color(0xFFCFCFCA), height: 1.4),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 10),
                 FilledButton(
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.accent,

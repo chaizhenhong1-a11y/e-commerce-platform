@@ -35,12 +35,18 @@ class ProductCard extends StatelessWidget {
                 children: <Widget>[
                   _ProductImage(imageUrl: product.imageUrl),
                   Positioned(
-                    top: 10,
-                    right: 10,
+                    top: 5,
+                    right: 5,
                     child: Material(
                       color: theme.colorScheme.surface.withValues(alpha: 0.92),
                       shape: const CircleBorder(),
                       child: IconButton(
+                        constraints: const BoxConstraints.tightFor(
+                          width: 28,
+                          height: 28,
+                        ),
+                        padding: EdgeInsets.zero,
+                        iconSize: 16,
                         tooltip: isWishlisted
                             ? 'Remove from wishlist'
                             : 'Save to wishlist',
@@ -54,8 +60,8 @@ class ProductCard extends StatelessWidget {
                     ),
                   ),
                   Positioned(
-                    top: 10,
-                    left: 10,
+                    top: 5,
+                    left: 5,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         color:
@@ -64,8 +70,8 @@ class ProductCard extends StatelessWidget {
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
+                          horizontal: 5,
+                          vertical: 2,
                         ),
                         child: Text(
                           inStock ? 'IN STOCK' : 'SOLD OUT',
@@ -81,7 +87,7 @@ class ProductCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 13, 14, 15),
+              padding: const EdgeInsets.fromLTRB(6, 5, 6, 6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -95,31 +101,31 @@ class ProductCard extends StatelessWidget {
                       letterSpacing: 0.6,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 2),
                   Text(
                     product.name,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w800,
-                      height: 1.1,
+                      height: 1.0,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 2),
                   Row(
                     children: <Widget>[
                       Expanded(
                         child: Text(
                           '${product.hasMultipleVariants ? 'From ' : ''}'
                           'RM ${product.price.toStringAsFixed(2)}',
-                          style: theme.textTheme.titleMedium?.copyWith(
+                          style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
                       Icon(
                         Icons.arrow_forward_rounded,
-                        size: 18,
+                        size: 12,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ],
@@ -165,7 +171,7 @@ class _ImageFallback extends StatelessWidget {
       child: Center(
         child: Icon(
           Icons.inventory_2_outlined,
-          size: 44,
+          size: 22,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),

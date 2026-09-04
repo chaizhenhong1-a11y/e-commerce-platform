@@ -51,6 +51,7 @@ export function AccountDashboard() {
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [savingAddress, setSavingAddress] = useState(false);
   const [addressMessage, setAddressMessage] = useState("");
+  const [showAddressForm, setShowAddressForm] = useState(false);
 
   async function reloadAddresses() {
     setAddresses(await getCustomerAddresses());
@@ -137,6 +138,7 @@ export function AccountDashboard() {
   }
 
   function beginEdit(address: CustomerAddress) {
+    setShowAddressForm(true);
     setEditingAddressId(address.id);
     setAddressForm({
       label: address.label,
@@ -154,6 +156,7 @@ export function AccountDashboard() {
   }
 
   function resetAddressForm() {
+    setShowAddressForm(false);
     setEditingAddressId(null);
     setAddressForm({
       ...emptyAddress,
@@ -176,6 +179,7 @@ export function AccountDashboard() {
       }
       await reloadAddresses();
       setEditingAddressId(null);
+      setShowAddressForm(false);
       setAddressForm({ ...emptyAddress, recipientName: fullName });
       setAddressMessage(editingAddressId ? "Address updated." : "Address saved.");
     } catch (cause) {
@@ -210,17 +214,22 @@ export function AccountDashboard() {
 
   return (
     <section className="account-dashboard shell">
-      <div className="account-dashboard__header">
-        <div>
+      <div className="account-hero">
+        <div className="account-hero__identity">
           <span className="section-kicker">MY ACCOUNT</span>
           <h1>Hello, {customer.firstName}</h1>
           <p>{customer.email}</p>
+          <div className="account-hero__status">
+            <span>{customer.emailVerified ? "Verified email" : "Email verification pending"}</span>
+            <span>{addresses.length} saved address{addresses.length === 1 ? "" : "es"}</span>
+            <span>{orders.length} order{orders.length === 1 ? "" : "s"}</span>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div className="account-hero__actions">
           {customer.role === "STAFF" || customer.role === "ADMIN" ? (
-            <Link className="button button--primary" href="/staff/returns">Returns operations</Link>
+            <Link className="button account-hero__staff" href="/staff/returns">Staff operations</Link>
           ) : null}
-          <button className="button" type="button" onClick={signOut}>Sign out</button>
+          <button className="button account-hero__signout" type="button" onClick={signOut}>Sign out</button>
         </div>
       </div>
 
@@ -276,10 +285,20 @@ export function AccountDashboard() {
           </button>
         </form>
 
-        <section className="account-panel">
+        <section className="account-panel account-address-panel" id="address-book">
           <div className="account-panel__heading">
             <div><span className="section-kicker">ADDRESS BOOK</span><h2>Saved addresses</h2></div>
-            <span>{addresses.length}/10</span>
+            <div className="account-panel__heading-actions">
+              <span>{addresses.length}/10</span>
+              {!showAddressForm ? (
+                <button className="button button--primary button--small" type="button" onClick={() => {
+                  setEditingAddressId(null);
+                  setAddressForm({ ...emptyAddress, recipientName: fullName, isDefault: addresses.length === 0 });
+                  setAddressMessage("");
+                  setShowAddressForm(true);
+                }}>Add address</button>
+              ) : null}
+            </div>
           </div>
 
           {addresses.length === 0 ? (
@@ -311,6 +330,7 @@ export function AccountDashboard() {
             </div>
           )}
 
+          {showAddressForm ? (
           <form className="address-form" onSubmit={saveAddress}>
             <div className="account-panel__heading account-panel__heading--sub">
               <div><h3>{editingAddressId ? "Edit address" : "Add address"}</h3></div>
@@ -363,81 +383,10 @@ export function AccountDashboard() {
               {savingAddress ? "Saving…" : editingAddressId ? "Update address" : "Save address"}
             </button>
           </form>
+          ) : null}
         </section>
       </div>
 
-      <div className="account-panel account-orders">
-        <div className="account-panel__heading">
-          <div>
-            <span className="section-kicker">RECENT PURCHASES</span>
-            <h2>Recent orders</h2>
-          </div>
-          <Link className="button" href="/account/orders">
-            View all orders
-          </Link>
-        </div>
-
-        {orders.length === 0 ? (
-          <div className="account-empty">
-            <h3>No account orders yet</h3>
-            <p>
-              Orders placed while signed in will appear here. Guest orders
-              remain separate.
-            </p>
-            <Link className="button button--primary" href="/#shop">
-              Start shopping
-            </Link>
-          </div>
-        ) : (
-          <div className="account-order-list">
-            {orders.slice(0, 3).map((order) => (
-              <Link
-                className="account-order-row account-order-row--rich"
-                href={`/orders/${encodeURIComponent(order.orderNumber)}`}
-                key={order.orderNumber}
-              >
-                <div className="account-order-row__main">
-                  <div className="account-order-row__heading">
-                    <div>
-                      <strong>{order.orderNumber}</strong>
-                      <span>
-                        {new Date(order.createdAt).toLocaleDateString()} ·{" "}
-                        {order.itemCount} item
-                        {order.itemCount === 1 ? "" : "s"}
-                      </span>
-                    </div>
-                    <div className="account-order-row__total">
-                      <strong>RM {(order.totalCents / 100).toFixed(2)}</strong>
-                      <span>
-                        {order.status} · {order.paymentStatus}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="account-order-products">
-                    {order.items.slice(0, 2).map((item) => (
-                      <span key={item.id}>
-                        <strong>{item.productName}</strong>
-                        <small>
-                          {item.variantName} · SKU {item.sku} · Qty{" "}
-                          {item.quantity}
-                        </small>
-                      </span>
-                    ))}
-                    {order.items.length > 2 ? (
-                      <small>+{order.items.length - 2} more products</small>
-                    ) : null}
-                  </div>
-
-                  <span className="account-order-row__view">
-                    View order details →
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
+          </section>
   );
 }

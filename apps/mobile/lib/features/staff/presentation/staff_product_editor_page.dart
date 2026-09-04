@@ -1,11 +1,14 @@
 import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../products/presentation/product_providers.dart';
 import '../data/staff_repository.dart';
 import '../domain/staff_catalog.dart';
 import 'staff_providers.dart';
+import 'staff_ui_theme.dart';
 
 class StaffProductEditorPage extends ConsumerStatefulWidget {
   const StaffProductEditorPage({super.key, this.productId});
@@ -184,6 +187,12 @@ class _StaffProductEditorPageState
       _categoryId = product.categoryId;
       _isFeatured = product.isFeatured;
     });
+
+    // Keep customer-facing catalog/detail providers in sync when Staff edits
+    // product media in this Flutter session. Cross-tab/web edits are covered
+    // by the product-details lifecycle refresh.
+    ref.invalidate(productProvider(product.id));
+    ref.invalidate(productsProvider);
   }
 
   Future<void> _generateMatrix() async {
@@ -220,6 +229,86 @@ class _StaffProductEditorPageState
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = _message(error, 'Unable to generate variants.'));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _uploadImageFromDevice() async {
+    final productId = widget.productId;
+    final product = _product;
+    if (productId == null || product == null || _busy) return;
+
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const <String>['jpg', 'jpeg', 'png', 'webp'],
+      allowMultiple: false,
+      withData: true,
+    );
+    if (picked == null || picked.files.isEmpty || !mounted) return;
+
+    final file = picked.files.single;
+    final bytes = file.bytes;
+    if (bytes == null) {
+      setState(() {
+        _error = 'Unable to read the selected image from this device.';
+        _success = null;
+      });
+      return;
+    }
+    if (bytes.length > 5 * 1024 * 1024) {
+      setState(() {
+        _error = 'Image must be 5 MB or smaller.';
+        _success = null;
+      });
+      return;
+    }
+
+    final extension = (file.extension ?? '').toLowerCase();
+    final contentType = switch (extension) {
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      _ => null,
+    };
+    if (contentType == null) {
+      setState(() {
+        _error = 'Choose a JPG, PNG, or WebP image.';
+        _success = null;
+      });
+      return;
+    }
+
+    final draft = await showDialog<_UploadImageDraft>(
+      context: context,
+      builder: (context) => _UploadImageDialog(
+        fileName: file.name,
+        fileSize: bytes.length,
+        variants: product.variants,
+      ),
+    );
+    if (draft == null || !mounted) return;
+
+    setState(() {
+      _busy = true;
+      _error = null;
+      _success = null;
+    });
+    try {
+      await _repository.uploadProductImage(
+        productId: productId,
+        fileBytes: bytes,
+        fileName: file.name,
+        contentType: contentType,
+        altText: draft.altText,
+        variantId: draft.variantId,
+        isPrimary: draft.isPrimary,
+      );
+      await _reloadProduct();
+      if (mounted) setState(() => _success = 'Product image uploaded.');
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = _message(error, 'Unable to upload image.'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -458,7 +547,8 @@ class _StaffProductEditorPageState
     final product = _product;
     final categories = _options?.categories ?? const <StaffEditorCategory>[];
 
-    return Scaffold(
+    return StaffUiTheme(
+        child: Scaffold(
       appBar: AppBar(
         title: Text(_editing ? 'Edit product' : 'New product'),
         actions: <Widget>[
@@ -640,12 +730,12 @@ class _StaffProductEditorPageState
                               Wrap(
                                 spacing: 8,
                                 children: <Widget>[
-                                  FilledButton.tonalIcon(
+                                  FilledButton.icon(
                                     onPressed: _busy ? null : _generateMatrix,
                                     icon: const Icon(Icons.grid_view_rounded),
                                     label: const Text('Matrix'),
                                   ),
-                                  FilledButton.tonalIcon(
+                                  FilledButton.icon(
                                     onPressed:
                                         _busy ? null : () => _editVariant(),
                                     icon: const Icon(Icons.add_rounded),
@@ -684,19 +774,31 @@ class _StaffProductEditorPageState
                                       ?.copyWith(fontWeight: FontWeight.w800),
                                 ),
                               ),
-                              FilledButton.tonalIcon(
-                                onPressed: _busy ? null : _addImage,
-                                icon: const Icon(
-                                  Icons.add_photo_alternate_outlined,
-                                ),
-                                label: const Text('Add image'),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: <Widget>[
+                                  FilledButton.icon(
+                                    onPressed:
+                                        _busy ? null : _uploadImageFromDevice,
+                                    icon: const Icon(
+                                      Icons.upload_file_rounded,
+                                    ),
+                                    label: const Text('Upload image'),
+                                  ),
+                                  FilledButton.icon(
+                                    onPressed: _busy ? null : _addImage,
+                                    icon: const Icon(Icons.link_rounded),
+                                    label: const Text('Add by URL'),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Manage image URL, alt text, SKU assignment, '
-                            'display order and primary image.',
+                            'Upload JPG, PNG or WebP directly from this device. '
+                            'URL images remain available as an optional fallback.',
                           ),
                           const SizedBox(height: 12),
                           if (product == null || product.images.isEmpty)
@@ -710,7 +812,7 @@ class _StaffProductEditorPageState
                 ],
               ],
             ),
-    );
+    ));
   }
 
   Widget _imageCard(StaffProductImage image) {
@@ -777,6 +879,8 @@ class _StaffProductEditorPageState
                 child: const Text('Edit'),
               ),
               TextButton(
+                style:
+                    TextButton.styleFrom(foregroundColor: Colors.red.shade700),
                 onPressed: _busy ? null : () => _deleteImage(image),
                 child: const Text('Remove'),
               ),
@@ -836,6 +940,8 @@ class _StaffProductEditorPageState
                 child: const Text('Edit'),
               ),
               TextButton(
+                style:
+                    TextButton.styleFrom(foregroundColor: Colors.red.shade700),
                 onPressed: _busy ? null : () => _removeVariant(variant),
                 child: const Text('Remove'),
               ),
@@ -1070,6 +1176,130 @@ class _VariantMatrixDialogState extends State<_VariantMatrixDialog> {
 
   String? _required(String? value) =>
       value == null || value.trim().isEmpty ? 'Required.' : null;
+}
+
+class _UploadImageDraft {
+  const _UploadImageDraft({
+    required this.isPrimary,
+    this.altText,
+    this.variantId,
+  });
+
+  final String? altText;
+  final String? variantId;
+  final bool isPrimary;
+}
+
+class _UploadImageDialog extends StatefulWidget {
+  const _UploadImageDialog({
+    required this.fileName,
+    required this.fileSize,
+    required this.variants,
+  });
+
+  final String fileName;
+  final int fileSize;
+  final List<StaffCatalogVariant> variants;
+
+  @override
+  State<_UploadImageDialog> createState() => _UploadImageDialogState();
+}
+
+class _UploadImageDialogState extends State<_UploadImageDialog> {
+  final _alt = TextEditingController();
+  String? _variantId;
+  bool _isPrimary = false;
+
+  @override
+  void dispose() {
+    _alt.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Upload product image'),
+      content: SizedBox(
+        width: 500,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.image_outlined),
+                title: Text(
+                  widget.fileName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  '${(widget.fileSize / 1024 / 1024).toStringAsFixed(2)} MB',
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _alt,
+                maxLength: 220,
+                decoration: const InputDecoration(
+                  labelText: 'Alt text',
+                  hintText: 'Optional image description',
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String?>(
+                initialValue: _variantId,
+                decoration:
+                    const InputDecoration(labelText: 'Variant assignment'),
+                items: <DropdownMenuItem<String?>>[
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Shared product image'),
+                  ),
+                  ...widget.variants.map(
+                    (variant) => DropdownMenuItem<String?>(
+                      value: variant.id,
+                      child: Text('${variant.sku} · ${variant.name}'),
+                    ),
+                  ),
+                ],
+                onChanged: (value) => setState(() => _variantId = value),
+              ),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Set as primary image'),
+                subtitle: const Text(
+                  'The storefront will prefer this image as the product cover.',
+                ),
+                value: _isPrimary,
+                onChanged: (value) => setState(() => _isPrimary = value),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton.icon(
+          onPressed: () => Navigator.pop(
+            context,
+            _UploadImageDraft(
+              altText: _alt.text.trim().isEmpty ? null : _alt.text.trim(),
+              variantId: _variantId,
+              isPrimary: _isPrimary,
+            ),
+          ),
+          icon: const Icon(Icons.cloud_upload_outlined),
+          label: const Text('Upload'),
+        ),
+      ],
+    );
+  }
 }
 
 class _ImageDraft {

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/staff_repository.dart';
 import '../domain/staff_return_case.dart';
 import 'staff_providers.dart';
+import 'staff_ui_theme.dart';
 
 class StaffReturnsPage extends ConsumerStatefulWidget {
   const StaffReturnsPage({super.key});
@@ -202,7 +203,8 @@ class _StaffReturnsPageState extends ConsumerState<StaffReturnsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return StaffUiTheme(
+        child: Scaffold(
       appBar: AppBar(
         title: const Text('Returns operations'),
         actions: <Widget>[
@@ -263,7 +265,7 @@ class _StaffReturnsPageState extends ConsumerState<StaffReturnsPage> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _caseCard(StaffReturnCase entry) {
@@ -351,17 +353,21 @@ class _StaffReturnsPageState extends ConsumerState<StaffReturnsPage> {
               runSpacing: 8,
               children: <Widget>[
                 if (entry.status == 'REQUESTED') ...<Widget>[
-                  FilledButton.tonal(
+                  FilledButton(
                     onPressed: busy ? null : () => _review(entry, true),
                     child: const Text('Approve'),
                   ),
-                  FilledButton.tonal(
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.red.shade700,
+                      foregroundColor: Colors.white,
+                    ),
                     onPressed: busy ? null : () => _review(entry, false),
                     child: const Text('Reject'),
                   ),
                 ],
                 if (entry.status == 'APPROVED') ...<Widget>[
-                  FilledButton.tonal(
+                  FilledButton(
                     onPressed: busy
                         ? null
                         : () => _confirmAction(
@@ -375,7 +381,7 @@ class _StaffReturnsPageState extends ConsumerState<StaffReturnsPage> {
                             ),
                     child: const Text('Mark in transit'),
                   ),
-                  FilledButton.tonal(
+                  FilledButton(
                     onPressed: busy
                         ? null
                         : () => _confirmAction(
@@ -389,7 +395,7 @@ class _StaffReturnsPageState extends ConsumerState<StaffReturnsPage> {
                   ),
                 ],
                 if (entry.status == 'IN_TRANSIT')
-                  FilledButton.tonal(
+                  FilledButton(
                     onPressed: busy
                         ? null
                         : () => _confirmAction(
@@ -402,11 +408,11 @@ class _StaffReturnsPageState extends ConsumerState<StaffReturnsPage> {
                     child: const Text('Mark received'),
                   ),
                 if (entry.status == 'RECEIVED') ...<Widget>[
-                  FilledButton.tonal(
+                  FilledButton(
                     onPressed: busy ? null : () => _inspect(entry),
                     child: const Text('Save inspection'),
                   ),
-                  FilledButton.tonal(
+                  FilledButton(
                     onPressed: busy
                         ? null
                         : () => _confirmAction(

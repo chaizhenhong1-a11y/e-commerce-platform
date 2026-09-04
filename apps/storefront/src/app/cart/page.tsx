@@ -12,13 +12,14 @@ export default function CartPage() {
         <span>Cart</span>
       </nav>
 
-      <div className="cart-page-heading">
+      <header className="cart-page-heading">
         <div>
           <span className="section-kicker">YOUR BAG</span>
           <h1>Shopping cart</h1>
+          <p>Review your items before continuing to checkout.</p>
         </div>
-        <Link href="/#shop">Continue shopping →</Link>
-      </div>
+        <Link className="cart-page-heading__link" href="/#shop">Continue shopping <span>→</span></Link>
+      </header>
 
       <CartView />
     </div>

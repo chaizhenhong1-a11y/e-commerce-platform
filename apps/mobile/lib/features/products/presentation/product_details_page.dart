@@ -17,12 +17,37 @@ class ProductDetailsPage extends ConsumerStatefulWidget {
   ConsumerState<ProductDetailsPage> createState() => _ProductDetailsPageState();
 }
 
-class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
+class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage>
+    with WidgetsBindingObserver {
   String? _selectedVariantId;
   int _quantity = 1;
   int _selectedImageIndex = 0;
   bool _addingToCart = false;
   bool _updatingWishlist = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    _refreshProductMedia();
+  }
+
+  void _refreshProductMedia() {
+    ref.invalidate(productProvider(widget.productId));
+    ref.invalidate(productsProvider);
+    setState(() => _selectedImageIndex = 0);
+  }
 
   ProductVariant _selectedVariant(Product product) {
     final selectedId = _selectedVariantId;
