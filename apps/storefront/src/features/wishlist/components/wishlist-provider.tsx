@@ -15,6 +15,11 @@ import {
   removeWishlistProduct,
   saveWishlistProduct,
 } from "../data/wishlist-api";
+import {
+  markAccountSignedIn,
+  markAccountSignedOut,
+  readAccountAuthState,
+} from "@/features/account/lib/account-route-cache";
 
 type WishlistContextValue = {
   productIds: Set<string>;
@@ -42,8 +47,11 @@ function responseStatus(error: unknown) {
 
 export function WishlistProvider({ children }: { children: ReactNode }) {
   const [productIds, setProductIds] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+  const initialAuthState = readAccountAuthState();
+  const [loading, setLoading] = useState(initialAuthState === "unknown");
+  const [authenticated, setAuthenticated] = useState<boolean | null>(
+    initialAuthState === "signed-out" ? false : initialAuthState === "signed-in" ? true : null,
+  );
   const refreshFlightRef = useRef<Promise<void> | null>(null);
 
   const sync = useCallback((showLoading: boolean) => {
@@ -59,9 +67,11 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       try {
         const snapshot = await getWishlist();
         setProductIds(new Set(snapshot.productIds));
+        markAccountSignedIn();
         setAuthenticated(true);
       } catch (error) {
         if (responseStatus(error) === 401) {
+          markAccountSignedOut();
           setProductIds(new Set());
           setAuthenticated(false);
         } else {
@@ -87,6 +97,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(() => sync(true), [sync]);
 
   useEffect(() => {
+    if (readAccountAuthState() === "signed-out") return;
     void sync(true);
   }, [sync]);
 

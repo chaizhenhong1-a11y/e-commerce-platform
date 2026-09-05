@@ -10,26 +10,42 @@ import {
 } from "../data/cart-api";
 import { getCartSessionId } from "../data/cart-session";
 import type { Cart } from "../domain/cart";
+import {
+  accountRouteCacheKeys,
+  markAccountSignedIn,
+  markAccountSignedOut,
+  readAccountAuthState,
+  readAccountRouteCache,
+  writeAccountRouteCache,
+} from "@/features/account/lib/account-route-cache";
 
 export function CartView() {
-  const [cart, setCart] = useState<Cart | null>(null);
+  const cachedCart = readAccountRouteCache<Cart>(accountRouteCacheKeys.cart);
+  const [cart, setCart] = useState<Cart | null>(cachedCart ?? null);
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [signedOut, setSignedOut] = useState(false);
+  const initialAuthState = readAccountAuthState();
+  const [signedOut, setSignedOut] = useState(initialAuthState === "signed-out");
 
   useEffect(() => {
     let active = true;
+    if (readAccountAuthState() === "signed-out") return;
     void (async () => {
       const customer = await getCurrentCustomer().catch(() => null);
       if (!active) return;
       if (!customer) {
+        markAccountSignedOut();
         setSignedOut(true);
         return;
       }
+      markAccountSignedIn();
       const sessionId = getCartSessionId();
       try {
         const next = await getCart(sessionId);
-        if (active) setCart(next);
+        if (active) {
+          setCart(next);
+          writeAccountRouteCache<Cart>(accountRouteCacheKeys.cart, next);
+        }
       } catch (cause) {
         if (active) setError(cause instanceof Error ? cause.message : "Unable to load cart.");
       }
@@ -44,11 +60,15 @@ export function CartView() {
     setBusyItemId(itemId);
     setError("");
     try {
-      setCart(await updateCartItem(cart.sessionId, itemId, quantity));
+      const nextCart = await updateCartItem(cart.sessionId, itemId, quantity);
+      setCart(nextCart);
+      writeAccountRouteCache<Cart>(accountRouteCacheKeys.cart, nextCart);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to update cart.");
       try {
-        setCart(await getCart(cart.sessionId));
+        const nextCart = await getCart(cart.sessionId);
+        setCart(nextCart);
+        writeAccountRouteCache<Cart>(accountRouteCacheKeys.cart, nextCart);
       } catch {
         // Keep the last cart snapshot if the recovery refresh also fails.
       }
@@ -62,7 +82,9 @@ export function CartView() {
     setBusyItemId(itemId);
     setError("");
     try {
-      setCart(await removeCartItem(cart.sessionId, itemId));
+      const nextCart = await removeCartItem(cart.sessionId, itemId);
+      setCart(nextCart);
+      writeAccountRouteCache<Cart>(accountRouteCacheKeys.cart, nextCart);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to remove item.");
     } finally {
@@ -72,14 +94,15 @@ export function CartView() {
 
   if (signedOut) {
     return (
-      <section className="cart-state-card">
-        <div className="cart-state-card__icon">LOCK</div>
-        <span className="section-kicker">ACCOUNT REQUIRED</span>
-        <h2>Sign in to use your cart</h2>
-        <p>Your TextShop cart stays private and follows your account across devices.</p>
-        <Link className="button button--primary" href="/account/sign-in?returnTo=%2Fcart">
-          Sign in
-        </Link>
+      <section className="commerce-guest-card commerce-guest-card--cart">
+        <div className="commerce-guest-card__content">
+          <span className="commerce-guest-card__kicker">SHOPPING CART</span>
+          <h1>Sign in to use your cart.</h1>
+          <p>Your TextShop cart stays private and follows your account across devices.</p>
+          <Link className="button button--primary" href="/account/sign-in?returnTo=%2Fcart">
+            Sign in
+          </Link>
+        </div>
       </section>
     );
   }

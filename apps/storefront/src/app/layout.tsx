@@ -30,7 +30,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en">
       <body>
         <WishlistProvider>
         <div className="announcement-bar">
@@ -91,7 +91,7 @@ export default function RootLayout({
           </div>
         </header>
 
-        <main>{children}</main>
+        <main className="storefront-main">{children}</main>
 
         <footer className="site-footer">
           <div className="shell footer-top">

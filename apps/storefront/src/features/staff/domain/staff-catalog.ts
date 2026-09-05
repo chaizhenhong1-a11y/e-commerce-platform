@@ -19,11 +19,14 @@ export type StaffVariant = {
   optionValues?: Record<string, string> | null;
   inventory: StaffInventory;
 };
+export type StaffProductDetails = { material?: string; dimensions?: string; care?: string; highlights?: string[]; specifications?: Record<string, string> };
 export type StaffProduct = {
   id: string;
   name: string;
   slug: string;
   description?: string | null;
+  details?: StaffProductDetails | null;
+  colorSwatches?: Record<string, string> | null;
   status: "DRAFT" | "ACTIVE" | "ARCHIVED";
   isFeatured: boolean;
   category: { id: string; name: string } | null;

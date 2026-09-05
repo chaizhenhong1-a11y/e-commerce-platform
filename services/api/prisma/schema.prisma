@@ -27,6 +27,8 @@ model Product {
   name        String
   slug        String           @unique
   description String?
+  details     Json?
+  colorSwatches Json?
   status      ProductStatus    @default(DRAFT)
   isFeatured  Boolean          @default(false)
   category    Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -574,6 +576,7 @@ model PaymentAttempt {
 enum PaymentProvider {
   MANUAL_TEST
   STRIPE
+  BILLPLZ
   TOYYIBPAY
   SENANGPAY
 }

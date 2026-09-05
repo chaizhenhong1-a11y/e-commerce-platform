@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginCustomer } from "../data/account-api";
+import { markAccountSignedIn } from "../lib/account-route-cache";
 
 export function SignInForm({ returnTo }: { returnTo?: string }) {
   const router = useRouter();
@@ -24,6 +25,7 @@ export function SignInForm({ returnTo }: { returnTo?: string }) {
         email: email.trim(),
         password,
       });
+      markAccountSignedIn();
       const target = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
         ? returnTo
         : "/account";

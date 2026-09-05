@@ -8,7 +8,9 @@ import { PaymentsService } from './payments.service';
 import { ManualTestPaymentProvider } from './providers/manual-test.provider';
 import { PaymentProviderRegistry } from './providers/payment-provider.registry';
 import { StripePaymentProvider } from './providers/stripe.provider';
+import { BillplzPaymentProvider } from './providers/billplz.provider';
 import { StripeWebhookController } from './webhooks/stripe-webhook.controller';
+import { BillplzWebhookController } from './webhooks/billplz-webhook.controller';
 import { RefundsController } from './refunds/refunds.controller';
 import { RefundsService } from './refunds/refunds.service';
 import { ReturnsController } from './returns/returns.controller';
@@ -20,6 +22,7 @@ import { ReturnsService } from './returns/returns.service';
   controllers: [
     PaymentsController,
     StripeWebhookController,
+    BillplzWebhookController,
     RefundsController,
     ReturnsController,
     StaffReturnsController,
@@ -28,6 +31,7 @@ import { ReturnsService } from './returns/returns.service';
     PaymentsService,
     ManualTestPaymentProvider,
     StripePaymentProvider,
+    BillplzPaymentProvider,
     PaymentProviderRegistry,
     RefundsService,
     ReturnsService,

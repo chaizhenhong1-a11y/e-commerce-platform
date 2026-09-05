@@ -16,3 +16,8 @@
 .quick a:first-child:hover,.actions button:hover,.primaryLink:hover,.panelActions button:hover,.inlineForm button:hover,.modalActions button:hover{box-shadow:inset 0 -3px 0 #DBFF4B}
 .toolbar input:focus,.toolbar select:focus,.adjustmentForm input:focus,.adjustmentForm textarea:focus,.formGrid input:focus,.formGrid textarea:focus,.formGrid select:focus{outline:3px solid rgba(219,255,75,.45);border-color:#171717}
 .check input,.toggleLabel input,.scopeCheck input{accent-color:#171717}.badges span:first-child{background:#DBFF4B;color:#171717}.modalBackdrop{background:rgba(23,23,23,.52)}
+
+/* Phase 054.31.27.2 — Product Editor fixed textarea sizing */
+.formGrid textarea {
+  resize: none;
+}

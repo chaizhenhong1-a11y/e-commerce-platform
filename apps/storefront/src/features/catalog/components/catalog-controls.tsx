@@ -65,15 +65,17 @@ export function CatalogControls({
         </select>
       </label>
 
-      <button className="button button--primary" type="submit">
-        Apply filters
-      </button>
+      <div className="catalog-controls__actions">
+        <button className="button button--primary catalog-controls__submit" type="submit">
+          Apply filters
+        </button>
 
-      {filtering ? (
-        <a className="catalog-reset" href="/#shop">
-          Clear all
-        </a>
-      ) : null}
+        {filtering ? (
+          <a className="catalog-reset" href="/#shop">
+            Clear all
+          </a>
+        ) : null}
+      </div>
     </form>
   );
 }

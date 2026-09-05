@@ -54,6 +54,7 @@ export function ProductCard({
       </div>
 
       <div className="market-product-card__body">
+        <span className="market-product-card__category">{product.category}</span>
         <Link
           className="market-product-card__title"
           href={`/products/${product.slug}`}

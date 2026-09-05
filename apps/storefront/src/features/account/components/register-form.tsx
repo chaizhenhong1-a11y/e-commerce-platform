@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerCustomer } from "../data/account-api";
+import { markAccountSignedIn } from "../lib/account-route-cache";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export function RegisterForm() {
         email: form.email.trim(),
         password: form.password,
       });
+      markAccountSignedIn();
       router.replace("/account");
       router.refresh();
     } catch (cause) {

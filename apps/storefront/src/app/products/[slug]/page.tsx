@@ -78,7 +78,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <a href="#reviews">Customer reviews</a>
           </div>
 
-          <VariantPurchasePanel variants={product.variants} />
+          <VariantPurchasePanel variants={product.variants} colorSwatches={product.colorSwatches} />
 
           <div className="delivery-box">
             <div>
@@ -103,15 +103,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <section className="product-details-section" id="details">
         <div>
           <span className="section-kicker">DETAILS</span>
-          <h2>Designed for everyday use.</h2>
+          <h2>Product details</h2>
+          <p className="product-details-section__intro">Information maintained with this product in TextShop Admin.</p>
         </div>
         <div className="product-detail-copy">
-          <p>{product.description}</p>
-          <ul>
-            <li>Selected for practical everyday use</li>
-            <li>Backed by live inventory availability</li>
-            <li>Protected by TextShop&apos;s standard return policy</li>
-          </ul>
+          {product.description ? <p>{product.description}</p> : null}
+          {product.details.highlights.length ? <div className="product-detail-group"><h3>Highlights</h3><ul>{product.details.highlights.map((highlight)=><li key={highlight}>{highlight}</li>)}</ul></div> : null}
+          {product.details.material ? <div className="product-detail-group"><h3>Material</h3><p>{product.details.material}</p></div> : null}
+          {product.details.dimensions ? <div className="product-detail-group"><h3>Dimensions / fit</h3><p>{product.details.dimensions}</p></div> : null}
+          {product.details.care ? <div className="product-detail-group"><h3>Care</h3><p>{product.details.care}</p></div> : null}
+          {Object.keys(product.details.specifications).length || product.variants[0]?.sku ? <div className="product-detail-group"><h3>Specifications</h3><dl className="product-specifications">{Object.entries(product.details.specifications).map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}{product.variants.length ? <div><dt>{product.variants.length === 1 ? "SKU" : "SKUs"}</dt><dd>{product.variants.map((variant) => variant.sku).join(", ")}</dd></div> : null}</dl></div> : null}
         </div>
       </section>
 

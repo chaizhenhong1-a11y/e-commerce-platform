@@ -15,6 +15,14 @@ import {
   updateCustomerAddress,
   updateCustomerProfile,
 } from "../data/account-api";
+import {
+  accountRouteCacheKeys,
+  markAccountSignedIn,
+  markAccountSignedOut,
+  readAccountAuthState,
+  readAccountRouteCache,
+  writeAccountRouteCache,
+} from "../lib/account-route-cache";
 import type {
   Customer,
   CustomerAddress,
@@ -35,12 +43,29 @@ const emptyAddress: CustomerAddressInput = {
   isDefault: false,
 };
 
+type AccountDashboardSnapshot = {
+  customer: Customer;
+  orders: CustomerOrder[];
+  addresses: CustomerAddress[];
+};
+
 export function AccountDashboard() {
   const router = useRouter();
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [orders, setOrders] = useState<CustomerOrder[]>([]);
-  const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialSnapshot = readAccountRouteCache<AccountDashboardSnapshot>(
+    accountRouteCacheKeys.dashboard,
+  );
+  const [customer, setCustomer] = useState<Customer | null>(
+    initialSnapshot?.customer ?? null,
+  );
+  const [orders, setOrders] = useState<CustomerOrder[]>(
+    initialSnapshot?.orders ?? [],
+  );
+  const [addresses, setAddresses] = useState<CustomerAddress[]>(
+    initialSnapshot?.addresses ?? [],
+  );
+  const initialAuthState = readAccountAuthState();
+  const [signedOut, setSignedOut] = useState(initialAuthState === "signed-out");
+  const [loading, setLoading] = useState(!initialSnapshot && initialAuthState !== "signed-out");
   const [error, setError] = useState("");
   const [verificationMessage, setVerificationMessage] = useState("");
   const [resending, setResending] = useState(false);
@@ -53,18 +78,42 @@ export function AccountDashboard() {
   const [addressMessage, setAddressMessage] = useState("");
   const [showAddressForm, setShowAddressForm] = useState(false);
 
+  function cacheSnapshot(
+    nextCustomer: Customer,
+    nextOrders: CustomerOrder[],
+    nextAddresses: CustomerAddress[],
+  ) {
+    writeAccountRouteCache<AccountDashboardSnapshot>(
+      accountRouteCacheKeys.dashboard,
+      {
+        customer: nextCustomer,
+        orders: nextOrders,
+        addresses: nextAddresses,
+      },
+    );
+    writeAccountRouteCache<CustomerOrder[]>(
+      accountRouteCacheKeys.orders,
+      nextOrders,
+    );
+  }
+
   async function reloadAddresses() {
-    setAddresses(await getCustomerAddresses());
+    const nextAddresses = await getCustomerAddresses();
+    setAddresses(nextAddresses);
+    if (customer) cacheSnapshot(customer, orders, nextAddresses);
   }
 
   useEffect(() => {
+    if (readAccountAuthState() === "signed-out") return;
     async function load() {
       try {
         const current = await getCurrentCustomer();
         if (!current) {
-          router.replace("/account/sign-in");
+          markAccountSignedOut();
+          setSignedOut(true);
           return;
         }
+        markAccountSignedIn();
         setCustomer(current);
         setProfile({
           firstName: current.firstName,
@@ -76,6 +125,7 @@ export function AccountDashboard() {
         ]);
         setOrders(nextOrders);
         setAddresses(nextAddresses);
+        cacheSnapshot(current, nextOrders, nextAddresses);
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Unable to load account.");
       } finally {
@@ -128,6 +178,7 @@ export function AccountDashboard() {
         lastName: profile.lastName.trim() || undefined,
       });
       setCustomer(updated);
+      cacheSnapshot(updated, orders, addresses);
       setProfileMessage("Profile updated.");
       router.refresh();
     } catch (cause) {
@@ -209,6 +260,23 @@ export function AccountDashboard() {
     }
   }
 
+  if (signedOut) return (
+    <section className="account-dashboard account-dashboard--guest shell">
+      <div className="account-guest-card">
+        <div className="account-guest-card__content">
+          <span className="account-guest-card__kicker">YOUR ACCOUNT</span>
+          <h1>Sign in to manage your account.</h1>
+          <p>Access purchases, saved addresses and profile details from your TextShop account.</p>
+          <Link
+            className="button button--primary"
+            href="/account/sign-in?returnTo=%2Faccount"
+          >
+            Sign in
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
   if (loading) return <div className="cart-loading-card">Loading account…</div>;
   if (!customer) return null;
 

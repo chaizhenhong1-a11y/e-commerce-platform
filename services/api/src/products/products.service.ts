@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { MediaStorageService, type UploadedImageFile } from '../media/media-storage.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -279,6 +280,8 @@ export class ProductsService {
     name: string;
     slug: string;
     description?: string;
+    details?: Record<string, unknown>;
+    colorSwatches?: Record<string, string>;
     categoryId?: string | null;
     status?: import('@prisma/client').ProductStatus;
     isFeatured?: boolean;
@@ -302,6 +305,8 @@ export class ProductsService {
     name: string;
     slug: string;
     description?: string;
+    details?: Record<string, unknown>;
+    colorSwatches?: Record<string, string>;
     categoryId?: string | null;
     status?: import('@prisma/client').ProductStatus;
     isFeatured?: boolean;
@@ -596,6 +601,8 @@ export class ProductsService {
     name: string;
     slug: string;
     description?: string;
+    details?: Record<string, unknown>;
+    colorSwatches?: Record<string, string>;
     categoryId?: string | null;
     status?: import('@prisma/client').ProductStatus;
     isFeatured?: boolean;
@@ -612,10 +619,55 @@ export class ProductsService {
       name,
       slug,
       description: data.description?.trim() || null,
+      details: this.normalizeProductDetails(data.details),
+      colorSwatches: this.normalizeColorSwatches(data.colorSwatches),
       categoryId: data.categoryId || null,
       status: data.status ?? 'DRAFT',
       isFeatured: data.isFeatured ?? false,
     };
+  }
+
+  private normalizeProductDetails(input?: Record<string, unknown>) {
+    if (!input) return Prisma.DbNull;
+    const cleanText = (value: unknown, max: number) => {
+      if (typeof value !== 'string') return null;
+      const text = value.trim();
+      if (!text) return null;
+      if (text.length > max) throw new BadRequestException(`Product detail text cannot exceed ${max} characters.`);
+      return text;
+    };
+    const material = cleanText(input.material, 1000);
+    const dimensions = cleanText(input.dimensions, 1000);
+    const care = cleanText(input.care, 1500);
+    const highlights = Array.isArray(input.highlights)
+      ? input.highlights.map((value) => cleanText(value, 300)).filter((value): value is string => Boolean(value)).slice(0, 12)
+      : [];
+    const specifications: Record<string, string> = {};
+    if (input.specifications && typeof input.specifications === 'object' && !Array.isArray(input.specifications)) {
+      for (const [rawLabel, rawValue] of Object.entries(input.specifications)) {
+        const label = cleanText(rawLabel, 80);
+        const value = cleanText(rawValue, 500);
+        if (label && value) specifications[label] = value;
+        if (Object.keys(specifications).length >= 30) break;
+      }
+    }
+    const result = { ...(material ? { material } : {}), ...(dimensions ? { dimensions } : {}), ...(care ? { care } : {}), ...(highlights.length ? { highlights } : {}), ...(Object.keys(specifications).length ? { specifications } : {}) };
+    return Object.keys(result).length ? result : Prisma.DbNull;
+  }
+
+  private normalizeColorSwatches(input?: Record<string, string>) {
+    if (!input) return Prisma.DbNull;
+    const result: Record<string, string> = {};
+    for (const [rawName, rawHex] of Object.entries(input)) {
+      const name = rawName.trim();
+      const hex = typeof rawHex === 'string' ? rawHex.trim().toUpperCase() : '';
+      if (!name || !hex) continue;
+      if (name.length > 60) throw new BadRequestException('Color names cannot exceed 60 characters.');
+      if (!/^#[0-9A-F]{6}$/.test(hex)) throw new BadRequestException(`Color swatch for ${name} must use a 6-digit hex value such as #1D1D1B.`);
+      result[name] = hex;
+      if (Object.keys(result).length > 40) throw new BadRequestException('A product can define at most 40 color swatches.');
+    }
+    return Object.keys(result).length ? result : Prisma.DbNull;
   }
 
   private validateVariantInput(data: {

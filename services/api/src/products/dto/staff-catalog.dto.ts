@@ -21,6 +21,8 @@ export class SaveStaffProductDto {
   @IsString() @MaxLength(140) name!: string;
   @IsString() @MaxLength(160) @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) slug!: string;
   @IsOptional() @IsString() @MaxLength(5000) description?: string;
+  @IsOptional() @IsObject() details?: Record<string, unknown>;
+  @IsOptional() @IsObject() colorSwatches?: Record<string, string>;
   @IsOptional() @IsString() categoryId?: string | null;
   @IsOptional() @IsEnum(ProductStatus) status?: ProductStatus;
   @IsOptional() @IsBoolean() isFeatured?: boolean;

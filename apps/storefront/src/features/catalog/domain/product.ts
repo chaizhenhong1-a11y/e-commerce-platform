@@ -18,12 +18,22 @@ export type ProductVariant = {
   optionValues: Record<string, string>;
 };
 
+export type ProductDetails = {
+  material?: string;
+  dimensions?: string;
+  care?: string;
+  highlights: string[];
+  specifications: Record<string, string>;
+};
+
 export type Product = {
   id: string;
   variantId: string;
   slug: string;
   name: string;
   description: string;
+  details: ProductDetails;
+  colorSwatches: Record<string, string>;
   price: number;
   currency: "MYR";
   category: string;

@@ -5,6 +5,6 @@ export class CreatePaymentDto {
   @IsNotEmpty()
   orderNumber!: string;
 
-  @IsIn(['MANUAL_TEST', 'STRIPE'])
-  provider!: 'MANUAL_TEST' | 'STRIPE';
+  @IsIn(['MANUAL_TEST', 'STRIPE', 'BILLPLZ'])
+  provider!: 'MANUAL_TEST' | 'STRIPE' | 'BILLPLZ';
 }

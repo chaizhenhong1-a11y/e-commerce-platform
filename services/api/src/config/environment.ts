@@ -3,7 +3,7 @@ import { dirname, parse, resolve } from 'node:path';
 
 const SECRET_MIN_LENGTH = 32;
 const VALID_NODE_ENVS = new Set(['development', 'test', 'production']);
-const VALID_PAYMENT_PROVIDERS = new Set(['MANUAL_TEST', 'STRIPE']);
+const VALID_PAYMENT_PROVIDERS = new Set(['MANUAL_TEST', 'STRIPE', 'BILLPLZ']);
 const VALID_EMAIL_DELIVERY_MODES = new Set(['CONSOLE', 'SMTP']);
 const VALID_PUSH_DELIVERY_MODES = new Set(['CONSOLE', 'FCM']);
 
@@ -122,7 +122,7 @@ export function validateEnvironment(config: Record<string, unknown>) {
     readString(config, 'PAYMENT_PROVIDER') || 'MANUAL_TEST';
   if (!VALID_PAYMENT_PROVIDERS.has(paymentProvider)) {
     throw new Error(
-      '[config] PAYMENT_PROVIDER must currently be MANUAL_TEST or STRIPE.',
+      '[config] PAYMENT_PROVIDER must currently be MANUAL_TEST, STRIPE, or BILLPLZ.',
     );
   }
 
@@ -130,6 +130,19 @@ export function validateEnvironment(config: Record<string, unknown>) {
   const stripeWebhookSecret = readString(
     config,
     'STRIPE_WEBHOOK_SECRET',
+  );
+
+  const billplzMode =
+    (readString(config, 'BILLPLZ_MODE') || 'SANDBOX').toUpperCase();
+  if (!['SANDBOX', 'LIVE'].includes(billplzMode)) {
+    throw new Error('[config] BILLPLZ_MODE must be SANDBOX or LIVE.');
+  }
+  const billplzSecretKey = readString(config, 'BILLPLZ_SECRET_KEY');
+  const billplzCollectionId = readString(config, 'BILLPLZ_COLLECTION_ID');
+  const billplzXSignatureKey = readString(config, 'BILLPLZ_X_SIGNATURE_KEY');
+  const billplzCallbackBaseUrl = readString(
+    config,
+    'BILLPLZ_CALLBACK_BASE_URL',
   );
 
   const emailDeliveryMode =
@@ -208,6 +221,15 @@ export function validateEnvironment(config: Record<string, unknown>) {
       );
     }
 
+    if (paymentProvider === 'BILLPLZ') {
+      if (billplzMode !== 'LIVE') {
+        throw new Error('[config] BILLPLZ_MODE must be LIVE in production.');
+      }
+      if (!billplzSecretKey || !billplzCollectionId || !billplzXSignatureKey || !billplzCallbackBaseUrl) {
+        throw new Error('[config] BILLPLZ_SECRET_KEY, BILLPLZ_COLLECTION_ID, BILLPLZ_X_SIGNATURE_KEY, and BILLPLZ_CALLBACK_BASE_URL are required for production Billplz payments.');
+      }
+    }
+
     if (paymentProvider === 'STRIPE') {
       if (!stripeSecretKey) {
         throw new Error(
@@ -236,6 +258,11 @@ export function validateEnvironment(config: Record<string, unknown>) {
     PAYMENT_PROVIDER: paymentProvider,
     STRIPE_SECRET_KEY: stripeSecretKey,
     STRIPE_WEBHOOK_SECRET: stripeWebhookSecret,
+    BILLPLZ_MODE: billplzMode,
+    BILLPLZ_SECRET_KEY: billplzSecretKey,
+    BILLPLZ_COLLECTION_ID: billplzCollectionId,
+    BILLPLZ_X_SIGNATURE_KEY: billplzXSignatureKey,
+    BILLPLZ_CALLBACK_BASE_URL: billplzCallbackBaseUrl,
     EMAIL_DELIVERY_MODE: emailDeliveryMode,
     EMAIL_FROM: emailFrom,
     SMTP_HOST: smtpHost,

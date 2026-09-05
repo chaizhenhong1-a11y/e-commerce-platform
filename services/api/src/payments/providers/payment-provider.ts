@@ -7,6 +7,7 @@ export type PaymentSessionRequest = {
   amountCents: number;
   currency: string;
   customerEmail: string;
+  customerName: string;
 };
 
 export type PaymentSessionResult = {

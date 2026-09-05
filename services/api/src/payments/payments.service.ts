@@ -145,6 +145,7 @@ export class PaymentsService {
         amountCents: order.totalCents,
         currency: order.currency,
         customerEmail: order.email,
+        customerName: order.shippingName,
       });
 
       const updated = await this.prisma.payment.update({
@@ -242,6 +243,31 @@ export class PaymentsService {
       payment.id,
       payment.providerRef,
     );
+  }
+
+
+  async confirmBillplzCallback(
+    providerRef: string,
+    amountCents: number,
+    paid: boolean,
+  ) {
+    const payment = await this.prisma.payment.findUnique({
+      where: { providerRef },
+    });
+
+    if (!payment || payment.provider !== PaymentProvider.BILLPLZ) {
+      throw new NotFoundException('Billplz payment not found.');
+    }
+
+    if (payment.amountCents !== amountCents) {
+      throw new BadRequestException('Billplz callback amount does not match the payment.');
+    }
+
+    if (!paid) {
+      return this.toResponse(payment);
+    }
+
+    return this.confirmProviderPayment(payment.id, providerRef);
   }
 
   async confirmProviderPayment(

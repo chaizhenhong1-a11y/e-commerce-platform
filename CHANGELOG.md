@@ -1,3 +1,454 @@
+## 0.51.60.2.2 - Phase 054.31.32.2.2: Legacy Account orders import compatibility fix
+
+- Added a compatibility re-export for the legacy `features/account/components/orders-center.tsx` relative `./cancel-order-button` import that is still included in Storefront TypeScript type checking.
+- Reused the canonical `features/orders/components/cancel-order-button.tsx` implementation instead of duplicating cancellation logic or changing Purchases behavior.
+- No FPX/payment behavior, Checkout, Account state, Catalog UI, Wishlist, Updates, Cart, API, Prisma, database, Admin, `apps/mobile`, or Flutter code changed.
+
+## 0.51.60.2.1 - Phase 054.31.32.2.1: Storefront production build compatibility fix
+
+- Restored the existing `CancelOrderButton` component required by the Purchases page so the current `orders-center.tsx` import resolves during Next.js production type checking.
+- Updated the three legacy storefront mock catalog fixtures to satisfy the current Product Details domain contract by supplying empty `details` and `colorSwatches` values; no live catalog product data or Catalog presentation changed.
+- This is a build-compatibility correction discovered while validating the FPX Storefront increment; no payment behavior, Checkout behavior, Account state, Wishlist, Updates, Cart, API, Prisma, database, Admin, `apps/mobile`, or Flutter code changed.
+
+## 0.51.60.2 - Phase 054.31.32.2: Storefront FPX payment selection
+
+- Added `BILLPLZ` to the Storefront payment-provider type so the existing payment recovery flow can request the new backend adapter without bypassing server ownership of payment state.
+- Added an `FPX Online Banking` payment option to the Web payment screen, gated by `NEXT_PUBLIC_BILLPLZ_ENABLED=true`, and kept Stripe and development payment options intact.
+- The FPX action uses the existing authenticated `/api/payments` route and redirects only to the provider-issued checkout URL returned by the NestJS API.
+- No order is marked paid by the Storefront; final payment confirmation still requires the verified Billplz callback/provider state handled by the API.
+- No Checkout form behavior, Catalog, Account, Wishlist, Updates, Purchases, Cart, Admin, `apps/mobile`, or Flutter code changed.
+
+## 0.51.60.1 - Phase 054.31.32.1: Billplz provider build fix
+
+- Restored the missing Billplz environment-variable reads used by production validation and normalized `BILLPLZ_MODE` to `SANDBOX` or `LIVE`.
+- Kept the Billplz registry dependency injectable in NestJS while allowing existing two-provider registry unit tests to construct the registry without a third test double.
+- No payment behavior, storefront UI, Admin, `apps/mobile`, or Flutter code changed.
+
+## 0.51.60 - Phase 054.31.32: Billplz FPX provider foundation
+
+- Added Billplz as a replaceable payment provider alongside the existing MANUAL_TEST and Stripe adapters without removing the existing payment architecture.
+- Added Billplz Sandbox/Live endpoint selection, MYR-only bill creation, session resume, cancellation, and future-safe provider configuration.
+- Added a Billplz callback endpoint with HMAC-SHA256 X Signature verification, constant-time signature comparison, provider-reference lookup, and exact amount validation before an order can be confirmed paid.
+- Reused the existing transactional payment confirmation path so inventory is only committed after an authenticated paid callback or verified provider status.
+- Added the BILLPLZ Prisma payment-provider enum value and migration plus environment validation for Billplz credentials and public HTTPS callback URL.
+- Billplz refunds remain intentionally disabled until a verified refund flow is implemented; existing Stripe and development refund behavior is unchanged.
+- No storefront visual design, Catalog, Account, Wishlist, Updates, Purchases, Cart, Admin, `apps/mobile`, or Flutter code changed.
+
+## 0.51.59.3 - Phase 054.31.31.3: Wishlist rendered typography alignment
+
+- Corrected the Wishlist guest typography against the actual rendered `h2` markup instead of the unused `h1` selector.
+- Matched the Wishlist guest heading size, line-height, letter spacing, paragraph size, and left text alignment to the unified Account, Updates, Purchases, and Cart guest pages.
+- Preserved Wishlist card dimensions, wording, actions, decorative circles, authentication flow, and signed-in behavior.
+- No other storefront page, API, Admin, `apps/mobile`, or Flutter code changed.
+
+## 0.51.59.2 - Phase 054.31.31.2: Wishlist guest typography unification
+
+- Matched the signed-out Wishlist guest typography to the same scale used by the unified Account, Updates, Purchases, and Cart guest cards.
+- Unified the kicker pill sizing, main heading scale and line-height, supporting copy size, and action spacing.
+- Preserved Wishlist wording, card dimensions, decorative circles, sign-in destination, and signed-in Wishlist behavior.
+- No Account, Updates, Purchases, Cart, Catalog, API, Prisma, database, Admin, `apps/mobile`, or Flutter behavior changed.
+
+## 0.51.59.1 - Phase 054.31.31.1: Wishlist guest width constraint fix
+
+- Fixed the remaining legacy `max-width: 760px` constraint that kept the signed-out Wishlist card visibly narrower than the other unified guest cards.
+- Wishlist guest state now uses the same `900px` desktop maximum width as Account, Updates, Purchases, and Cart.
+- No height, typography, decorative elements, signed-in Wishlist behavior, API, Admin, `apps/mobile`, or Flutter code changed.
+
+## 0.51.59 - Phase 054.31.31: Wishlist guest-state scale unification
+
+- Brought the signed-out Wishlist state card onto the same desktop width scale as the unified Account, Updates, Purchases, and Cart guest states.
+- Set the Wishlist guest card to a maximum width of `900px` while preserving its established `400px` desktop height, typography, actions, and decorative treatment.
+- Preserved the existing responsive mobile proportions.
+- Signed-in Wishlist/product content and wishlist behavior are unchanged.
+- No Account, Updates, Purchases, Cart, Catalog, API, Prisma, database, Admin, `apps/mobile`, or Flutter behavior changed.
+
+## 0.51.58.7 - Phase 054.31.30.7: Exact Cart guest alignment
+
+- Corrected the signed-out Cart guest card position using the Cart page's existing padding instead of adding another full guest-page offset.
+- Desktop alignment is now `28px` Cart page padding + `24px` guest-card margin = `52px`, matching the unified guest-page top spacing.
+- Mobile alignment is now `18px` Cart page padding + `6px` guest-card margin = `24px`, matching the unified mobile guest-page spacing.
+- The Cart breadcrumb remains removed for signed-in and signed-out states.
+- No card dimensions, internal content, signed-in Cart behavior, API, Admin, `apps/mobile`, or Flutter code changed.
+
+## 0.51.58.4 - Phase 054.31.30.4: Remove Cart breadcrumb
+
+- Removed the redundant `Home / Cart` breadcrumb from Cart for both signed-in and signed-out states.
+- Cart remains directly accessible from the global storefront header, so the top-level route no longer carries duplicate navigation.
+- Preserved all Cart authentication, loading, item, quantity, removal, inventory, checkout, and routing behavior.
+- No Account, Wishlist, Updates, Purchases, Catalog, API, Prisma, database, Admin, `apps/mobile`, or Flutter behavior changed.
+
+## 0.51.58.3 - Phase 054.31.30.3: Cart guest breadcrumb cleanup
+
+- Hid the `Home / Cart` breadcrumb only while the signed-out unified Cart guest card is rendered.
+- Signed-in Cart continues to show its existing breadcrumb and normal shopping layout.
+- Preserved cart authentication, loading, mutation, checkout, routing, and all other storefront behavior.
+- No Updates, Purchases, Account, Wishlist, Catalog, API, Prisma, database, Admin, `apps/mobile`, or Flutter behavior changed.
+
+## 0.51.58.2 - Phase 054.31.30.2: Purchases real route component correction
+
+- Corrected the Website Purchases guest-state implementation in the component actually imported by `/account/orders`: `features/orders/components/orders-center.tsx`.
+- Replaced the old black `My orders` signed-out hero with the unified Account/Wishlist-style light guest card.
+- Preserved the existing `/account/sign-in?returnTo=%2Faccount%2Forders` destination and all signed-in Purchases loading, refresh, search, filters, order actions, payment recovery, cancellation, and details navigation.
+- No Updates, Cart, Account, Wishlist, Catalog, API, Prisma, database, Admin, `apps/mobile`, or Flutter behavior changed.
+
+## 0.51.58 - Phase 054.31.30: Unified Updates, Purchases and Cart guest states
+
+- Unified the signed-out Website Updates, Purchases and Cart routes with the same compact single-card guest template now used by Account/Wishlist.
+- Standardized the 900px maximum card width, 400px minimum height, 48px padding, black/lime section pill, neutral light-gray outline circle, fluorescent-lime lower-right geometry, and black primary sign-in action.
+- Cart hides its normal black shopping-cart hero only while the signed-out guest card is rendered, preventing a duplicated two-section presentation.
+- Preserved all existing sign-in return destinations, authentication checks, notification refresh/read behavior, order loading/filtering/actions, cart loading/mutation/checkout behavior, and signed-in route presentations.
+- No API, Prisma, database, Admin, Catalog, Product Details, Wishlist behavior, signed-in Account behavior, `apps/mobile`, or Flutter code changed.
+
+## 0.51.57.3 - Phase 054.31.29.3: Account guest card compact width parity
+
+- Corrected the remaining horizontal oversizing of the signed-out Account guest card.
+- Removed full-shell stretching and constrained the guest card to the same compact centered presentation intended by the Wishlist guest template.
+- Preserved the accepted 400px card height, 48px padding, decorative geometry, Account copy, and sign-in flow.
+- Signed-in Account, Wishlist, Updates, Cart, Purchases, Catalog, API, Prisma, database, Admin, `apps/mobile`, and Flutter are unchanged.
+
+## 0.51.57.2 - Phase 054.31.29.2: Account guest card Wishlist proportion parity
+
+- Matched the signed-out Account card to the accepted Wishlist guest-state proportions instead of using a larger Account-specific composition.
+- Standardized the desktop guest card to 400px minimum height, 48px padding, 28px radius, 240px fluorescent-lime corner geometry, and an 82px neutral outline circle.
+- Preserved Account-specific copy and sign-in flow; signed-in Account behavior remains unchanged.
+- Wishlist, Updates, Cart, Purchases, Catalog, API, Prisma, database, Admin, `apps/mobile`, and Flutter are unchanged.
+
+## 0.51.57.1 - Phase 054.31.29.1: Account guest state aligned with Wishlist template
+
+- Replaced the two-section signed-out Account presentation with the approved single-card guest template used by Wishlist.
+- Added the black `YOUR ACCOUNT` pill, large sign-in heading, supporting account copy, black sign-in action, neutral light-gray outline circle, and fluorescent-lime lower-right geometry.
+- Preserved the existing `/account/sign-in?returnTo=%2Faccount` flow and all signed-in Account behavior.
+- Wishlist, Cart, Updates, Catalog, API, Prisma, database, Admin, `apps/mobile`, and Flutter are unchanged.
+
+## 0.51.57 - Phase 054.31.29: Signed-out Account visual refinement
+
+- Rebuilt only the Web Account signed-out state from the project owner's current `account-dashboard.tsx` instead of an older snapshot.
+- Replaced the plain signed-out card with the approved TextShop guest-state composition: black Account hero, fluorescent-lime hero geometry, light account-required panel, neutral light-gray outline circle, and lime lower-right decoration.
+- Added clear `Sign in` and `Create account` entry points while preserving the existing `/account` return path.
+- Signed-in Account dashboard markup and behavior are unchanged.
+- No authentication/session logic, account API, Prisma, database, Admin, Cart, Updates, Catalog, `apps/mobile`, or Flutter code changed.
+
+## 0.51.56.2 - Phase 054.31.28.2: Cart hero ring parity with Updates
+
+- Matched the Shopping Cart hero outlined circle to the existing Updates hero treatment: `2px solid #DBFF4B` with `.72` opacity.
+- Preserved the black Cart hero, its lower-right lime decoration, and the light-gray outlined circle in the empty-cart panel.
+- No Cart behavior, checkout flow, API, Prisma, database, Admin, `apps/mobile`, or Flutter code changed.
+
+## 0.51.56.1 - Phase 054.31.28.1: Cart decorative circle parity
+
+- Kept the outlined circle on the black Shopping Cart hero in the TextShop fluorescent-lime accent.
+- Changed only the outlined circle inside the light empty-cart panel to the same neutral light-gray treatment used by other light empty-state decorations.
+- Preserved the filled lime corner decoration and all Cart content, navigation, state, pricing, and checkout behavior.
+- Web storefront CSS only. No Cart logic, API, Prisma, database, Admin, `apps/mobile`, or Flutter code changed.
+
+## 0.51.56 - Phase 054.31.28: Catalog / Product Listing professional refinement
+
+- Rebalanced the Web storefront catalog into a compact commerce browsing surface: filters now use a restrained toolbar instead of an oversized full-width action row.
+- Refined Product Cards with consistent card boundaries, calmer spacing, controlled media proportions, category context, stronger title/price/stock hierarchy, and unified Wishlist / quick-view controls.
+- Limited catalog descriptions to two visual lines with defensive wrapping for long unbroken admin-authored text; Product Details continues to preserve and show the complete description.
+- Improved four-column desktop density and responsive three-/two-column layouts without changing product discovery, filter values, sorting, Wishlist, product navigation, inventory, or catalog API behavior.
+- Web storefront presentation only. No catalog API, Prisma, database, Admin product data, `apps/mobile`, or Flutter code changed.
+
+## 0.51.55.2 - Phase 054.31.27.2: Product Editor fixed textarea sizing
+
+- Disabled manual textarea resizing in the Web Staff Product Editor so Description, Material, Dimensions / fit, Care, Highlights, Specifications, and Color swatch fields keep the intended Admin layout.
+- Long content remains accessible through the textarea's normal internal scrolling; input values, validation, limits, and save behavior are unchanged.
+- No Product Details behavior, catalog API, Prisma schema, database, Flutter, or mobile code changed.
+
+## 0.51.55.1 - Phase 054.31.27.1: Product Editor textarea vertical resize guard
+
+- Restricted Product Editor multiline fields to vertical resizing so administrators can increase or reduce field height without stretching the Staff product form horizontally.
+- Applied the behavior only to Product Editor form-grid textareas; existing field values, validation, limits, save behavior, product data, APIs, Prisma, storefront Product Details, Flutter, and mobile behavior are unchanged.
+
+## 0.51.55 - Phase 054.31.27: Product Details commerce enhancement
+
+- Replaced generic hard-coded Product Details filler copy with structured, product-specific merchandising data maintained from TextShop Staff Admin: material, dimensions/fit, care, highlights, and specifications. Empty fields stay hidden rather than inventing product facts.
+- Added PostgreSQL/Prisma JSON fields for structured product details and explicit color-swatch mappings, including a migration and API validation/normalization. Color swatches are staff-entered 6-digit hex values matched to real Color/Colour option values; the storefront never guesses colors from names.
+- Extended Staff Product Editor to maintain the new detail/specification fields and real color swatches while preserving the existing product, variant matrix, inventory, media, and publishing workflows.
+- Added a keyboard-accessible Product Gallery lightbox with click-to-enlarge, previous/next navigation, Escape-to-close, backdrop close, and variant-aware image continuity.
+- Upgraded Color/Colour variant choices to visual swatches only when matching real swatch data exists; Size and every other option remain the existing text-based controls.
+- Simplified purchase-area stock messaging to customer-facing `In stock`, `Only X left`, and `Out of stock`; SKU is no longer exposed beside stock and is surfaced in Product Details / Specifications instead.
+- Refined Customer Reviews presentation with a clearer rating summary, verified-purchase emphasis, review composer, responsive review cards, and stronger focus states without changing review eligibility, create/update/delete APIs, or paid-purchase verification.
+- Kept the existing Free delivery, 14-day returns, Secure checkout, Real-time stock, and Local support reminders unchanged as intentional purchase reassurance.
+- Web/API/Admin/database increment only. No `apps/mobile` or Flutter files are included or modified.
+
+## 0.51.54 - Phase 054.31.26: Product detail long-text overflow guard
+
+- Fixed Product Details text overflow when an admin-authored description contains very long unbroken words, URLs, punctuation, or continuous characters.
+- Added shrink-safe layout constraints to the product information and details containers so long copy can no longer widen the storefront page or create a horizontal scrollbar.
+- Added defensive wrapping to the primary product description and the lower Product details copy/list while preserving the full description instead of truncating it.
+- No product data, Admin editing behavior, catalog API, variant selection, cart, wishlist, reviews, database, Prisma, Flutter, or mobile code changed.
+
+## 0.51.53.2 - Phase 054.31.25.2: Inline unread count with Account activity
+
+- Moved the Updates unread-count pill beside the `Account activity` kicker for a cleaner and more compact hero hierarchy.
+- Kept the `Updates` title on its own full-width row beneath the two compact status pills.
+- Preserved the existing unread-count styling and the stacking fix that keeps both pills above decorative hero geometry.
+- Added a compact mobile adjustment so the two pills remain aligned without changing notification markup or behavior.
+- No notification logic, unread synchronization, mark-read actions, API, database, Prisma, Flutter, or mobile app code changed.
+
+## 0.51.53.1.1 - Phase 054.31.25.1.1: Restore unread pill proportions
+
+- Corrected the 25.1 unread-count fix after its extra sizing/background rules made the `<p>` badge look visually awkward.
+- Kept the safe foreground stacking layer so the unread count remains above the decorative hero circles.
+- Restored the original compact translucent pill dimensions, spacing, border, typography, and background treatment.
+- No notification data, unread synchronization, mark-read behavior, routing, API, database, Prisma, Flutter, or mobile changes were made.
+
+## 0.51.53.1 - Phase 054.31.25.1: Notification unread badge visibility fix
+
+- Fixed the Updates hero unread-count pill so `0 unread` and other unread counts always render completely above the decorative hero circles.
+- Explicitly kept both hero pseudo-element decorations on the background layer and disabled pointer interaction on them.
+- Gave the unread-count pill its own foreground stacking layer, opaque dark surface, and non-wrapping content so its text cannot be visually obscured or clipped.
+- No notification data, unread synchronization, mark-read actions, routes, API, database, Prisma, Flutter, or mobile behavior changed.
+
+## 0.51.53 - Phase 054.31.25: Updates / Notifications visual refinement
+
+- Refined the Web Updates center to match the approved TextShop Account, Cart, Checkout, Purchases, and Wishlist visual language.
+- Reworked the Updates heading into a black editorial hero with fluorescent-lime geometry, unread-count treatment, and a clearer Mark all read action.
+- Improved notification-card hierarchy with distinct unread emphasis, notification metadata pills, clearer title/message spacing, and refined View / Mark read actions.
+- Polished empty, signed-out, loading, and responsive states while preserving the existing component markup and behavior.
+- Preserved unread-count publishing, mark-one-read, mark-all-read, account-route-cache continuity, authentication handling, action routes, and notification API behavior.
+- Presentation-only Web storefront change. No notification logic, API, database, Prisma, Flutter, or mobile changes are included.
+
+## 0.51.52 - Phase 054.31.24: Wishlist visual refinement
+
+- Refined the Web Wishlist to match the approved TextShop Account, Cart, Checkout, and Purchases visual language.
+- Reworked the saved-items heading into a black editorial hero with fluorescent-lime brand geometry and a clearer saved-item count.
+- Polished wishlist product cards, media surfaces, badges, hover treatment, and save/remove controls without changing ProductCard behavior.
+- Reworked loading, signed-out, and empty Wishlist states into a consistent TextShop light-card presentation with black/lime accents and clearer calls to action.
+- Preserved the existing account-backed Wishlist synchronization, shared backend source of truth, authentication flow, refresh behavior, product mutations, routes, and API boundaries.
+- Presentation-only Web storefront change. No Wishlist logic, NestJS, database, Prisma, Flutter, or mobile changes are included.
+
+## 0.51.51 - Phase 054.31.23: Purchases / Orders visual refinement
+
+- Refined the Web Purchases center to match the approved TextShop Account, Cart, and Checkout visual language.
+- Reworked the Purchases header into a black editorial hero with fluorescent-lime branding while preserving Refresh and signed-out Sign in behavior.
+- Improved search and status filters and refined order cards, product rows, status/payment pills, delivery/item/total summaries, actions, and responsive states.
+- Inspected the supplied order-detail route and left it unchanged because it is only a server wrapper around `OrderStatusView`; detail-view styling is reserved until the exact `order-status-view.tsx` source is supplied.
+- Presentation-only Web storefront change. Order loading, route cache, search/filter logic, refresh, cancellation, payment continuation, order status routing, API, database, Prisma, Flutter, and mobile are unchanged.
+
+## 0.51.50 - Phase 054.31.22: Checkout visual refinement
+
+- Refined the Web Checkout presentation to match the approved TextShop Account/Cart visual language.
+- Reworked the Checkout hero as a stronger black editorial surface with fluorescent-lime brand accents and a compact protected-checkout pill.
+- Polished Contact, Saved addresses, Shipping address, and Delivery method sections with clearer numbered steps, stronger spacing, focus states, and selected-address treatment.
+- Refined the Order review panel with a black header, cleaner item hierarchy, lime quantity badges, a clearer coupon surface, stronger totals, and a more prominent Place order action.
+- Improved signed-out, blocked, success, and responsive checkout presentation while preserving the existing content and behavior.
+- Presentation-only Web storefront change. Checkout submission, coupon validation, stock refresh, inventory reservation, payment routing, API behavior, database behavior, Prisma, Flutter, and mobile are unchanged.
+
+## 0.51.49.3.2 - Phase 054.31.21.3.2: Empty-cart decorative circle lime fill
+
+- Corrected the decorative circle inside the cream empty-cart state card.
+- Changed the upper-left `cart-state-card::after` circle from a faint outline to a fully filled TextShop fluorescent lime `#DBFF4B`.
+- Left the Cart hero circles and all existing Cart layout/behavior unchanged.
+- Presentation-only Web storefront correction; no cart logic, checkout behavior, API, database, Flutter, or mobile changes.
+
+## 0.51.49.3.1 - Phase 054.31.21.3.1: Cart hero circle stacking correction
+
+- Corrected the Cart hero decorative-circle stacking order so the large lower-right circle is painted inside the black hero instead of falling behind the hero background.
+- Both decorative circles are explicitly filled with TextShop fluorescent lime `#DBFF4B`.
+- Raised the real Cart hero content above the decorative layer without changing spacing, dimensions, copy, or interaction.
+- Presentation-only Web storefront correction; no cart logic, checkout behavior, API, database, Flutter, or mobile changes.
+
+## 0.51.49.3 - Phase 054.31.21.3: Cart hero decorative circle parity
+
+- Unified both Cart hero decorative circles as fully filled TextShop fluorescent lime `#DBFF4B`.
+- Kept all existing Cart hero geometry, spacing, typography, and the Phase 054.31.21.2 removal of the duplicate `Continue shopping` action unchanged.
+- Presentation-only Web storefront refinement; no cart logic, checkout behavior, API, database, Flutter, or mobile changes.
+
+## 0.51.49.2 - Phase 054.31.21.2: Cart hero action cleanup + filled lime circle
+
+- Removed the redundant `Continue shopping` action from the Cart hero.
+- Changed the Cart hero decorative circle to a fully filled TextShop fluorescent lime `#DBFF4B`, not just a lime outline.
+- Preserved the black Cart hero, typography, layout, cart behavior, checkout behavior, API behavior, and all existing shopping entry points outside the hero.
+- Web storefront only; no Flutter/mobile files changed.
+
+## 0.51.49.1 - Phase 054.31.21.1: Cart hero brand parity
+
+- Corrected the Web Cart hero from the temporary light treatment to the established TextShop black hero used by the Account experience.
+- Unified the Cart hero with white heading text, muted supporting copy, fluorescent-lime kicker and geometry, and a restrained white outline accent.
+- Restyled the Continue shopping action for the dark hero, with the existing fluorescent-lime hover treatment.
+- Presentation-only storefront correction. No cart, checkout, authentication, API, database, Prisma, inventory, payment, routing, or business logic changed.
+- No `apps/mobile` or Flutter files are included or modified.
+
+## 0.51.49 - Phase 054.31.21: Cart visual refinement
+
+- Refined the existing Web Cart presentation without changing cart loading, quantity, removal, stock, checkout-readiness, or pricing behavior.
+- Upgraded the Cart heading and delivery-benefit surface with restrained TextShop black/lime editorial geometry while keeping all existing copy and data-driven delivery progress.
+- Improved cart item hierarchy, product media treatment, availability pills, quantity controls, line pricing, and card spacing for a calmer premium shopping-bag layout.
+- Reworked the existing Order Summary presentation with a stronger black header, clearer estimated-total hierarchy, fluorescent-lime checkout interaction, and more structured assurance details.
+- Refined signed-out, loading, error, and empty-cart states using the same TextShop visual language introduced on the Account dashboard.
+- Presentation-only storefront change. No cart API, authentication/session logic, route-continuity cache, checkout logic, database, Prisma, inventory, payment, or authorization behavior changed.
+- No `apps/mobile` or Flutter files are included or modified.
+
+## 0.51.48 - Phase 054.31.20: Account dashboard visual refinement
+
+- Refined the signed-in Web Account dashboard into a stronger TextShop account-management surface without reintroducing duplicate Purchases, Wishlist, Updates, or Recent orders navigation.
+- Upgraded the existing black Account hero with a restrained fluorescent-lime geometric treatment, stronger identity hierarchy, clearer account-status pills, and a more intentional sign-out action.
+- Rebalanced email verification, Personal details, Saved addresses, input, empty-state, address-card, default-address, and address-form presentation while preserving all existing account workflows.
+- Improved responsive behavior so the Account hero and management panels remain usable on narrow storefront viewports.
+- Presentation-only storefront change. No account API, authentication/session logic, route-continuity cache, database, Prisma, order, payment, inventory, or authorization behavior changed.
+- No `apps/mobile` or Flutter files are included or modified.
+
+## 0.51.47 - Phase 054.31.19: Signed-out route continuity
+
+- Extended the storefront route-continuity state to remember a confirmed signed-out browser session instead of replaying protected-page loading states on every client-side navigation.
+- Account, Cart, Purchases, Updates, and the global Wishlist provider now share the same in-memory authentication hint for presentation continuity while server/API authorization remains authoritative.
+- Confirmed signed-out routes render their existing sign-in state immediately; unknown sessions still perform the normal authentication request before deciding what to show.
+- Successful sign-in/registration and authenticated route responses restore the signed-in hint; logout and 401/unauthenticated responses clear protected route snapshots and restore the signed-out hint.
+- Preserved Phase 054.31.17.5 authenticated route-data caching and Phase 054.31.17.5.1 silent Orders refresh behavior.
+- Storefront-only change. No Flutter/mobile, API contract, database, Prisma, payment, inventory, or authorization-rule changes.
+
+## 0.51.46.4.2.3 - Phase 054.31.18.4.2.3: Auth black panel edge alignment
+
+- Fixed the desktop authentication brand rail being horizontally centered inside its grid column, which left a visible white strip before the black panel and prevented the black surface from reaching the rounded left edge.
+- Explicitly restored horizontal grid-item stretching on the authentication shell so the black brand panel now occupies the full left column and inherits the shell's top-left and bottom-left rounded clipping correctly.
+- Preserved the existing 28px outer radius, original Phase 054.31.18.4.1 dimensions, straight black/white center divider, and white right-side rounded corners.
+- No authentication logic, API behavior, routes, sessions, responsive mobile-Web flow, or `apps/mobile` / Flutter files are modified.
+
+## 0.51.46.4.2.2 - Phase 054.31.18.4.2.2: Auth split-surface corner restore
+
+- Removed the unintended desktop full-width Auth override from Phase 054.31.18.4.2 and restored the established Phase 054.31.18.4.1 dimensions without enlarging the authentication surface.
+- Restored the original shared 28px outer clipping so the black brand rail keeps the top-left and bottom-left rounded corners while the white form side keeps the top-right and bottom-right rounded corners.
+- Kept the black/white center divider straight with no rounding at the internal split.
+- Preserved the Web authentication component structure, form behavior, APIs, cookies, sessions, and responsive rules.
+- No `apps/mobile` files or Flutter UI are included or modified.
+
+## 0.51.46.4.2.1 - Phase 054.31.18.4.2.1: Black brand rail corner correction
+
+- Reverted the unintended full-width Auth expansion and restored the established Phase 054.31.18.4.1 desktop dimensions and spacing.
+- Removed rounding from the white/form side and from the overall Auth surface.
+- Kept rounding only on the black brand rail, specifically its top-left and bottom-left corners.
+- Preserved the current Web authentication component structure, account flows, APIs, cookies, sessions, and responsive behavior.
+- No `apps/mobile` files or Flutter login UI are changed.
+
+## 0.51.46.4.2 - Phase 054.31.18.4.2: Web auth full-bleed fill correction
+
+- Changed the Website authentication surface from a centered inset card to a full-bleed section directly beneath the storefront navigation, removing the unwanted white gutters around the black brand panel.
+- Let the desktop auth composition fill the available viewport height so the TextShop brand rail and form column read as one intentional full-width account experience instead of a floating card.
+- Removed desktop side borders, rounded outer corners, and shell shadow while preserving the internal black/white split, brand artwork, form styling, and responsive behavior.
+- Kept narrow-screen Website auth full-width and single-column. No `apps/mobile` files are included or modified; the Flutter login UI remains untouched.
+- Authentication APIs, cookies, sessions, validation, `returnTo` routing, backend behavior, and database schema remain unchanged.
+
+## 0.51.46.4.1 - Phase 054.31.18.4.1: Web auth visual parity overflow correction
+
+- Replaced the Website auth brand rail's generated pseudo-element copy with a real reusable `AccountAuthBrandPanel` component so headline, supporting copy, security label, and circle motif can be sized independently and remain inside the panel.
+- Matched the established Flutter sign-in identity more faithfully on Website: black brand canvas, fluorescent-lime TEXTSHOP pill, three-line account statement, restrained supporting text, secure-access lock treatment, and contained bottom-right circle motif.
+- Removed the oversized generated text that could run below the authentication container and clipped the decorative shapes safely inside the brand panel.
+- Applied the same reusable Website brand panel to Sign in, Register, Forgot password, Reset password, and Verify email while keeping narrow-screen Website auth single-column.
+- No `apps/mobile` files are included or modified. Authentication APIs, cookies, sessions, validation, returnTo routing, backend behavior, database schema, and the Flutter login UI remain unchanged.
+
+## 0.51.46.4 - Phase 054.31.18.4: Web / mobile-auth visual parity
+
+- Aligned the Website authentication brand panel with the established Flutter sign-in visual language without changing the Flutter application itself.
+- Reworked the desktop Website auth rail around the same black canvas, fluorescent-lime TEXTSHOP pill, large three-line account statement, restrained supporting copy, bottom-right lime circle motif, and secure-access treatment seen in the mobile sign-in experience.
+- Kept the Website authentication form in its own white desktop column so sign-in, registration, password recovery, reset, and verification remain practical on larger screens.
+- Kept narrow-screen Website authentication single-column and preserved all existing mobile-Web responsiveness.
+- No `apps/mobile` files are included or modified. Authentication APIs, cookies, sessions, validation, returnTo routing, backend behavior, and Flutter login UI remain unchanged.
+
+## 0.51.46.3 - Phase 054.31.18.3: Auth editorial identity refinement
+
+- Reworked the desktop Website authentication composition into a more intentional editorial TextShop account surface instead of a plain split black/white panel.
+- Added a compact fluorescent-lime TextShop monogram, subtle dark-panel lighting, stronger brand copy, and a better-balanced 38/62 desktop split without adding images or decorative assets.
+- Refined the form side with more deliberate heading scale, control proportions, button treatment, and spacing while preserving the existing authentication components and semantics.
+- Kept narrow-screen Web authentication single-column and unchanged.
+- Preserved all authentication APIs, cookies, sessions, validation, returnTo routing, backend behavior, and Flutter/mobile-app files.
+
+## 0.51.46.2.2 - Phase 054.31.18.2.2: Auth brand rail paint correction
+
+- Fixed the remaining blank desktop authentication rail by painting the dark TextShop panel directly on the authentication container instead of relying on an empty pseudo-element to establish its height.
+- Removed the pseudo-element rail from desktop rendering while preserving the existing compact brand copy overlay and right-side authentication form layout.
+- Kept narrow-screen Web authentication single-column and unchanged.
+- Preserved all authentication APIs, cookies, sessions, validation, routing, backend behavior, and Flutter/mobile-app files.
+
+## 0.51.46.2.1 - Phase 054.31.18.2.1: Auth brand rail rendering fix
+
+- Fixed the Website authentication brand rail remaining visually blank because Phase 054.31.18.2 did not reset inherited pseudo-element positioning from the previous authentication layout.
+- Restored the intended compact dark TextShop brand panel on desktop while keeping the form in the right content column.
+- Preserved the narrow-screen single-column Web authentication layout and all authentication APIs, cookies, sessions, validation, routing, and backend behavior.
+- No Flutter / mobile-app files are changed.
+
+## 0.51.46.2 - Phase 054.31.18.2: Web Authentication visual refinement
+
+- Rebalanced the Website authentication layout so the brand panel occupies a compact supporting column instead of half the page.
+- Removed the oversized security checklist and large empty dark area in favor of a concise TextShop identity panel with restrained account context.
+- Let the authentication container follow form content with a lower minimum height, while preserving comfortable desktop spacing for sign-in, registration, password recovery, reset, and verification flows.
+- Simplified mobile Web authentication to a single clean form card and hides the decorative brand rail entirely on narrow screens.
+- Preserved all authentication APIs, cookies, sessions, returnTo routing, validation, password behavior, account ownership, and backend logic.
+- No Flutter / mobile-app files are changed.
+
+## 0.51.46.1 - Phase 054.31.18.1: Web Authentication layout correction
+
+- Reworked the authentication surface from an oversized dark hero with a floating form into a balanced split-panel account layout.
+- Added a restrained dark TextShop trust panel on desktop while keeping the actual authentication form on a clean white content surface.
+- Removed the overlapping/floating-card treatment that made the sign-in page feel visually disconnected from the storefront.
+- Added a compact single-column mobile composition with a short brand panel above the form.
+- Preserved all existing authentication components, routes, validation, API calls, session behavior, cookies, and account business logic.
+
+## 0.51.46 - Phase 054.31.18: Web Authentication professional polish
+
+- Refined the Website Sign in, Register, Forgot password, Reset password, and Verify email surfaces into one consistent TextShop authentication experience.
+- Added a restrained black account backdrop, fluorescent-lime security accent, stronger typography hierarchy, cleaner card proportions, and more deliberate spacing while preserving the established off-white storefront canvas.
+- Improved authentication form fields with clearer labels, hover/focus treatment, password guidance, error presentation, assistance links, CTA hierarchy, and compact mobile behavior.
+- Refined recovery, reset-complete, invalid-link, and email-verification result cards so authentication outcomes use the same visual system as the primary forms.
+- Preserved all existing authentication requests, returnTo routing, session/cookie behavior, password validation, verification behavior, APIs, backend services, and database schema. This increment is presentation-only.
+
+## 0.51.45.5.1 - Phase 054.31.17.5.1: Purchases silent refresh stabilization
+
+- Changed the Website Purchases manual refresh to preserve the current rendered order snapshot when the server response is unchanged instead of replacing the complete orders state with an equivalent object tree.
+- Kept the Refresh button label width stable while a refresh is in progress and exposed the busy state through `aria-busy`, preventing the `Refresh` / `Refreshing…` text swap from causing a visible layout nudge.
+- Continued writing the authoritative server response into the Phase 054.31.17.5 account route cache so genuine order changes still appear immediately and remain available across route revisits.
+- Preserved manual refresh, cancellation refresh, authentication checks, filters, search, order actions, APIs, backend behavior, database schema, and existing TextShop visual design.
+
+## 0.51.45.5 - Phase 054.31.17.5: Storefront route data continuity
+
+- Added a small in-memory account route cache so Account, Purchases, Cart, and Updates can reuse their last successful client snapshot when customers revisit those routes.
+- Changed route revisits from destructive full loading states to immediate cached rendering followed by silent server revalidation, removing the visible blank/loading flash caused by remounting account-owned client components.
+- Kept first-load behavior server-backed: routes without a successful snapshot still show their existing loading states while authoritative APIs respond.
+- Synchronized cache snapshots after account profile/address changes, order refreshes, cart mutations, and notification refreshes so revisits do not render stale pre-mutation data.
+- Cleared all account-owned route snapshots on the existing `textshop:auth-signed-out` event and whenever session validation returns signed out, preventing one customer snapshot from surviving logout.
+- Preserved existing APIs, authentication/session cookies, routing destinations, wishlist behavior, checkout/payment/order logic, backend services, database schema, and TextShop visual design.
+
+## 0.51.45.4 - Phase 054.31.17.4: Global storefront navigation stability
+
+- Stabilized the global storefront content surface during client-side route changes instead of applying page-specific transition patches.
+- Added a persistent `storefront-main` viewport floor so short, loading, and newly-mounted pages do not visibly collapse the document and pull the footer upward during navigation.
+- Reserved browser scrollbar space globally to prevent horizontal layout jumps when moving between pages with different document heights.
+- Kept the route surface on the established TextShop canvas color so navigation does not expose a white body/background mismatch between page renders.
+- Preserved the persistent header, Wishlist provider, all routes, APIs, authentication, notifications, wishlist, cart, order, payment, and commerce behavior.
+- No artificial fade animation or route delay was added; reduced-motion users retain non-smooth scrolling behavior.
+
+## 0.51.45.3 - Phase 054.31.17.3: Header auth reset & compact responsive actions
+
+- Updated the Website Updates header badge to listen to the existing `textshop:auth-signed-out` account event and clear the unread count immediately when the customer signs out.
+- Preserved the existing notification live-sync channel, 30-second server polling, and browser-focus refresh behavior.
+- Fixed the narrow-header regression introduced by Phase 054.31.17 where higher-specificity alignment rules prevented header action text from hiding below the existing 1100px compact breakpoint.
+- Updates, Wishlist, Account, Purchases, and Cart now collapse to icon-only actions on smaller browser widths while retaining badges, links, accessibility labels, and click behavior.
+- No authentication API, notification API, session, database, order, payment, routing, or backend behavior changed.
+
+## 0.51.45.2 - Phase 054.31.17.2: Notification unread live synchronization
+
+- Added a small storefront notification unread-count synchronization channel shared by the Updates center and the global header.
+- The Header Updates badge now updates immediately after single-notification read actions and Mark all read, instead of waiting for the existing 30-second polling cycle.
+- Opening the Updates center now publishes the authoritative unread count returned by the notification feed so the page and header converge immediately.
+- Viewing an unread notification publishes the corresponding local unread-count decrement after the mark-read API succeeds, while the destination navigation remains unchanged.
+- Preserved the existing 30-second foreground polling and browser-focus refresh as server-backed fallbacks for newly-created notifications and cross-tab activity.
+- No notification API, database, authentication, order, payment, delivery, return, routing, or backend behavior changed.
+
+## 0.51.45.1 - Phase 054.31.17.1: Header badge/icon correction
+
+- Restored the Updates header icon after the Phase 054.31.17 alignment pass incorrectly zeroed the notification bell font size.
+- Unified Updates and Wishlist count badges to the same TextShop fluorescent-lime (`#DBFF4B`) badge treatment with black text/border.
+- Preserved all existing notification counts, wishlist counts, navigation, responsive layout, and business logic.
+
+## 0.51.45 - Phase 054.31.17: Web header action alignment
+
+- Normalized the desktop storefront header actions so Updates, Wishlist, Account, Orders, and Cart share the same icon box, text baseline, spacing, and action height.
+- Standardized header icon sizing and the two-line label typography to remove the visible vertical mismatch between dynamic and static header actions.
+- Aligned Wishlist and Updates count badges to the same compact top-right badge geometry while preserving their existing black and fluorescent-lime semantic treatments.
+- Preserved all existing navigation destinations, wishlist counts, notification unread counts, account state, orders, cart behavior, search, category navigation, and responsive header behavior.
+- No API, backend, authentication, catalog, cart, checkout, order, notification, or wishlist business logic changed.
+
 ## 0.51.44 - Phase 054.31.16: Web Wishlist + Updates professional polish
 
 - Refined Wishlist with a TextShop black/lime page header, cleaner saved-product presentation, and more polished signed-out, loading, and empty states.

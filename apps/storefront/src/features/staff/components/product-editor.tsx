@@ -11,6 +11,12 @@ type ProductForm = {
   name: string;
   slug: string;
   description: string;
+  material: string;
+  dimensions: string;
+  care: string;
+  highlights: string;
+  specifications: string;
+  colorSwatches: string;
   categoryId: string;
   status: "DRAFT" | "ACTIVE" | "ARCHIVED";
   isFeatured: boolean;
@@ -38,7 +44,7 @@ type MatrixDraft = {
   initialQuantity: string;
 };
 
-const blankProduct: ProductForm = { name: "", slug: "", description: "", categoryId: "", status: "DRAFT", isFeatured: false };
+const blankProduct: ProductForm = { name: "", slug: "", description: "", material: "", dimensions: "", care: "", highlights: "", specifications: "", colorSwatches: "", categoryId: "", status: "DRAFT", isFeatured: false };
 const blankVariant: VariantDraft = { sku: "", name: "", price: "", compareAt: "", currency: "MYR", isActive: true, initialQuantity: "0", options: "" };
 const blankMatrix: MatrixDraft = { optionOneName: "Color", optionOneValues: "", optionTwoName: "Size", optionTwoValues: "", skuPrefix: "", price: "", compareAt: "", initialQuantity: "0" };
 
@@ -54,6 +60,13 @@ function parseOptionValues(input: string) {
 }
 function formatOptionValues(values?: Record<string, string> | null) {
   return values ? Object.entries(values).map(([name, value]) => `${name}=${value}`).join(", ") : "";
+}
+
+function parseKeyValueLines(input: string) {
+  return Object.fromEntries(input.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => { const [name, ...rest] = line.split("="); return [name?.trim() ?? "", rest.join("=").trim()]; }).filter(([name, value]) => name && value));
+}
+function formatKeyValueLines(values?: Record<string, string> | null) {
+  return values ? Object.entries(values).map(([name, value]) => `${name}=${value}`).join("\n") : "";
 }
 function money(cents: number, currency = "MYR") {
   return new Intl.NumberFormat("en-MY", { style: "currency", currency }).format(cents / 100);
@@ -91,6 +104,12 @@ export function ProductEditor({ productId }: Props) {
       name: payload.name ?? "",
       slug: payload.slug ?? "",
       description: payload.description ?? "",
+      material: payload.details?.material ?? "",
+      dimensions: payload.details?.dimensions ?? "",
+      care: payload.details?.care ?? "",
+      highlights: (payload.details?.highlights ?? []).join("\n"),
+      specifications: formatKeyValueLines(payload.details?.specifications),
+      colorSwatches: formatKeyValueLines(payload.colorSwatches),
       categoryId: payload.categoryId ?? payload.category?.id ?? "",
       status: payload.status ?? "DRAFT",
       isFeatured: Boolean(payload.isFeatured),
@@ -122,7 +141,7 @@ export function ProductEditor({ productId }: Props) {
     try {
       if (!form.name.trim() || !form.slug.trim()) throw new Error("Product name and slug are required.");
       if (form.status === "ACTIVE" && editing && !canPublish) throw new Error("Add at least one active SKU before publishing.");
-      const body = { ...form, name: form.name.trim(), slug: form.slug.trim(), description: form.description.trim(), categoryId: form.categoryId || null };
+      const body = { name: form.name.trim(), slug: form.slug.trim(), description: form.description.trim(), details: { material: form.material.trim(), dimensions: form.dimensions.trim(), care: form.care.trim(), highlights: form.highlights.split(/\r?\n/).map((value) => value.trim()).filter(Boolean), specifications: parseKeyValueLines(form.specifications) }, colorSwatches: parseKeyValueLines(form.colorSwatches), categoryId: form.categoryId || null, status: form.status, isFeatured: form.isFeatured };
       if (editing && productId) {
         await request(`/api/staff/catalog/products/${productId}`, "PUT", body);
         setSuccess("Product details saved.");
@@ -256,6 +275,12 @@ export function ProductEditor({ productId }: Props) {
           <label><span>Status</span><select value={form.status} onChange={(e)=>setForm((f)=>({...f,status:e.target.value as ProductForm["status"]}))}><option>DRAFT</option><option disabled={!editing || !canPublish}>ACTIVE</option><option>ARCHIVED</option></select></label>
           <label className={styles.toggleLabel}><input type="checkbox" checked={form.isFeatured} onChange={(e)=>setForm((f)=>({...f,isFeatured:e.target.checked}))}/><span>Featured product</span></label>
           <label className={styles.span2}><span>Description</span><textarea rows={7} maxLength={5000} value={form.description} onChange={(e)=>setForm((f)=>({...f,description:e.target.value}))}/><small>{form.description.length}/5000</small></label>
+          <label className={styles.span2}><span>Material</span><textarea rows={3} maxLength={1000} value={form.material} onChange={(e)=>setForm((f)=>({...f,material:e.target.value}))} placeholder="Real material information shown in Product details" /></label>
+          <label className={styles.span2}><span>Dimensions / fit</span><textarea rows={3} maxLength={1000} value={form.dimensions} onChange={(e)=>setForm((f)=>({...f,dimensions:e.target.value}))} placeholder="Dimensions, sizing or fit information" /></label>
+          <label className={styles.span2}><span>Care</span><textarea rows={3} maxLength={1500} value={form.care} onChange={(e)=>setForm((f)=>({...f,care:e.target.value}))} placeholder="Care or maintenance instructions" /></label>
+          <label className={styles.span2}><span>Highlights</span><textarea rows={5} value={form.highlights} onChange={(e)=>setForm((f)=>({...f,highlights:e.target.value}))} placeholder={"One factual highlight per line"}/><small>Only enter facts that are true for this product.</small></label>
+          <label className={styles.span2}><span>Specifications</span><textarea rows={5} value={form.specifications} onChange={(e)=>setForm((f)=>({...f,specifications:e.target.value}))} placeholder={"Capacity=750 ml\nWeight=320 g"}/><small>One Label=Value specification per line.</small></label>
+          <label className={styles.span2}><span>Color swatches</span><textarea rows={4} value={form.colorSwatches} onChange={(e)=>setForm((f)=>({...f,colorSwatches:e.target.value}))} placeholder={"Black=#1D1D1B\nCream=#F2EBDD"}/><small>Optional. Match real Color option values exactly and provide a 6-digit hex code. TextShop never guesses colors.</small></label>
         </div>
         <div className={styles.panelActions}><button disabled={busy}>{busy ? "Saving…" : editing ? "Save product" : "Create draft"}</button></div>
       </form>

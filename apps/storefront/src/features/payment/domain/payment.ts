@@ -1,4 +1,4 @@
-export type PaymentProvider = "MANUAL_TEST" | "STRIPE";
+export type PaymentProvider = "MANUAL_TEST" | "STRIPE" | "BILLPLZ";
 
 export type Payment = {
   id: string;

@@ -8,6 +8,8 @@ export const mockProducts: Product[] = [
     name: "Everyday Canvas Tote",
     description:
       "A clean everyday carry with a structured silhouette and roomy interior.",
+    details: { highlights: [], specifications: {} },
+    colorSwatches: {},
     price: 69,
     currency: "MYR",
     category: "Bags",
@@ -53,6 +55,8 @@ export const mockProducts: Product[] = [
     name: "Minimal Desk Lamp",
     description:
       "Soft ambient light for workspaces, bedside tables, and reading corners.",
+    details: { highlights: [], specifications: {} },
+    colorSwatches: {},
     price: 119,
     currency: "MYR",
     category: "Home",
@@ -97,6 +101,8 @@ export const mockProducts: Product[] = [
     name: "Daily Steel Bottle",
     description:
       "A durable insulated bottle designed for commuting and daily routines.",
+    details: { highlights: [], specifications: {} },
+    colorSwatches: {},
     price: 49,
     currency: "MYR",
     category: "Lifestyle",

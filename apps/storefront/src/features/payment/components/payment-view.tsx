@@ -9,6 +9,7 @@ import {
 } from "../data/payment-api";
 import type { Payment, PaymentProvider } from "../domain/payment";
 
+const billplzEnabled = process.env.NEXT_PUBLIC_BILLPLZ_ENABLED === "true";
 const stripeEnabled = process.env.NEXT_PUBLIC_STRIPE_ENABLED === "true";
 const developmentPaymentEnabled = process.env.NODE_ENV !== "production";
 
@@ -222,6 +223,23 @@ export function PaymentView({
       ) : null}
 
       <div className="payment-provider-list">
+        {billplzEnabled ? (
+          <button
+            className="payment-provider-option"
+            type="button"
+            disabled={Boolean(busyProvider)}
+            onClick={() => prepare("BILLPLZ")}
+          >
+            <div>
+              <strong>FPX Online Banking</strong>
+              <span>Pay from a Malaysian bank through Billplz</span>
+            </div>
+            <strong>
+              {busyProvider === "BILLPLZ" ? "Connecting…" : "Choose bank →"}
+            </strong>
+          </button>
+        ) : null}
+
         {stripeEnabled ? (
           <button
             className="payment-provider-option"

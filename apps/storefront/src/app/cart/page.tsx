@@ -18,7 +18,6 @@ export default function CartPage() {
           <h1>Shopping cart</h1>
           <p>Review your items before continuing to checkout.</p>
         </div>
-        <Link className="cart-page-heading__link" href="/#shop">Continue shopping <span>→</span></Link>
       </header>
 
       <CartView />

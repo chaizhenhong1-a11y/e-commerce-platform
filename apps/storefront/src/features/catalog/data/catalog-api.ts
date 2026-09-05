@@ -29,6 +29,8 @@ type ApiProduct = {
   slug: string;
   name: string;
   description: string | null;
+  details?: { material?: string; dimensions?: string; care?: string; highlights?: string[]; specifications?: Record<string, string> } | null;
+  colorSwatches?: Record<string, string> | null;
   isFeatured: boolean;
   category: {
     name: string;
@@ -73,6 +75,8 @@ function toProduct(product: ApiProduct): Product {
     slug: product.slug,
     name: product.name,
     description: product.description ?? "",
+    details: { material: product.details?.material, dimensions: product.details?.dimensions, care: product.details?.care, highlights: product.details?.highlights ?? [], specifications: product.details?.specifications ?? {} },
+    colorSwatches: product.colorSwatches ?? {},
     price: defaultVariant?.price ?? 0,
     currency: "MYR",
     category: product.category?.name ?? "Uncategorized",

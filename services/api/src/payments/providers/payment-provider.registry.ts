@@ -3,6 +3,7 @@ import { PaymentProvider } from '@prisma/client';
 import { ManualTestPaymentProvider } from './manual-test.provider';
 import { PaymentProviderAdapter } from './payment-provider';
 import { StripePaymentProvider } from './stripe.provider';
+import { BillplzPaymentProvider } from './billplz.provider';
 
 @Injectable()
 export class PaymentProviderRegistry {
@@ -14,11 +15,16 @@ export class PaymentProviderRegistry {
   constructor(
     manualTestProvider: ManualTestPaymentProvider,
     stripeProvider: StripePaymentProvider,
+    billplzProvider?: BillplzPaymentProvider,
   ) {
     this.providers = new Map<PaymentProvider, PaymentProviderAdapter>([
       [manualTestProvider.provider, manualTestProvider],
       [stripeProvider.provider, stripeProvider],
     ]);
+
+    if (billplzProvider) {
+      this.providers.set(billplzProvider.provider, billplzProvider);
+    }
   }
 
   get(provider: PaymentProvider): PaymentProviderAdapter {

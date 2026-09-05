@@ -1,16 +1,17 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { AddToCartButton } from "@/features/cart/components/add-to-cart-button";
 import type { ProductVariant } from "../domain/product";
 import { useProductSelection } from "./product-selection-provider";
 
-type VariantPurchasePanelProps = { variants: ProductVariant[] };
+type VariantPurchasePanelProps = { variants: ProductVariant[]; colorSwatches?: Record<string, string> };
 
 function money(value: number) {
   return `RM ${value.toFixed(2)}`;
 }
 
-export function VariantPurchasePanel({ variants }: VariantPurchasePanelProps) {
+export function VariantPurchasePanel({ variants, colorSwatches = {} }: VariantPurchasePanelProps) {
   const { selectedVariant, selectOption } = useProductSelection();
 
   if (!selectedVariant) {
@@ -42,7 +43,8 @@ export function VariantPurchasePanel({ variants }: VariantPurchasePanelProps) {
                   return optionNames.slice(0, optionIndex).every((name) => variant.optionValues[name] === selectedVariant.optionValues[name]);
                 });
                 return (
-                  <button className={["product-option", selected ? "product-option--selected" : "", available ? "" : "product-option--disabled"].filter(Boolean).join(" ")} type="button" role="radio" aria-checked={selected} aria-disabled={!available} disabled={!available} key={value} onClick={() => selectOption(optionName, value)}>
+                  <button className={["product-option", /^colou?r$/i.test(optionName) && colorSwatches[value] ? "product-option--color" : "", selected ? "product-option--selected" : "", available ? "" : "product-option--disabled"].filter(Boolean).join(" ")} type="button" role="radio" aria-checked={selected} aria-disabled={!available} disabled={!available} key={value} onClick={() => selectOption(optionName, value)}>
+                    {/^colou?r$/i.test(optionName) && colorSwatches[value] ? <span className="product-color-swatch" style={{ "--swatch-color": colorSwatches[value] } as CSSProperties} aria-hidden="true" /> : null}
                     <span>{value}</span>
                     <small>{available ? "Available" : "Unavailable"}</small>
                   </button>
@@ -54,7 +56,7 @@ export function VariantPurchasePanel({ variants }: VariantPurchasePanelProps) {
       })}
 
       <div className="product-buy-panel">
-        <div className="product-stock-state"><span className={selectedVariant.inStock ? "stock-dot" : "stock-dot stock-dot--out"} />{!selectedVariant.inStock ? `Out of stock · ${selectedVariant.sku}` : selectedVariant.availableStock <= 5 ? `Only ${selectedVariant.availableStock} left · ${selectedVariant.sku}` : `${selectedVariant.availableStock} available · ${selectedVariant.sku}`}</div>
+        <div className="product-stock-state"><span className={selectedVariant.inStock ? "stock-dot" : "stock-dot stock-dot--out"} />{!selectedVariant.inStock ? "Out of stock" : selectedVariant.availableStock <= 5 ? `Only ${selectedVariant.availableStock} left` : "In stock"}</div>
         <AddToCartButton variantId={selectedVariant.id} disabled={!selectedVariant.inStock} />
       </div>
     </>
