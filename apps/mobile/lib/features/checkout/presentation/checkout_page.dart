@@ -36,7 +36,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   final _couponCode = TextEditingController();
 
   String? _selectedAddressId;
-  String _provider = 'STRIPE';
+  final String _provider = 'STRIPE';
   bool _initialized = false;
   bool _submitting = false;
   bool _refreshingInventory = false;
@@ -466,14 +466,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         actions: <Widget>[
           FilledButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('View orders'),
+            child: const Text('View order'),
           ),
         ],
       ),
     );
 
     if (mounted) {
-      context.go('/orders');
+      context.go('/orders/${order.orderNumber}');
     }
   }
 
@@ -700,35 +700,13 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                _SectionCard(
+                const _SectionCard(
                   title: 'Payment',
-                  child: RadioGroup<String>(
-                    groupValue: _provider,
-                    onChanged: (value) {
-                      if (_submitting || value == null) return;
-                      setState(() => _provider = value);
-                    },
-                    child: Column(
-                      children: <Widget>[
-                        if (kDebugMode)
-                          const RadioListTile<String>(
-                            contentPadding: EdgeInsets.zero,
-                            value: 'MANUAL_TEST',
-                            title: Text('Development test payment'),
-                            subtitle: Text(
-                              'Local testing only; confirms immediately.',
-                            ),
-                          ),
-                        const RadioListTile<String>(
-                          contentPadding: EdgeInsets.zero,
-                          value: 'STRIPE',
-                          title: Text('Stripe'),
-                          subtitle: Text(
-                            'Secure hosted payment page.',
-                          ),
-                        ),
-                      ],
-                    ),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.credit_card_rounded),
+                    title: Text('Stripe'),
+                    subtitle: Text('Secure hosted payment page.'),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -756,9 +734,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     child: Text(
                       _submitting
                           ? 'Processing…'
-                          : _provider == 'MANUAL_TEST'
-                              ? 'Place order & complete test payment'
-                              : 'Continue to secure payment',
+                          : 'Continue to secure payment',
                     ),
                   ),
                 ),

@@ -75,11 +75,6 @@ export function OrdersConsole() {
   }
 
   async function transition(order: StaffOrder, action: "process" | "deliver") {
-    const message = action === "process"
-      ? `Move ${order.orderNumber} into processing?`
-      : `Mark ${order.orderNumber} as delivered?`;
-    if (!window.confirm(message)) return;
-
     setBusy(order.orderNumber);
     setError(null);
     try {
@@ -204,7 +199,7 @@ export function OrdersConsole() {
             {order.latestRefund ? <p className={styles.signal}>Refund: {order.latestRefund.status} · {money(order.latestRefund.amountCents, order.currency)}</p> : null}
 
             <div className={styles.actions}>
-              <Link href={`/orders/${encodeURIComponent(order.orderNumber)}`}>View order</Link>
+              <Link href={`/staff/orders/${encodeURIComponent(order.orderNumber)}`}>View order</Link>
               {order.canProcess ? (
                 <button disabled={busy === order.orderNumber} onClick={() => void transition(order, "process")}>Start processing</button>
               ) : null}

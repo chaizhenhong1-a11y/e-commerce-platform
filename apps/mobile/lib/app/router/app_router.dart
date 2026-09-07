@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../features/account/presentation/address_book_page.dart';
 import '../../features/auth/domain/auth_state.dart';
@@ -105,9 +106,22 @@ class _StaffRequiredRoute extends ConsumerWidget {
   }
 }
 
+String _initialLocation() {
+  if (!kIsWeb) {
+    return '/';
+  }
+
+  final uri = Uri.base;
+  final path = uri.path.isEmpty ? '/' : uri.path;
+
+  return uri.hasQuery ? '$path?${uri.query}' : path;
+}
+
+
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
-  initialLocation: '/',
+  initialLocation: _initialLocation(),
+  overridePlatformDefaultLocation: true,
   routes: <RouteBase>[
     GoRoute(
       path: '/sign-in',
