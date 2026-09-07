@@ -28,6 +28,12 @@ class _StaffProductEditorPageState
   final _nameController = TextEditingController();
   final _slugController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _materialController = TextEditingController();
+  final _dimensionsController = TextEditingController();
+  final _careController = TextEditingController();
+  final _highlightsController = TextEditingController();
+  final _specificationsController = TextEditingController();
+  final _colorSwatchesController = TextEditingController();
 
   StaffProductEditorOptions? _options;
   StaffCatalogProduct? _product;
@@ -59,6 +65,12 @@ class _StaffProductEditorPageState
       ..dispose();
     _slugController.dispose();
     _descriptionController.dispose();
+    _materialController.dispose();
+    _dimensionsController.dispose();
+    _careController.dispose();
+    _highlightsController.dispose();
+    _specificationsController.dispose();
+    _colorSwatchesController.dispose();
     super.dispose();
   }
 
@@ -94,6 +106,14 @@ class _StaffProductEditorPageState
         _nameController.text = product.name;
         _slugController.text = product.slug;
         _descriptionController.text = product.description ?? '';
+        _materialController.text = product.details.material ?? '';
+        _dimensionsController.text = product.details.dimensions ?? '';
+        _careController.text = product.details.care ?? '';
+        _highlightsController.text = product.details.highlights.join('\n');
+        _specificationsController.text =
+            _formatKeyValueLines(product.details.specifications);
+        _colorSwatchesController.text =
+            _formatKeyValueLines(product.colorSwatches);
         _status = product.status;
         _categoryId = product.categoryId;
         _isFeatured = product.isFeatured;
@@ -106,6 +126,35 @@ class _StaffProductEditorPageState
       if (mounted) setState(() => _loading = false);
     }
   }
+
+  Map<String, String> _parseKeyValueLines(String input) {
+    final result = <String, String>{};
+    for (final rawLine in input.split(RegExp(r'\r?\n'))) {
+      final line = rawLine.trim();
+      if (line.isEmpty) continue;
+      final separator = line.indexOf('=');
+      if (separator <= 0) continue;
+      final name = line.substring(0, separator).trim();
+      final value = line.substring(separator + 1).trim();
+      if (name.isNotEmpty && value.isNotEmpty) result[name] = value;
+    }
+    return result;
+  }
+
+  String _formatKeyValueLines(Map<String, String> values) =>
+      values.entries.map((entry) => '${entry.key}=${entry.value}').join('\n');
+
+  Map<String, dynamic> _productDetailsPayload() => <String, dynamic>{
+        'material': _materialController.text.trim(),
+        'dimensions': _dimensionsController.text.trim(),
+        'care': _careController.text.trim(),
+        'highlights': _highlightsController.text
+            .split(RegExp(r'\r?\n'))
+            .map((value) => value.trim())
+            .where((value) => value.isNotEmpty)
+            .toList(growable: false),
+        'specifications': _parseKeyValueLines(_specificationsController.text),
+      };
 
   String _message(Object error, String fallback) {
     if (error is DioException) {
@@ -149,6 +198,8 @@ class _StaffProductEditorPageState
           name: _nameController.text,
           slug: _slugController.text,
           description: _descriptionController.text,
+          details: _productDetailsPayload(),
+          colorSwatches: _parseKeyValueLines(_colorSwatchesController.text),
           categoryId: _categoryId,
           status: _status,
           isFeatured: _isFeatured,
@@ -162,6 +213,8 @@ class _StaffProductEditorPageState
           name: _nameController.text,
           slug: _slugController.text,
           description: _descriptionController.text,
+          details: _productDetailsPayload(),
+          colorSwatches: _parseKeyValueLines(_colorSwatchesController.text),
           categoryId: _categoryId,
           isFeatured: _isFeatured,
         );
@@ -632,6 +685,72 @@ class _StaffProductEditorPageState
                             maxLength: 5000,
                             decoration: const InputDecoration(
                               labelText: 'Description',
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _materialController,
+                            minLines: 2,
+                            maxLines: 4,
+                            maxLength: 1000,
+                            decoration: const InputDecoration(
+                              labelText: 'Material',
+                              helperText:
+                                  'Real material information shown in Product details.',
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _dimensionsController,
+                            minLines: 2,
+                            maxLines: 4,
+                            maxLength: 1000,
+                            decoration: const InputDecoration(
+                              labelText: 'Dimensions / fit',
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _careController,
+                            minLines: 2,
+                            maxLines: 5,
+                            maxLength: 1500,
+                            decoration:
+                                const InputDecoration(labelText: 'Care'),
+                          ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _highlightsController,
+                            minLines: 3,
+                            maxLines: 6,
+                            decoration: const InputDecoration(
+                              labelText: 'Highlights',
+                              helperText:
+                                  'One factual highlight per line. Maximum 12 are stored.',
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _specificationsController,
+                            minLines: 3,
+                            maxLines: 7,
+                            decoration: const InputDecoration(
+                              labelText: 'Specifications',
+                              hintText: 'Capacity=750 ml\nWeight=320 g',
+                              helperText:
+                                  'One Label=Value specification per line.',
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _colorSwatchesController,
+                            minLines: 3,
+                            maxLines: 6,
+                            decoration: const InputDecoration(
+                              labelText: 'Color swatches',
+                              hintText: 'Black=#1D1D1B\nCream=#F2EBDD',
+                              helperText:
+                                  'Match real Color option values exactly and use 6-digit hex values.',
                             ),
                           ),
                           const SizedBox(height: 10),

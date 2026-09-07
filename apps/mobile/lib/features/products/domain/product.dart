@@ -72,6 +72,56 @@ class ProductVariant {
   bool get inStock => availableStock > 0;
 }
 
+class ProductDetails {
+  const ProductDetails({
+    this.material,
+    this.dimensions,
+    this.care,
+    this.highlights = const <String>[],
+    this.specifications = const <String, String>{},
+  });
+
+  factory ProductDetails.fromJson(Object? value) {
+    if (value is! Map) return const ProductDetails();
+    final map = Map<String, dynamic>.from(value);
+    String? text(Object? raw) {
+      final result = raw?.toString().trim();
+      return result == null || result.isEmpty ? null : result;
+    }
+
+    final rawHighlights = map['highlights'];
+    final rawSpecifications = map['specifications'];
+    return ProductDetails(
+      material: text(map['material']),
+      dimensions: text(map['dimensions']),
+      care: text(map['care']),
+      highlights: rawHighlights is List
+          ? rawHighlights.map(text).whereType<String>().toList(growable: false)
+          : const <String>[],
+      specifications: rawSpecifications is Map
+          ? <String, String>{
+              for (final entry in rawSpecifications.entries)
+                if (text(entry.key) != null && text(entry.value) != null)
+                  text(entry.key)!: text(entry.value)!,
+            }
+          : const <String, String>{},
+    );
+  }
+
+  final String? material;
+  final String? dimensions;
+  final String? care;
+  final List<String> highlights;
+  final Map<String, String> specifications;
+
+  bool get isEmpty =>
+      material == null &&
+      dimensions == null &&
+      care == null &&
+      highlights.isEmpty &&
+      specifications.isEmpty;
+}
+
 class Product {
   const Product({
     required this.id,
@@ -81,6 +131,8 @@ class Product {
     required this.category,
     required this.variants,
     required this.images,
+    this.details = const ProductDetails(),
+    this.colorSwatches = const <String, String>{},
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -111,6 +163,8 @@ class Product {
       category: category?['name'] as String? ?? 'Shop',
       variants: variants,
       images: images,
+      details: ProductDetails.fromJson(json['details']),
+      colorSwatches: _stringMap(json['colorSwatches']),
     );
   }
 
@@ -121,6 +175,18 @@ class Product {
   final String category;
   final List<ProductVariant> variants;
   final List<ProductImage> images;
+  final ProductDetails details;
+  final Map<String, String> colorSwatches;
+
+  static Map<String, String> _stringMap(Object? value) {
+    if (value is! Map) return const <String, String>{};
+    return <String, String>{
+      for (final entry in value.entries)
+        if (entry.key.toString().trim().isNotEmpty &&
+            entry.value.toString().trim().isNotEmpty)
+          entry.key.toString().trim(): entry.value.toString().trim(),
+    };
+  }
 
   ProductVariant get defaultVariant {
     for (final variant in variants) {

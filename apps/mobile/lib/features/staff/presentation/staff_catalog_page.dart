@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../products/presentation/product_providers.dart';
 import '../data/staff_repository.dart';
 import '../domain/staff_catalog.dart';
 import 'staff_providers.dart';
@@ -25,6 +26,7 @@ class _StaffCatalogPageState extends ConsumerState<StaffCatalogPage> {
   bool _lowStockOnly = false;
   bool _loading = true;
   String? _busyVariantId;
+  String? _busyProductId;
   String? _error;
 
   StaffRepository get _repository => ref.read(staffRepositoryProvider);
@@ -81,6 +83,101 @@ class _StaffCatalogPageState extends ConsumerState<StaffCatalogPage> {
 
   String _money(StaffCatalogVariant variant) {
     return '${variant.currency} ${(variant.priceCents / 100).toStringAsFixed(2)}';
+  }
+
+  Future<void> _setProductStatus(
+    StaffCatalogProduct product,
+    String status,
+  ) async {
+    if (_busyProductId != null) return;
+    setState(() {
+      _busyProductId = product.id;
+      _error = null;
+    });
+    try {
+      await _repository.updateProductStatus(
+        productId: product.id,
+        status: status,
+      );
+      ref.invalidate(productProvider(product.id));
+      ref.invalidate(productsProvider);
+      ref.invalidate(productCatalogMetadataProvider);
+      await _load();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              status == 'ACTIVE'
+                  ? '${product.name} is now live.'
+                  : '${product.name} has been taken off sale.',
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(
+            () => _error = _message(error, 'Unable to update product status.'));
+      }
+    } finally {
+      if (mounted) setState(() => _busyProductId = null);
+    }
+  }
+
+  Future<void> _deleteProduct(StaffCatalogProduct product) async {
+    if (_busyProductId != null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete product?'),
+        content: Text(
+          'Permanently delete "${product.name}"?\n\n'
+          'If it has order, cart, or inventory-audit history, TextShop will archive it instead so commerce history stays safe.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _busyProductId = product.id;
+      _error = null;
+    });
+    try {
+      final result = await _repository.deleteProduct(product.id);
+      ref.invalidate(productProvider(product.id));
+      ref.invalidate(productsProvider);
+      ref.invalidate(productCatalogMetadataProvider);
+      await _load();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.message.isNotEmpty
+                  ? result.message
+                  : result.deleted
+                      ? '${product.name} deleted.'
+                      : '${product.name} archived.',
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = _message(error, 'Unable to delete product.'));
+      }
+    } finally {
+      if (mounted) setState(() => _busyProductId = null);
+    }
   }
 
   Future<void> _adjust(
@@ -334,17 +431,72 @@ class _StaffCatalogPageState extends ConsumerState<StaffCatalogPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Chip(label: Text(product.status)),
-                    IconButton(
-                      tooltip: 'Edit product',
-                      onPressed: () async {
-                        await context.push(
-                          '/staff/catalog/products/${product.id}',
-                        );
-                        if (mounted) {
-                          await _load();
-                        }
-                      },
-                      icon: const Icon(Icons.edit_outlined),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        IconButton(
+                          tooltip: 'Edit product',
+                          onPressed: _busyProductId == product.id
+                              ? null
+                              : () async {
+                                  await context.push(
+                                    '/staff/catalog/products/${product.id}',
+                                  );
+                                  if (mounted) {
+                                    await _load();
+                                  }
+                                },
+                          icon: const Icon(Icons.edit_outlined),
+                        ),
+                        if (_busyProductId == product.id)
+                          const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        else
+                          PopupMenuButton<String>(
+                            tooltip: 'Product actions',
+                            onSelected: (value) {
+                              if (value == 'ACTIVE') {
+                                _setProductStatus(product, 'ACTIVE');
+                              } else if (value == 'ARCHIVED') {
+                                _setProductStatus(product, 'ARCHIVED');
+                              } else if (value == 'DELETE') {
+                                _deleteProduct(product);
+                              }
+                            },
+                            itemBuilder: (context) => <PopupMenuEntry<String>>[
+                              if (product.status != 'ACTIVE')
+                                const PopupMenuItem<String>(
+                                  value: 'ACTIVE',
+                                  child: ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: Icon(Icons.publish_outlined),
+                                    title: Text('Publish / relist'),
+                                  ),
+                                ),
+                              if (product.status != 'ARCHIVED')
+                                const PopupMenuItem<String>(
+                                  value: 'ARCHIVED',
+                                  child: ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: Icon(Icons.archive_outlined),
+                                    title: Text('Take off sale'),
+                                  ),
+                                ),
+                              const PopupMenuDivider(),
+                              const PopupMenuItem<String>(
+                                value: 'DELETE',
+                                child: ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: Icon(Icons.delete_outline),
+                                  title: Text('Delete product'),
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
                     ),
                   ],
                 ),

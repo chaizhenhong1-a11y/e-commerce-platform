@@ -1,3 +1,164 @@
+## 0.51.68.3.5 - Phase 055.7.3.5: Stripe Web empty-cart pre-redirect flash fix
+
+- Fixed the actual pre-Stripe flash source in Flutter Web Checkout: order creation converts the server-side cart immediately, and the page was invalidating/reloading `customerCartProvider` before the Stripe Checkout Session finished opening.
+- Web now keeps the submitted cart snapshot mounted while Stripe is being created/launched, so Checkout no longer rebuilds into `Your cart is empty.` before the hosted payment page takes over the tab.
+- Web cart invalidation is deferred to completed/manual-test/recovery paths; after a successful hosted Stripe redirect the returning app performs a fresh startup/read naturally.
+- Native Android/iOS cart synchronization remains immediate after order creation.
+- No order creation, inventory reservation, Stripe amount/session/webhook logic, authentication persistence, Storefront, catalog, Staff, Prisma, Billplz, or FPX behavior changed.
+
+## 0.51.68.3.4 - Phase 055.7.3.4: Stripe Web pre-redirect route race fix
+
+- Stopped Flutter Web from navigating to internal Order details immediately after successfully launching Stripe Hosted Checkout in the current tab.
+- Web now lets the Stripe browser navigation become the sole post-submit transition, eliminating the brief `The cart is empty` / intermediate TextShop route flash before the Stripe sandbox appears.
+- Stripe's configured return URL remains responsible for returning Web customers to the created order after payment.
+- Native Android/iOS behavior is preserved: TextShop may continue to show Order details behind the externally opened payment page.
+- No order creation, inventory reservation, payment amount, Stripe provider/webhook, authentication persistence, Storefront, catalog, Staff, Prisma, Billplz, or FPX logic changed.
+
+## 0.51.68.3.3 - Phase 055.7.3.3: Stripe Web launch compile fix
+
+- Restored Flutter foundation imports in the checkout and order-details payment launch surfaces because Phase 055.7.3.2 now directly uses `kIsWeb`, while checkout also retains its existing `kDebugMode` development-payment guard.
+- No payment routing, Stripe session, authentication persistence, Android/iOS behavior, Storefront, catalog, Staff, cart, Prisma, Billplz, or FPX logic changed.
+
+## 0.51.68.3.2 - Phase 055.7.3.2: Stripe same-tab Web return-session fix
+
+- Fixed Flutter Web Stripe Hosted Checkout opening through `LaunchMode.externalApplication`, which created a separate browser context and prevented the original tab's `sessionStorage` authentication session from being available on the Stripe return page.
+- Flutter Web payment redirects now deliberately reuse the current tab (`_self`), so the Phase 055.7.3 session-storage tokens survive the round trip to Stripe and back to the same TextShop origin.
+- Android/iOS continue opening the external payment provider with the existing external-application behavior.
+- Payment-provider logic, webhook verification, Stripe amounts, order confirmation, Storefront authentication, catalog, Staff, cart, Prisma, Billplz, and FPX behavior are unchanged.
+
+## 0.51.68.3.1 - Phase 055.7.3.1: Flutter Web session-storage analyzer cleanup
+
+- Scoped Flutter's `avoid_web_libraries_in_flutter` analyzer suppression to the dedicated conditionally imported Web-only session-storage implementation.
+- Preserved the Phase 055.7.3 `sessionStorage` behavior used to survive Stripe Hosted Checkout full-page redirects.
+- No authentication flow, Stripe payment/webhook logic, Android/iOS secure storage, Storefront, catalog, Staff, cart, Prisma, Billplz, or FPX behavior changed.
+
+## 0.51.68.3 - Phase 055.7.3: Stripe return Web session persistence
+
+- Persisted Flutter Web development access/refresh tokens in browser `sessionStorage` so a full-page Stripe Hosted Checkout redirect can return to the same TextShop tab without forcing the customer to sign in again.
+- Preserved the existing in-memory Web token cache as a fallback when browser session storage is unavailable.
+- Kept Android/iOS authentication on `flutter_secure_storage`; no native credential-storage behavior changed.
+- Authentication persistence only. No Stripe payment creation/webhook logic, Storefront authentication, product/catalog, Staff, cart, Prisma schema, migrations, or Billplz/FPX behavior changed.
+
+## 0.51.68.2 - Phase 055.7.2: Pexels Next Image support
+
+- Allowed `images.pexels.com` in the Next.js Storefront image remote patterns so seeded Pexels product photos can render in order/account surfaces using `next/image`.
+- Storefront image-host configuration only. No Stripe, Flutter, order, authentication, Staff, Prisma, or payment behavior changed.
+
+## 0.51.68.1 - Phase 055.7.1: Stripe Checkout return routing
+
+- Routed Stripe Checkout success/cancel returns back to the Flutter Web origin that initiated payment instead of always forcing the configured Next.js Storefront URL.
+- Added an optional payment `returnBaseUrl` request value; Flutter Web supplies its current `Uri.base.origin`, while non-Web clients retain the existing server fallback.
+- Restricted payment return origins server-side: production accepts the configured Storefront origin, while non-production additionally permits localhost loopback origins for local Flutter Web development.
+- Preserved Stripe Hosted Checkout, webhook confirmation, payment/order state handling, Billplz behavior, customer catalog, Staff lifecycle, Prisma schema, and migrations.
+
+## 0.51.68 - Phase 055.7: Stripe Sandbox checkout enforcement
+
+- Made Stripe the default Flutter checkout provider in debug and release builds so local Sandbox testing opens the hosted Stripe payment flow instead of silently completing through the development payment shortcut.
+- Kept `MANUAL_TEST` available as an explicit debug-only option for intentional local payment simulation; it is no longer preselected.
+- Updated pending-order payment recovery to prefer Stripe unless the order was originally created with `MANUAL_TEST`, preventing debug builds from unexpectedly switching a real Stripe recovery attempt back to the local test provider.
+- Flutter payment selection/recovery only. No Staff, customer catalog layout, Product Details, cart contents, NestJS payment provider implementation, Stripe webhook logic, Billplz/FPX, Prisma schema, or migrations changed.
+
+## 0.51.67.1 - Phase 055.6.1: Staff lifecycle customer catalog synchronization
+
+- Invalidated the Flutter customer Home catalog immediately after a Staff product is published, archived, or deleted so lifecycle changes no longer leave stale products visible on Home.
+- Invalidated the matching customer Product Details snapshot and catalog metadata alongside the product list, reusing the existing Riverpod synchronization pattern already used by Staff Product Editor mutations.
+- Preserved the Phase 055.6 Staff lifecycle API and the Phase 055.5 responsive 2/3/4-column customer catalog presentation.
+- Flutter provider synchronization only. No catalog layout, cart, checkout, payment/FPX, Prisma schema, migration, or backend lifecycle behavior changed.
+
+## 0.51.67 - Phase 055.6: Staff product lifecycle actions
+
+- Added explicit Flutter Staff Catalog product lifecycle actions for publishing/relisting, taking products off sale by archiving them, and requesting permanent deletion.
+- Added a protected Staff product-delete API that permanently deletes only products without order, cart, or inventory-audit history. Products with protected commerce history are archived and unfeatured instead of being hard-deleted.
+- Added destructive-action confirmation and server-result feedback in Flutter Staff Catalog so staff can distinguish a true deletion from a safety archive.
+- Reused the existing ProductStatus and publish validation instead of introducing a parallel deletion/status model.
+- Staff Catalog + NestJS product lifecycle only. No customer catalog layout, Product Details, cart, checkout, payment/FPX, Prisma schema, migration, or database reset behavior changed.
+
+## 0.51.66 - Phase 055.5: Responsive mobile catalog density refinement
+
+- Refined the Flutter customer product grid to use 2 columns on narrow phone layouts, 3 columns on landscape-phone/small-tablet widths, and 4 columns on wide Web/Desktop widths.
+- Increased row and column spacing so product cards have more breathing room without changing catalog data or navigation behavior.
+- Increased card height allocation so product imagery has a taller presentation area, while preserving the existing image crop and wishlist/stock overlays.
+- Product names now display up to two lines instead of being forced to one line, and card content spacing gives the price row more room.
+- Flutter customer catalog presentation only. No Product Details, variant selection sheet, cart behavior, Staff, Web Storefront, NestJS API, Prisma, database, payment, or FPX behavior changed.
+
+## 0.51.65 - Phase 055.4.1: Demo catalog multi-image gallery data
+
+- Expanded selected demo catalog products to three real Pexels photographs each so product gallery and thumbnail interactions can be exercised with realistic multi-image data.
+- Added three-image coverage to wide-leg pants, cargo trousers, white sneakers, high-top sneakers, and the weekend jacket while keeping the demo catalog at exactly 10 products.
+- Kept the seed idempotent: rerunning the seed updates the same products and adds the additional product-image rows instead of creating duplicate products.
+- No Flutter, storefront, API runtime, Prisma schema, migration, payment, or FPX behavior changed.
+
+## 0.51.64 - Phase 055.4: Ten-product realistic demo catalog seed
+
+- Replaced the small placeholder seed catalog with 10 realistic TextShop demo products for local/staging testing.
+- Uses real Pexels stock-photo URLs rather than generated product imagery or SVG placeholders.
+- Covers Color + Size, Color-only, Size-only and single-variant products so the Flutter add-to-cart variant sheet can be exercised against realistic combinations.
+- Seeds real `optionValues`, `colorSwatches`, merchandising details, MYR pricing, compare-at pricing and inventory using the existing Prisma schema.
+- Keeps seeding idempotent through category, product, variant, inventory and product-image upserts.
+- Seed data only. No Flutter, Web, API runtime logic, Prisma schema, migrations, payment or FPX behavior changed.
+
+## 0.51.63.4 - Phase 055.3.4: Variant selection sheet interaction fix
+
+- Opens the add-to-cart variant sheet with no Color/Size choice preselected.
+- Requires the customer to actively choose every available product option before adding to cart.
+- Keeps option availability dynamic from real in-stock variant combinations instead of locking choices to the default variant.
+- Enables quantity controls only after a complete purchasable variant is selected.
+- Preserves real Staff color swatches and existing cart/API behavior.
+- Keeps the page-level quantity field final to satisfy the existing Flutter lint.
+
+## 0.51.63.3 - Phase 055.3.3: Flutter add-to-cart variant selection sheet
+
+- Changed Flutter customer Product Details so products with selectable variants open a dedicated bottom sheet when `Add to cart` is pressed, instead of requiring the customer to choose Color/Size inline on the product page.
+- The sheet shows the current product image, price, live stock, grouped product options such as Color/Colour and Size, Staff-authored real color swatches, quantity controls, and a final `Add to cart` action.
+- Option choices continue to resolve to a real server-backed variant/SKU; unavailable combinations remain disabled and cart ownership/inventory rules remain unchanged.
+- Products without selectable options keep the existing one-tap add-to-cart behavior.
+- Flutter customer Product Details only. No Staff, Categories, Promotions, Web, NestJS API, Prisma, database, payment, or FPX behavior changed.
+
+## 0.51.63.2 - Phase 055.3.2: Flutter grouped product option parity
+
+- Replaced the Flutter Product Details flat whole-SKU choice list with grouped option selectors such as `Color` and `Size`, matching the existing Website product-option interaction model more closely.
+- Color/Colour options now render the Staff-authored real swatch beside the exact option value when a valid `#RRGGBB` mapping exists; TextShop still never guesses colors from names.
+- Selecting an option resolves back to a concrete in-stock variant/SKU while preserving the other selected option values. Unavailable combinations are disabled instead of creating client-owned commerce state.
+- A real Color/Colour option remains visible even when a product currently has only one variant, while legacy single-variant fallback `Option` data stays hidden.
+- Flutter customer Product Details only. No Staff editor, Promotions, Categories, Web, NestJS API, Prisma, database, inventory rules, cart ownership, payment, or FPX behavior changed.
+
+## 0.51.63.1 - Phase 055.3.1: Flutter product swatch analyzer fix
+
+- Fixed the Product Details variant swatch avatar expression that used unsupported pattern-expression syntax in the current Flutter/Dart toolchain.
+- Moved optional swatch/block-icon selection into a typed `Widget?` helper, preserving the Phase 055.3 color-swatch behavior without changing product, variant, cart, Staff, API, database, promotion, or payment logic.
+- Flutter/mobile fix only.
+
+## 0.51.63 - Phase 055.3: Flutter product merchandising parity
+
+- Added Flutter Staff Product Editor support for the existing server-owned `details` and `colorSwatches` product fields: material, dimensions / fit, care, factual highlights, Label=Value specifications, and exact Color/Colour hex swatches.
+- Matched the existing Website/API contract instead of introducing a parallel mobile schema. Product details preserve the API limits and color swatches remain explicit 6-digit hex values; the Flutter client does not guess colors from names.
+- Extended the Flutter customer Product model and Product Details page to read and display the same structured merchandising data, including optional real color swatches for matching Color/Colour variant values. Empty detail fields remain hidden.
+- Preserved existing product CRUD, variant matrix, inventory, media upload, cart, wishlist, checkout, orders, promotions, authentication, Staff guards, and 30-minute unpaid inventory reservation behavior.
+- Flutter/mobile only. No Website, NestJS API implementation, Prisma schema, database migration, payment, or FPX behavior is changed.
+
+## 0.51.62 - Phase 055.2: Flutter Staff promotions management
+
+- Added a dedicated Flutter Staff Promotions workspace with coupon and automatic-discount sections, matching the existing server-authoritative Web Staff promotion capabilities.
+- Added coupon listing, create/edit, active/inactive state, percentage/fixed-amount discounts, minimum subtotal, optional maximum discount, schedules, total/per-account usage limits, product/category scopes, redemption visibility, and guarded deactivation.
+- Added automatic promotion listing, create/edit, active/inactive state, percentage/fixed-amount discounts, minimum subtotal, optional maximum discount, schedules, priority, product/category scopes, and guarded deactivation.
+- Added Staff promotion domain/repository/provider layers backed only by the existing protected `/staff/promotions` and `/staff/promotions/automatic` API contracts, plus protected mobile routes and a Staff Center Promotions entry.
+- Preserved the API rule that coupon and automatic promotions are evaluated at checkout on the server; the mobile UI never calculates or commits authoritative order discounts.
+- Mobile/Flutter Staff increment only. No Web Storefront code, payment/FPX behavior, NestJS API implementation, Prisma schema, database migration, customer-facing Flutter flow, Catalog/Product Editor behavior, or existing category management is changed.
+
+## 0.51.60.3.1 - Phase 055.1.1: Mobile Staff Categories Riverpod deprecation fix
+
+- Removed the deprecated `ProviderScope(parent: ...)` wrapper from the Mobile Staff Categories editor bottom sheet.
+- The editor now inherits the existing Riverpod scope directly through the Flutter widget tree, preserving the same Staff repository/provider access without relying on the deprecated `parent` API.
+- No category CRUD behavior, API contract, Web Storefront, payment/FPX, Prisma, database, or customer-facing Flutter behavior changed.
+
+## 0.51.61 - Phase 055.1: Flutter Staff category management
+
+- Added a dedicated Flutter Staff Categories workspace backed by the existing protected `/staff/categories` API.
+- Added category listing, pull-to-refresh, create/edit flows, active/inactive state, sort order, product-count visibility, and guarded deletion for categories that still contain products.
+- Added the `/staff/categories` staff-protected route and a Categories entry in Staff Center while preserving the existing Orders, Returns, Catalog, Product Editor, and commerce-health workflows.
+- Added Staff category domain/repository/provider layers so category management follows the existing mobile Staff architecture instead of placing API logic in the UI.
+- Mobile/Flutter Staff increment only. No Web storefront UI, payment/FPX, Prisma schema, database, customer-facing mobile flow, or existing Catalog/Product Editor behavior is changed.
+
 ## 0.51.60.2.2 - Phase 054.31.32.2.2: Legacy Account orders import compatibility fix
 
 - Added a compatibility re-export for the legacy `features/account/components/orders-center.tsx` relative `./cancel-order-button` import that is still included in Storefront TypeScript type checking.

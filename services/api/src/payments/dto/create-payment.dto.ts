@@ -1,4 +1,4 @@
-import { IsIn, IsNotEmpty, IsString } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreatePaymentDto {
   @IsString()
@@ -7,4 +7,9 @@ export class CreatePaymentDto {
 
   @IsIn(['MANUAL_TEST', 'STRIPE', 'BILLPLZ'])
   provider!: 'MANUAL_TEST' | 'STRIPE' | 'BILLPLZ';
+
+  @IsOptional()
+  @IsString()
+  returnBaseUrl?: string;
 }
+

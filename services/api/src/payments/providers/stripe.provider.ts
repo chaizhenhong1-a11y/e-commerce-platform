@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -24,9 +25,7 @@ export class StripePaymentProvider implements PaymentProviderAdapter {
     request: PaymentSessionRequest,
   ): Promise<PaymentSessionResult> {
     const stripe = this.getClient();
-    const storefrontUrl =
-      this.configService.get<string>('STOREFRONT_URL') ??
-      'http://localhost:3000';
+    const returnBaseUrl = this.resolveReturnBaseUrl(request.returnBaseUrl);
 
     const reservationExpiresAt = new Date(
       Date.now() + 30 * 60 * 1000,
@@ -56,10 +55,10 @@ export class StripePaymentProvider implements PaymentProviderAdapter {
           },
         },
       ],
-      success_url: `${storefrontUrl}/orders/${encodeURIComponent(
+      success_url: `${returnBaseUrl}/orders/${encodeURIComponent(
         request.orderNumber,
       )}?payment=success`,
-      cancel_url: `${storefrontUrl}/orders/${encodeURIComponent(
+      cancel_url: `${returnBaseUrl}/orders/${encodeURIComponent(
         request.orderNumber,
       )}?payment=cancelled`,
     });
@@ -79,6 +78,41 @@ export class StripePaymentProvider implements PaymentProviderAdapter {
         stripeSessionId: session.id,
       },
     };
+  }
+
+  private resolveReturnBaseUrl(requested?: string) {
+    const storefrontUrl =
+      this.configService.get<string>('STOREFRONT_URL') ??
+      'http://localhost:3000';
+    const fallback = new URL(storefrontUrl);
+
+    if (!requested?.trim()) {
+      return fallback.origin;
+    }
+
+    let candidate: URL;
+    try {
+      candidate = new URL(requested.trim());
+    } catch {
+      throw new BadRequestException('Payment return URL is invalid.');
+    }
+
+    if (!['http:', 'https:'].includes(candidate.protocol)) {
+      throw new BadRequestException('Payment return URL must use HTTP or HTTPS.');
+    }
+
+    const nodeEnv =
+      this.configService.get<string>('NODE_ENV') ?? 'development';
+    const isLocalDevelopmentOrigin =
+      nodeEnv !== 'production' &&
+      ['localhost', '127.0.0.1', '[::1]'].includes(candidate.hostname);
+    const isConfiguredStorefrontOrigin = candidate.origin === fallback.origin;
+
+    if (!isLocalDevelopmentOrigin && !isConfiguredStorefrontOrigin) {
+      throw new BadRequestException('Payment return URL origin is not allowed.');
+    }
+
+    return candidate.origin;
   }
 
   async resumeSession(

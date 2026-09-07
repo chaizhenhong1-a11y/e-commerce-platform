@@ -17,10 +17,12 @@ import '../../features/orders/presentation/orders_page.dart';
 import '../../features/products/presentation/product_details_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/staff/presentation/staff_center_page.dart';
+import '../../features/staff/presentation/staff_categories_page.dart';
 import '../../features/staff/presentation/staff_orders_page.dart';
 import '../../features/staff/presentation/staff_returns_page.dart';
 import '../../features/staff/presentation/staff_catalog_page.dart';
 import '../../features/staff/presentation/staff_product_editor_page.dart';
+import '../../features/staff/presentation/staff_promotions_page.dart';
 import '../../features/wishlist/presentation/wishlist_page.dart';
 import '../shell/main_shell.dart';
 
@@ -160,6 +162,26 @@ final GoRouter appRouter = GoRouter(
       path: '/staff/returns',
       builder: (context, state) => const _StaffRequiredRoute(
         child: StaffReturnsPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/staff/categories',
+      builder: (context, state) => const _StaffRequiredRoute(
+        child: StaffCategoriesPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/staff/promotions',
+      builder: (context, state) => const _StaffRequiredRoute(
+        child: StaffPromotionsPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/staff/promotions/automatic',
+      builder: (context, state) => const _StaffRequiredRoute(
+        child: StaffPromotionsPage(
+          initialSection: StaffPromotionsSection.automatic,
+        ),
       ),
     ),
     GoRoute(

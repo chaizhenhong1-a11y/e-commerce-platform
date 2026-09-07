@@ -549,6 +549,39 @@ export class ProductsService {
     return this.prisma.product.update({ where: { id: productId }, data });
   }
 
+  async deleteProductForStaff(productId: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      select: { id: true, status: true, variants: { select: { id: true } } },
+    });
+    if (!product) throw new NotFoundException('Product not found.');
+
+    const variantIds = product.variants.map((variant) => variant.id);
+    if (variantIds.length > 0) {
+      const [orderCount, cartCount, adjustmentCount] = await Promise.all([
+        this.prisma.orderItem.count({ where: { variantId: { in: variantIds } } }),
+        this.prisma.cartItem.count({ where: { variantId: { in: variantIds } } }),
+        this.prisma.inventoryAdjustment.count({ where: { variantId: { in: variantIds } } }),
+      ]);
+      if (orderCount > 0 || cartCount > 0 || adjustmentCount > 0) {
+        if (product.status !== 'ARCHIVED') {
+          await this.prisma.product.update({
+            where: { id: productId },
+            data: { status: 'ARCHIVED', isFeatured: false },
+          });
+        }
+        return {
+          deleted: false,
+          archived: true,
+          message: 'Product has order, cart, or inventory-audit history and was archived instead of permanently deleted.',
+        };
+      }
+    }
+
+    await this.prisma.product.delete({ where: { id: productId } });
+    return { deleted: true, archived: false, message: 'Product permanently deleted.' };
+  }
+
   async updateVariantForStaff(variantId: string, data: { isActive: boolean }) {
     const variant = await this.prisma.productVariant.findUnique({ where: { id: variantId } });
     if (!variant) throw new NotFoundException('Variant not found.');

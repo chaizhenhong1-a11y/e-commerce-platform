@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 import '../domain/checkout_order.dart';
 
@@ -57,6 +59,7 @@ class CheckoutRepository {
       data: <String, dynamic>{
         'orderNumber': orderNumber,
         'provider': provider,
+        if (kIsWeb) 'returnBaseUrl': Uri.base.origin,
       },
     );
     final data = response.data;

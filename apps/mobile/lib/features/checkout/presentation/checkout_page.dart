@@ -36,7 +36,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   final _couponCode = TextEditingController();
 
   String? _selectedAddressId;
-  String _provider = kDebugMode ? 'MANUAL_TEST' : 'STRIPE';
+  String _provider = 'STRIPE';
   bool _initialized = false;
   bool _submitting = false;
   bool _refreshingInventory = false;
@@ -292,7 +292,16 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       // The reservation changes server-authoritative available inventory
       // immediately, so discard product snapshots now instead of waiting for
       // a manual refresh or an app lifecycle event.
-      ref.invalidate(customerCartProvider);
+      // Creating an order converts the server-side cart immediately. On Web,
+      // invalidating the cart here causes Checkout to rebuild with the now-empty
+      // cart while we are still creating/opening the Stripe session, producing
+      // a visible "Your cart is empty." flash before the browser redirect.
+      //
+      // Keep the submitted cart snapshot mounted until Stripe takes over this
+      // tab. Native clients can continue syncing the cart immediately.
+      if (!kIsWeb) {
+        ref.invalidate(customerCartProvider);
+      }
       ref.invalidate(customerOrdersProvider);
       _invalidateInventoryViews();
 
@@ -303,6 +312,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       _verifyPaymentAmount(createdOrder, payment);
 
       if (payment.status == 'PAID') {
+        if (kIsWeb) {
+          ref.invalidate(customerCartProvider);
+        }
         if (!mounted) return;
         await _showCompleted(createdOrder);
         return;
@@ -311,6 +323,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       if (payment.provider == 'MANUAL_TEST') {
         await repository.confirmDevelopmentPayment(payment.id);
         ref.invalidate(customerOrdersProvider);
+        if (kIsWeb) {
+          ref.invalidate(customerCartProvider);
+        }
         if (!mounted) return;
         await _showCompleted(createdOrder);
         return;
@@ -323,15 +338,26 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
       final launched = await launchUrl(
         Uri.parse(url),
-        mode: LaunchMode.externalApplication,
+        mode: kIsWeb
+            ? LaunchMode.platformDefault
+            : LaunchMode.externalApplication,
+        webOnlyWindowName: kIsWeb ? '_self' : null,
       );
       if (!launched) {
         throw StateError('Unable to open the payment page.');
       }
 
+      // On Flutter Web the hosted checkout replaces this tab. Do not race the
+      // browser navigation by routing the app to Order details first; that
+      // briefly renders an emptied-cart/order state before Stripe takes over.
+      // Stripe's return URL is responsible for bringing Web back to the order.
+      if (kIsWeb) {
+        return;
+      }
+
       if (!mounted) return;
-      // Order details observes app resume and refreshes the trusted payment
-      // state after the customer returns from Stripe.
+      // Native platforms keep TextShop alive while the external payment page
+      // is open, so showing Order details behind it remains useful.
       context.go('/orders/${createdOrder.orderNumber}');
     } on DioException catch (error) {
       if (!mounted) {
@@ -399,6 +425,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     CheckoutOrder order,
     String message,
   ) async {
+    // The order already owns the reservation, so a failed provider launch is
+    // the point where Web should now discard the converted cart snapshot.
+    ref.invalidate(customerCartProvider);
     await showDialog<void>(
       context: context,
       barrierDismissible: false,

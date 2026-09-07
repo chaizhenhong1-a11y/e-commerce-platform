@@ -3,15 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { PublicOrderStatus } from "@/features/orders/domain/order-status";
-import {
-  confirmDevelopmentPayment,
-  createPayment,
-} from "../data/payment-api";
+import { createPayment } from "../data/payment-api";
 import type { Payment, PaymentProvider } from "../domain/payment";
 
 const billplzEnabled = process.env.NEXT_PUBLIC_BILLPLZ_ENABLED === "true";
 const stripeEnabled = process.env.NEXT_PUBLIC_STRIPE_ENABLED === "true";
-const developmentPaymentEnabled = process.env.NODE_ENV !== "production";
 
 function money(cents: number) {
   return `RM ${(cents / 100).toFixed(2)}`;
@@ -19,9 +15,11 @@ function money(cents: number) {
 
 function formatRemaining(milliseconds: number) {
   if (milliseconds <= 0) return "Expired";
+
   const totalSeconds = Math.floor(milliseconds / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
+
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
@@ -31,7 +29,9 @@ export function PaymentView({
   initialOrder: PublicOrderStatus;
 }) {
   const [payment, setPayment] = useState<Payment | null>(null);
-  const [busyProvider, setBusyProvider] = useState<PaymentProvider | null>(null);
+  const [busyProvider, setBusyProvider] = useState<PaymentProvider | null>(
+    null,
+  );
   const [error, setError] = useState("");
   const [now, setNow] = useState(() => Date.now());
 
@@ -44,17 +44,27 @@ export function PaymentView({
   );
 
   useEffect(() => {
-    if (!reservationDeadline) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    if (!reservationDeadline) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
     return () => window.clearInterval(timer);
   }, [reservationDeadline]);
 
   const reservationExpired =
     reservationDeadline !== null && reservationDeadline <= now;
+
   const paid =
-    ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "FULFILLED"].includes(initialOrder.status) ||
+    ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "FULFILLED"].includes(
+      initialOrder.status,
+    ) ||
     initialOrder.paymentStatus === "PAID" ||
     payment?.status === "PAID";
+
   const canPay =
     initialOrder.status === "AWAITING_PAYMENT" &&
     initialOrder.paymentStatus === "PENDING" &&
@@ -62,7 +72,9 @@ export function PaymentView({
     !paid;
 
   async function prepare(provider: PaymentProvider) {
-    if (busyProvider || !canPay) return;
+    if (busyProvider || !canPay) {
+      return;
+    }
 
     setBusyProvider(provider);
     setError("");
@@ -83,38 +95,7 @@ export function PaymentView({
       setPayment(created);
     } catch (cause) {
       setError(
-        cause instanceof Error
-          ? cause.message
-          : "Unable to prepare payment.",
-      );
-    } finally {
-      setBusyProvider(null);
-    }
-  }
-
-  async function confirmDevelopment() {
-    if (
-      !payment ||
-      payment.provider !== "MANUAL_TEST" ||
-      busyProvider ||
-      !canPay
-    ) {
-      return;
-    }
-
-    setBusyProvider("MANUAL_TEST");
-    setError("");
-
-    try {
-      setPayment(
-        await confirmDevelopmentPayment(
-          payment.id,
-          initialOrder.orderNumber,
-        ),
-      );
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "Payment failed.",
+        cause instanceof Error ? cause.message : "Unable to prepare payment.",
       );
     } finally {
       setBusyProvider(null);
@@ -125,16 +106,21 @@ export function PaymentView({
     return (
       <section className="checkout-success">
         <div className="checkout-success__icon">✓</div>
+
         <span className="section-kicker">PAYMENT COMPLETE</span>
+
         <h2>Order confirmed.</h2>
+
         <p>
-          This order is already paid. Starting another payment is blocked by
-          the backend.
+          This order is already paid. Starting another payment is blocked by the
+          backend.
         </p>
+
         <div className="checkout-success__number">
           <span>Order number</span>
           <strong>{initialOrder.orderNumber}</strong>
         </div>
+
         <div className="checkout-success__actions">
           <Link
             className="button button--primary"
@@ -142,6 +128,7 @@ export function PaymentView({
           >
             View order status
           </Link>
+
           <Link className="button" href="/#shop">
             Continue shopping
           </Link>
@@ -157,7 +144,15 @@ export function PaymentView({
     return (
       <section className="payment-card payment-card--blocked">
         <span className="section-kicker">PAYMENT RECOVERY</span>
-        <h1>{cancelled ? "Order cancelled" : expired ? "Payment expired" : "Payment unavailable"}</h1>
+
+        <h1>
+          {cancelled
+            ? "Order cancelled"
+            : expired
+              ? "Payment expired"
+              : "Payment unavailable"}
+        </h1>
+
         <p>
           {cancelled
             ? "This order was cancelled and cannot accept another payment."
@@ -165,6 +160,7 @@ export function PaymentView({
               ? "The 30-minute inventory reservation ended. A new payment cannot be started for this order."
               : "This order is not currently eligible for payment."}
         </p>
+
         <div className="payment-recovery-actions">
           <Link
             className="button button--primary"
@@ -172,6 +168,7 @@ export function PaymentView({
           >
             View order details
           </Link>
+
           <Link className="button" href="/#shop">
             Shop again
           </Link>
@@ -183,7 +180,9 @@ export function PaymentView({
   return (
     <section className="payment-card">
       <span className="section-kicker">PAYMENT RECOVERY</span>
+
       <h1>Complete your payment</h1>
+
       <p>
         Continue an existing gateway session when possible. If you switch
         providers, TextShop closes the previous open session before creating
@@ -195,10 +194,12 @@ export function PaymentView({
           <span>Order</span>
           <strong>{initialOrder.orderNumber}</strong>
         </div>
+
         <div>
           <span>Total</span>
           <strong>{money(initialOrder.totalCents)}</strong>
         </div>
+
         <div>
           <span>Inventory reservation</span>
           <strong>
@@ -212,9 +213,11 @@ export function PaymentView({
       {initialOrder.payment ? (
         <div className="payment-recovery-banner">
           <strong>Previous payment detected</strong>
+
           <span>
             {initialOrder.payment.provider} · {initialOrder.payment.status}
           </span>
+
           <small>
             Choosing the same provider resumes the existing session when it is
             still open.
@@ -234,6 +237,7 @@ export function PaymentView({
               <strong>FPX Online Banking</strong>
               <span>Pay from a Malaysian bank through Billplz</span>
             </div>
+
             <strong>
               {busyProvider === "BILLPLZ" ? "Connecting…" : "Choose bank →"}
             </strong>
@@ -251,48 +255,13 @@ export function PaymentView({
               <strong>Stripe Checkout</strong>
               <span>Resume or open the hosted secure payment page</span>
             </div>
+
             <strong>
               {busyProvider === "STRIPE" ? "Checking…" : "Continue →"}
             </strong>
           </button>
         ) : null}
-
-        {developmentPaymentEnabled ? (
-          <button
-            className="payment-provider-option"
-            type="button"
-            disabled={Boolean(busyProvider)}
-            onClick={() => prepare("MANUAL_TEST")}
-          >
-            <div>
-              <strong>Development payment</strong>
-              <span>Local testing only · no real money</span>
-            </div>
-            <strong>
-              {busyProvider === "MANUAL_TEST" ? "Checking…" : "Use test mode"}
-            </strong>
-          </button>
-        ) : null}
       </div>
-
-      {payment?.provider === "MANUAL_TEST" && payment.status === "PENDING" ? (
-        <div className="manual-payment-panel">
-          <div>
-            <span>{payment.resumed ? "Resumed test amount" : "Test amount"}</span>
-            <strong>{money(payment.amountCents)}</strong>
-          </div>
-          <button
-            className="button button--checkout"
-            type="button"
-            disabled={Boolean(busyProvider)}
-            onClick={confirmDevelopment}
-          >
-            {busyProvider === "MANUAL_TEST"
-              ? "Processing…"
-              : "Simulate successful payment"}
-          </button>
-        </div>
-      ) : null}
 
       {error ? <p className="form-error">{error}</p> : null}
 

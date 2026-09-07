@@ -87,7 +87,7 @@ class ProductCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(6, 5, 6, 6),
+              padding: const EdgeInsets.fromLTRB(8, 7, 8, 9),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -101,17 +101,17 @@ class ProductCard extends StatelessWidget {
                       letterSpacing: 0.6,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     product.name,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w800,
-                      height: 1.0,
+                      height: 1.18,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 6),
                   Row(
                     children: <Widget>[
                       Expanded(

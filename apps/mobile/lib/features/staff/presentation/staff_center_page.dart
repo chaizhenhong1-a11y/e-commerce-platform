@@ -114,7 +114,7 @@ class _StaffCenterPageState extends ConsumerState<StaffCenterPage>
                             ),
                             const SizedBox(height: 12),
                             _ActionGrid(
-                              columns: wide ? 3 : 1,
+                              columns: wide ? 5 : 1,
                               children: <Widget>[
                                 _ActionCard(
                                   icon: Icons.local_shipping_outlined,
@@ -133,6 +133,26 @@ class _StaffCenterPageState extends ConsumerState<StaffCenterPage>
                                   badge: data.activeReturns,
                                   badgeLabel: 'active',
                                   onTap: () => context.push('/staff/returns'),
+                                ),
+                                _ActionCard(
+                                  icon: Icons.category_outlined,
+                                  title: 'Categories',
+                                  subtitle:
+                                      'Organize storefront categories and sort order.',
+                                  badge: 0,
+                                  badgeLabel: 'items',
+                                  onTap: () =>
+                                      context.push('/staff/categories'),
+                                ),
+                                _ActionCard(
+                                  icon: Icons.local_offer_outlined,
+                                  title: 'Promotions',
+                                  subtitle:
+                                      'Manage coupons and automatic discounts.',
+                                  badge: 0,
+                                  badgeLabel: 'rules',
+                                  onTap: () =>
+                                      context.push('/staff/promotions'),
                                 ),
                                 _ActionCard(
                                   icon: Icons.inventory_2_outlined,

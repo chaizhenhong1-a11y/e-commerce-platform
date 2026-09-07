@@ -3,7 +3,9 @@ import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../domain/staff_commerce_summary.dart';
 import '../domain/staff_catalog.dart';
+import '../domain/staff_category.dart';
 import '../domain/staff_order.dart';
+import '../domain/staff_promotion.dart';
 import '../domain/staff_return_case.dart';
 
 class StaffRepository {
@@ -132,6 +134,323 @@ class StaffRepository {
     );
   }
 
+  Future<List<StaffCategory>> getCategories() async {
+    final response =
+        await _apiClient.dio.get<List<dynamic>>('/staff/categories');
+    final data = response.data ?? const <dynamic>[];
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(StaffCategory.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<StaffCategory> createCategory({
+    required String name,
+    required String slug,
+    required bool isActive,
+    required int sortOrder,
+  }) async {
+    final response = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/staff/categories',
+      data: <String, dynamic>{
+        'name': name.trim(),
+        'slug': slug.trim(),
+        'isActive': isActive,
+        'sortOrder': sortOrder,
+      },
+    );
+    final data = response.data;
+    if (data == null) throw StateError('Created category response was empty.');
+    return StaffCategory.fromJson(data);
+  }
+
+  Future<void> updateCategory({
+    required String categoryId,
+    required String name,
+    required String slug,
+    required bool isActive,
+    required int sortOrder,
+  }) async {
+    await _apiClient.dio.patch<void>(
+      '/staff/categories/${Uri.encodeComponent(categoryId)}',
+      data: <String, dynamic>{
+        'name': name.trim(),
+        'slug': slug.trim(),
+        'isActive': isActive,
+        'sortOrder': sortOrder,
+      },
+    );
+  }
+
+  Future<void> deleteCategory(String categoryId) async {
+    await _apiClient.dio.delete<void>(
+      '/staff/categories/${Uri.encodeComponent(categoryId)}',
+    );
+  }
+
+  Future<List<StaffCouponPromotion>> getCouponPromotions() async {
+    final response =
+        await _apiClient.dio.get<List<dynamic>>('/staff/promotions');
+    final data = response.data ?? const <dynamic>[];
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(StaffCouponPromotion.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<void> createCouponPromotion({
+    required String code,
+    required String name,
+    String? description,
+    required StaffPromotionDiscountType discountType,
+    required int value,
+    required int minSubtotalCents,
+    int? maxDiscountCents,
+    DateTime? startsAt,
+    DateTime? endsAt,
+    int? usageLimit,
+    int? perUserLimit,
+    required bool isActive,
+    required List<String> productIds,
+    required List<String> categoryIds,
+  }) async {
+    await _apiClient.dio.post<void>(
+      '/staff/promotions',
+      data: _couponPayload(
+        code: code,
+        name: name,
+        description: description,
+        discountType: discountType,
+        value: value,
+        minSubtotalCents: minSubtotalCents,
+        maxDiscountCents: maxDiscountCents,
+        startsAt: startsAt,
+        endsAt: endsAt,
+        usageLimit: usageLimit,
+        perUserLimit: perUserLimit,
+        isActive: isActive,
+        productIds: productIds,
+        categoryIds: categoryIds,
+      ),
+    );
+  }
+
+  Future<void> updateCouponPromotion({
+    required String promotionId,
+    required String code,
+    required String name,
+    String? description,
+    required StaffPromotionDiscountType discountType,
+    required int value,
+    required int minSubtotalCents,
+    int? maxDiscountCents,
+    DateTime? startsAt,
+    DateTime? endsAt,
+    int? usageLimit,
+    int? perUserLimit,
+    required bool isActive,
+    required List<String> productIds,
+    required List<String> categoryIds,
+  }) async {
+    await _apiClient.dio.patch<void>(
+      '/staff/promotions/${Uri.encodeComponent(promotionId)}',
+      data: _couponPayload(
+        code: code,
+        name: name,
+        description: description,
+        discountType: discountType,
+        value: value,
+        minSubtotalCents: minSubtotalCents,
+        maxDiscountCents: maxDiscountCents,
+        startsAt: startsAt,
+        endsAt: endsAt,
+        usageLimit: usageLimit,
+        perUserLimit: perUserLimit,
+        isActive: isActive,
+        productIds: productIds,
+        categoryIds: categoryIds,
+      ),
+    );
+  }
+
+  Future<void> deactivateCouponPromotion(String promotionId) async {
+    await _apiClient.dio.post<void>(
+      '/staff/promotions/${Uri.encodeComponent(promotionId)}/deactivate',
+    );
+  }
+
+  Future<List<StaffAutomaticPromotion>> getAutomaticPromotions() async {
+    final response =
+        await _apiClient.dio.get<List<dynamic>>('/staff/promotions/automatic');
+    final data = response.data ?? const <dynamic>[];
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(StaffAutomaticPromotion.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<void> createAutomaticPromotion({
+    required String name,
+    String? description,
+    required StaffPromotionDiscountType discountType,
+    required int value,
+    required int minSubtotalCents,
+    int? maxDiscountCents,
+    DateTime? startsAt,
+    DateTime? endsAt,
+    required int priority,
+    required bool isActive,
+    required List<String> productIds,
+    required List<String> categoryIds,
+  }) async {
+    await _apiClient.dio.post<void>(
+      '/staff/promotions/automatic',
+      data: _automaticPayload(
+        name: name,
+        description: description,
+        discountType: discountType,
+        value: value,
+        minSubtotalCents: minSubtotalCents,
+        maxDiscountCents: maxDiscountCents,
+        startsAt: startsAt,
+        endsAt: endsAt,
+        priority: priority,
+        isActive: isActive,
+        productIds: productIds,
+        categoryIds: categoryIds,
+      ),
+    );
+  }
+
+  Future<void> updateAutomaticPromotion({
+    required String promotionId,
+    required String name,
+    String? description,
+    required StaffPromotionDiscountType discountType,
+    required int value,
+    required int minSubtotalCents,
+    int? maxDiscountCents,
+    DateTime? startsAt,
+    DateTime? endsAt,
+    required int priority,
+    required bool isActive,
+    required List<String> productIds,
+    required List<String> categoryIds,
+  }) async {
+    await _apiClient.dio.patch<void>(
+      '/staff/promotions/automatic/${Uri.encodeComponent(promotionId)}',
+      data: _automaticPayload(
+        name: name,
+        description: description,
+        discountType: discountType,
+        value: value,
+        minSubtotalCents: minSubtotalCents,
+        maxDiscountCents: maxDiscountCents,
+        startsAt: startsAt,
+        endsAt: endsAt,
+        priority: priority,
+        isActive: isActive,
+        productIds: productIds,
+        categoryIds: categoryIds,
+      ),
+    );
+  }
+
+  Future<void> deactivateAutomaticPromotion(String promotionId) async {
+    await _apiClient.dio.post<void>(
+      '/staff/promotions/automatic/${Uri.encodeComponent(promotionId)}/deactivate',
+    );
+  }
+
+  Future<StaffPromotionEditorOptions> getPromotionEditorOptions() async {
+    final results = await Future.wait<dynamic>([
+      getCatalog(),
+      getCategories(),
+    ]);
+    final products = results[0] as List<StaffCatalogProduct>;
+    final categories = results[1] as List<StaffCategory>;
+    return StaffPromotionEditorOptions(
+      products: products
+          .map((item) => StaffPromotionCatalogOption(
+                id: item.id,
+                name: item.name,
+              ))
+          .toList(growable: false),
+      categories: categories
+          .map((item) => StaffPromotionCatalogOption(
+                id: item.id,
+                name: item.name,
+              ))
+          .toList(growable: false),
+    );
+  }
+
+  Map<String, dynamic> _couponPayload({
+    required String code,
+    required String name,
+    String? description,
+    required StaffPromotionDiscountType discountType,
+    required int value,
+    required int minSubtotalCents,
+    int? maxDiscountCents,
+    DateTime? startsAt,
+    DateTime? endsAt,
+    int? usageLimit,
+    int? perUserLimit,
+    required bool isActive,
+    required List<String> productIds,
+    required List<String> categoryIds,
+  }) {
+    return <String, dynamic>{
+      'code': code.trim().toUpperCase().replaceAll(RegExp(r'\s+'), ''),
+      'name': name.trim(),
+      if (description?.trim().isNotEmpty ?? false)
+        'description': description!.trim(),
+      'discountType': discountType.apiValue,
+      'value': value,
+      'minSubtotalCents': minSubtotalCents,
+      'maxDiscountCents': maxDiscountCents,
+      'startsAt': startsAt?.toUtc().toIso8601String(),
+      'endsAt': endsAt?.toUtc().toIso8601String(),
+      'usageLimit': usageLimit,
+      'perUserLimit': perUserLimit,
+      'isActive': isActive,
+      'productIds': productIds,
+      'categoryIds': categoryIds,
+    };
+  }
+
+  Map<String, dynamic> _automaticPayload({
+    required String name,
+    String? description,
+    required StaffPromotionDiscountType discountType,
+    required int value,
+    required int minSubtotalCents,
+    int? maxDiscountCents,
+    DateTime? startsAt,
+    DateTime? endsAt,
+    required int priority,
+    required bool isActive,
+    required List<String> productIds,
+    required List<String> categoryIds,
+  }) {
+    return <String, dynamic>{
+      'name': name.trim(),
+      if (description?.trim().isNotEmpty ?? false)
+        'description': description!.trim(),
+      'discountType': discountType.apiValue,
+      'value': value,
+      'minSubtotalCents': minSubtotalCents,
+      'maxDiscountCents': maxDiscountCents,
+      'startsAt': startsAt?.toUtc().toIso8601String(),
+      'endsAt': endsAt?.toUtc().toIso8601String(),
+      'priority': priority,
+      'isActive': isActive,
+      'productIds': productIds,
+      'categoryIds': categoryIds,
+    };
+  }
+
   Future<List<StaffCatalogProduct>> getCatalog({
     String? query,
     String? status,
@@ -208,6 +527,8 @@ class StaffRepository {
     required String name,
     required String slug,
     required String description,
+    required Map<String, dynamic> details,
+    required Map<String, String> colorSwatches,
     String? categoryId,
     required bool isFeatured,
   }) async {
@@ -217,6 +538,8 @@ class StaffRepository {
         'name': name.trim(),
         'slug': slug.trim(),
         'description': description.trim(),
+        'details': details,
+        'colorSwatches': colorSwatches,
         'categoryId': categoryId,
         'status': 'DRAFT',
         'isFeatured': isFeatured,
@@ -229,11 +552,32 @@ class StaffRepository {
     return StaffCatalogProduct.fromJson(data);
   }
 
+  Future<void> updateProductStatus({
+    required String productId,
+    required String status,
+  }) async {
+    await _apiClient.dio.patch<void>(
+      '/staff/catalog/products/${Uri.encodeComponent(productId)}',
+      data: <String, dynamic>{'status': status},
+    );
+  }
+
+  Future<StaffProductDeleteResult> deleteProduct(String productId) async {
+    final response = await _apiClient.dio.delete<Map<String, dynamic>>(
+      '/staff/catalog/products/${Uri.encodeComponent(productId)}',
+    );
+    return StaffProductDeleteResult.fromJson(
+      response.data ?? const <String, dynamic>{},
+    );
+  }
+
   Future<void> saveProduct({
     required String productId,
     required String name,
     required String slug,
     required String description,
+    required Map<String, dynamic> details,
+    required Map<String, String> colorSwatches,
     String? categoryId,
     required String status,
     required bool isFeatured,
@@ -244,6 +588,8 @@ class StaffRepository {
         'name': name.trim(),
         'slug': slug.trim(),
         'description': description.trim(),
+        'details': details,
+        'colorSwatches': colorSwatches,
         'categoryId': categoryId,
         'status': status,
         'isFeatured': isFeatured,
@@ -406,4 +752,24 @@ class StaffRepository {
       '/staff/catalog/images/${Uri.encodeComponent(imageId)}',
     );
   }
+}
+
+class StaffProductDeleteResult {
+  const StaffProductDeleteResult({
+    required this.deleted,
+    required this.archived,
+    required this.message,
+  });
+
+  factory StaffProductDeleteResult.fromJson(Map<String, dynamic> json) {
+    return StaffProductDeleteResult(
+      deleted: json['deleted'] == true,
+      archived: json['archived'] == true,
+      message: json['message']?.toString().trim() ?? '',
+    );
+  }
+
+  final bool deleted;
+  final bool archived;
+  final String message;
 }

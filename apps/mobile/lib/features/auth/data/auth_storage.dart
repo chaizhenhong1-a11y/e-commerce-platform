@@ -1,16 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'web_session_storage.dart';
+
 class AuthStorage {
   AuthStorage(this._storage);
 
   static const _accessTokenKey = 'textshop_access_token';
   static const _refreshTokenKey = 'textshop_refresh_token';
 
-  // Flutter Web is only a development/test target for the mobile client.
-  // Keep browser credentials in memory instead of relying on the plugin's
-  // experimental WebCrypto implementation. Android/iOS continue to use
-  // platform secure storage.
+  // Flutter Web keeps the development session in browser sessionStorage so
+  // a full-page Stripe redirect can return to the same tab without losing the
+  // authenticated session. Android/iOS continue to use platform secure storage.
   static String? _webAccessToken;
   static String? _webRefreshToken;
 
@@ -18,14 +19,14 @@ class AuthStorage {
 
   Future<String?> readAccessToken() async {
     if (kIsWeb) {
-      return _webAccessToken;
+      return readWebSessionValue(_accessTokenKey) ?? _webAccessToken;
     }
     return _storage.read(key: _accessTokenKey);
   }
 
   Future<String?> readRefreshToken() async {
     if (kIsWeb) {
-      return _webRefreshToken;
+      return readWebSessionValue(_refreshTokenKey) ?? _webRefreshToken;
     }
     return _storage.read(key: _refreshTokenKey);
   }
@@ -37,6 +38,8 @@ class AuthStorage {
     if (kIsWeb) {
       _webAccessToken = accessToken;
       _webRefreshToken = refreshToken;
+      writeWebSessionValue(_accessTokenKey, accessToken);
+      writeWebSessionValue(_refreshTokenKey, refreshToken);
       return;
     }
 
@@ -50,6 +53,8 @@ class AuthStorage {
     if (kIsWeb) {
       _webAccessToken = null;
       _webRefreshToken = null;
+      removeWebSessionValue(_accessTokenKey);
+      removeWebSessionValue(_refreshTokenKey);
       return;
     }
 

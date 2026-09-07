@@ -443,11 +443,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                   sliver: SliverLayoutBuilder(
                     builder: (context, constraints) {
                       final width = constraints.crossAxisExtent;
-                      final count = width >= 1200
-                          ? 6
-                          : width >= 900
-                              ? 5
-                              : 4;
+                      final count = width >= 1100
+                          ? 4
+                          : width >= 700
+                              ? 3
+                              : 2;
+                      final childAspectRatio = width >= 1100
+                          ? 0.80
+                          : width >= 700
+                              ? 0.76
+                              : 0.68;
 
                       return SliverGrid(
                         delegate: SliverChildBuilderDelegate(
@@ -475,9 +480,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: count,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          childAspectRatio: width < 560 ? 0.72 : 0.82,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: childAspectRatio,
                         ),
                       );
                     },

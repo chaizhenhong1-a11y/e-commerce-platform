@@ -80,6 +80,11 @@ export class StaffProductsController {
     return this.productsService.updateProductForStaff(productId, dto);
   }
 
+  @Delete('products/:productId')
+  deleteProduct(@Param('productId') productId: string) {
+    return this.productsService.deleteProductForStaff(productId);
+  }
+
   @Post('products/:productId/variants')
   createVariant(
     @Param('productId') productId: string,

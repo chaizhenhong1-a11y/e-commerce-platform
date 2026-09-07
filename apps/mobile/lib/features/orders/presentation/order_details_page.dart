@@ -232,11 +232,8 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
     try {
       final repository = ref.read(checkoutRepositoryProvider);
       final existingProvider = order.payment?.provider;
-      final provider = existingProvider == 'STRIPE'
-          ? 'STRIPE'
-          : kDebugMode
-              ? 'MANUAL_TEST'
-              : 'STRIPE';
+      final provider =
+          existingProvider == 'MANUAL_TEST' ? 'MANUAL_TEST' : 'STRIPE';
       final payment = await repository.createPayment(
         orderNumber: order.orderNumber,
         provider: provider,
@@ -272,7 +269,10 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
 
       final opened = await launchUrl(
         Uri.parse(url),
-        mode: LaunchMode.externalApplication,
+        mode: kIsWeb
+            ? LaunchMode.platformDefault
+            : LaunchMode.externalApplication,
+        webOnlyWindowName: kIsWeb ? '_self' : null,
       );
       if (!opened) {
         throw StateError('Unable to open the payment provider.');

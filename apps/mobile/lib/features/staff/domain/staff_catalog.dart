@@ -8,6 +8,8 @@ class StaffCatalogProduct {
     required this.variants,
     this.images = const <StaffProductImage>[],
     this.description,
+    this.details = const StaffProductDetails(),
+    this.colorSwatches = const <String, String>{},
     this.categoryId,
     this.categoryName,
     this.updatedAt,
@@ -23,6 +25,8 @@ class StaffCatalogProduct {
       status: json['status']?.toString() ?? 'UNKNOWN',
       isFeatured: json['isFeatured'] == true,
       description: _text(json['description']),
+      details: StaffProductDetails.fromJson(json['details']),
+      colorSwatches: _stringMap(json['colorSwatches']),
       categoryId: _text(json['categoryId']) ??
           (category is Map<String, dynamic> ? _text(category['id']) : null),
       categoryName:
@@ -49,6 +53,8 @@ class StaffCatalogProduct {
   final String status;
   final bool isFeatured;
   final String? description;
+  final StaffProductDetails details;
+  final Map<String, String> colorSwatches;
   final String? categoryId;
   final String? categoryName;
   final List<StaffCatalogVariant> variants;
@@ -72,10 +78,54 @@ class StaffCatalogProduct {
     return text == null || text.isEmpty ? null : text;
   }
 
+  static Map<String, String> _stringMap(Object? value) {
+    if (value is! Map) return const <String, String>{};
+    return <String, String>{
+      for (final entry in value.entries)
+        if (entry.key.toString().trim().isNotEmpty &&
+            entry.value.toString().trim().isNotEmpty)
+          entry.key.toString().trim(): entry.value.toString().trim(),
+    };
+  }
+
   static DateTime? _date(Object? value) {
     final text = value?.toString().trim();
     return text == null || text.isEmpty ? null : DateTime.tryParse(text);
   }
+}
+
+class StaffProductDetails {
+  const StaffProductDetails({
+    this.material,
+    this.dimensions,
+    this.care,
+    this.highlights = const <String>[],
+    this.specifications = const <String, String>{},
+  });
+
+  factory StaffProductDetails.fromJson(Object? value) {
+    if (value is! Map) return const StaffProductDetails();
+    final map = Map<String, dynamic>.from(value);
+    final highlights = map['highlights'];
+    return StaffProductDetails(
+      material: StaffCatalogProduct._text(map['material']),
+      dimensions: StaffCatalogProduct._text(map['dimensions']),
+      care: StaffCatalogProduct._text(map['care']),
+      highlights: highlights is List
+          ? highlights
+              .map((item) => item.toString().trim())
+              .where((item) => item.isNotEmpty)
+              .toList(growable: false)
+          : const <String>[],
+      specifications: StaffCatalogProduct._stringMap(map['specifications']),
+    );
+  }
+
+  final String? material;
+  final String? dimensions;
+  final String? care;
+  final List<String> highlights;
+  final Map<String, String> specifications;
 }
 
 class StaffCatalogVariant {

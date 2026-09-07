@@ -30,6 +30,7 @@ export class PaymentsService {
     provider: PaymentProvider,
     userId?: string,
     guestToken?: string,
+    returnBaseUrl?: string,
   ) {
     this.assertDevelopmentProviderAllowed(provider);
     const order = await this.prisma.order.findUnique({
@@ -146,6 +147,7 @@ export class PaymentsService {
         currency: order.currency,
         customerEmail: order.email,
         customerName: order.shippingName,
+        returnBaseUrl,
       });
 
       const updated = await this.prisma.payment.update({

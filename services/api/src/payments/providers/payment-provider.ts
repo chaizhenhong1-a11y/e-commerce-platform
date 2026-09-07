@@ -8,6 +8,7 @@ export type PaymentSessionRequest = {
   currency: string;
   customerEmail: string;
   customerName: string;
+  returnBaseUrl?: string;
 };
 
 export type PaymentSessionResult = {
