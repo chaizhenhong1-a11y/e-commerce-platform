@@ -2,15 +2,19 @@ import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/co
 import type { OrderStatus, PaymentStatus } from '@prisma/client';
 import { StaffAuthGuard } from '../auth/guards/staff-auth.guard';
 import { OrdersService } from './orders.service';
+import { StaffCommerceService } from './staff-commerce.service';
 
 @Controller('staff/orders')
 @UseGuards(StaffAuthGuard)
 export class StaffOrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly staffCommerceService: StaffCommerceService,
+  ) {}
 
   @Get('summary')
   summary() {
-    return this.ordersService.getStaffCommerceSummary();
+    return this.staffCommerceService.getSummary();
   }
 
   @Get()

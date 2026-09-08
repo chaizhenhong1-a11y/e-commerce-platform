@@ -117,7 +117,6 @@ String _initialLocation() {
   return uri.hasQuery ? '$path?${uri.query}' : path;
 }
 
-
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: _initialLocation(),

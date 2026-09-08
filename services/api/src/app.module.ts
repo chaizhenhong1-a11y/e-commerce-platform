@@ -19,6 +19,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { PromotionsModule } from './promotions/promotions.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { SettingsModule } from './settings/settings.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
@@ -40,6 +41,7 @@ import { WishlistModule } from './wishlist/wishlist.module';
     CustomersModule,
     CheckoutModule,
     PaymentsModule,
+    SettingsModule,
     ScheduleModule.forRoot(),
     OrdersModule,
     WishlistModule,

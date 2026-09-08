@@ -7,6 +7,7 @@ import { WishlistProvider } from "@/features/wishlist/components/wishlist-provid
 import { OrdersHeaderLink } from "@/features/orders/components/orders-header-link";
 import { HeaderActionIcon } from "@/shared/components/header-action-icon";
 import { NotificationHeaderLink } from "@/features/notifications/components/notification-header-link";
+import { StorefrontFooter } from "@/features/store/components/storefront-footer";
 
 export const metadata: Metadata = {
   title: {
@@ -93,49 +94,7 @@ export default function RootLayout({
 
         <main className="storefront-main">{children}</main>
 
-        <footer className="site-footer">
-          <div className="shell footer-top">
-            <div>
-              <Link className="brand brand--footer" href="/">
-                <span className="brand-mark">T</span>
-                <span>{siteConfig.name}</span>
-              </Link>
-              <p>
-                Curated everyday products with clear pricing, reliable delivery,
-                and straightforward service.
-              </p>
-            </div>
-
-            <div>
-              <h3>Shop</h3>
-              <Link href="/#shop">New arrivals</Link>
-              <Link href="/#shop">Best sellers</Link>
-              <Link href="/#shop">Home & living</Link>
-              <Link href="/#shop">Accessories</Link>
-            </div>
-
-            <div>
-              <h3>Help</h3>
-              <Link href="/#about">Delivery</Link>
-              <Link href="/#about">Returns</Link>
-              <Link href="/#about">Contact us</Link>
-              <Link href="/#about">FAQ</Link>
-            </div>
-
-            <div>
-              <h3>About</h3>
-              <Link href="/#about">Our story</Link>
-              <Link href="/#about">Trust & safety</Link>
-              <Link href="/#about">Terms</Link>
-              <Link href="/#about">Privacy</Link>
-            </div>
-          </div>
-
-          <div className="shell footer-bottom">
-            <span>© {new Date().getFullYear()} {siteConfig.name}</span>
-            <span>Malaysia · MYR</span>
-          </div>
-        </footer>
+        <StorefrontFooter />
         </WishlistProvider>
       </body>
     </html>

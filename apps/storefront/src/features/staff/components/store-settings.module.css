@@ -1,0 +1,35 @@
+.form {
+  display: grid;
+  gap: 18px;
+  max-width: 980px;
+}
+.section { display: grid; gap: 14px; padding: 20px; background: #fff; border: 1px solid #e5e5df; border-radius: 20px; }
+.section h2 { margin: 0; font-size: 1.05rem; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.field { display: grid; gap: 7px; }
+.full { grid-column: 1 / -1; }
+.field span { font-size: 0.82rem; font-weight: 800; }
+.field input, .field textarea { width: 100%; padding: 11px 12px; border: 1px solid #d8d8d2; border-radius: 12px; background: #fff; color: #171717; font: inherit; box-sizing: border-box; }
+.field input { min-height: 44px; }
+.field textarea { resize: vertical; line-height: 1.5; }
+.actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.actions button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: #171717; color: #fff; font-weight: 800; cursor: pointer; }
+.actions button:disabled { cursor: progress; opacity: 0.6; }
+.success { color: #166534; font-weight: 700; }
+.error { color: #b91c1c; font-weight: 700; }
+@media (max-width: 720px) { .grid { grid-template-columns: 1fr; } .full { grid-column: auto; } }
+
+.photoLabel,.subheading{display:block;font-weight:800;margin-bottom:10px}.subheading{padding-top:8px;border-top:1px solid #e7e7e7}.coverPreview{width:100%;max-height:360px;object-fit:cover;border-radius:18px}.photoPlaceholder{padding:48px 20px;text-align:center;background:#f5f5f5;border:1px dashed #c8c8c8;border-radius:18px;color:#666}.uploadButton{display:inline-flex;margin-top:10px;padding:10px 14px;border-radius:10px;background:#171717;color:#fff;font-weight:800;cursor:pointer}.uploadButton input{display:none}.galleryPreview{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}.galleryItem{position:relative}.galleryItem img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:14px}.galleryItem button{position:absolute;right:7px;bottom:7px;border:0;border-radius:8px;padding:6px 9px;background:rgba(0,0,0,.75);color:#fff;cursor:pointer}
+
+.photoHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.photoHeader p { margin: 4px 0 0; color: #6b6b65; font-size: .86rem; }
+.photoHeader .uploadButton { margin-top: 0; flex: 0 0 auto; }
+.galleryItem { overflow: hidden; border: 1px solid #e3e3dc; border-radius: 16px; background: #fafaf8; }
+.galleryItem img { display: block; border-radius: 0; }
+.coverBadge { position: absolute; left: 8px; top: 8px; padding: 5px 8px; border-radius: 999px; background: rgba(255,255,255,.92); color: #171717; font-size: .72rem; font-weight: 900; }
+.photoActions { display: flex; gap: 6px; padding: 8px; }
+.galleryItem .photoActions button { position: static; flex: 1; padding: 7px 8px; background: #171717; }
+.galleryItem .photoActions button:last-child { background: #fff; color: #991b1b; border: 1px solid #e8d2d2; }
+@media (max-width: 560px) { .photoHeader { flex-direction: column; } .photoHeader .uploadButton { width: 100%; justify-content: center; } }
+
+.logoManager p{margin:0 0 12px;color:#666}.logoPreview{display:flex;align-items:center;gap:16px;flex-wrap:wrap}.logoPreview img{width:112px;height:112px;object-fit:contain;border:1px solid #e3e3dc;border-radius:18px;background:#fff;padding:10px}.logoActions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.logoActions .uploadButton{margin-top:0}.removeLogoButton{border:1px solid #e8d2d2;background:#fff;color:#991b1b;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}

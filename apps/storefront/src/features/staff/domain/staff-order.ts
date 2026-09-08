@@ -7,7 +7,24 @@ export type StaffOrder = {
   latestRefund: { status: string; amountCents: number } | null;
   latestReturn: { id: string; status: string } | null;
 };
+
 export type StaffCommerceSummary = {
-  totalOrders: number; awaitingPayment: number; readyToFulfill: number; fulfilled: number;
-  activeReturns: number; refundProcessing: number; lowStockVariants: number;
+  currency: string;
+  timeZone: string;
+  totalOrders: number;
+  awaitingPayment: number;
+  readyToFulfill: number;
+  fulfilled: number;
+  activeReturns: number;
+  refundProcessing: number;
+  lowStockVariants: number;
+  todayOrders: number;
+  todayGrossSalesCents: number;
+  todayRefundsCents: number;
+  todayNetSalesCents: number;
+  monthOrders: number;
+  monthGrossSalesCents: number;
+  monthRefundsCents: number;
+  monthNetSalesCents: number;
+  averageOrderValueCents: number;
 };

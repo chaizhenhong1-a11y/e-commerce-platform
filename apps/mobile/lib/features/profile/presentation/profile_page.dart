@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../auth/domain/auth_state.dart';
 import '../../account/presentation/address_book_providers.dart';
+import '../../auth/domain/auth_state.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../cart/presentation/cart_providers.dart';
-import '../../orders/presentation/order_providers.dart';
 import '../../notifications/presentation/notification_providers.dart';
+import '../../orders/presentation/order_providers.dart';
+import '../../store/presentation/store_support_page.dart';
 import '../../wishlist/presentation/wishlist_providers.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -15,6 +16,12 @@ class ProfilePage extends ConsumerWidget {
 
   static const Color _lime = Color(0xFFDBFF4B);
   static const Color _ink = Color(0xFF171717);
+
+  void _openStoreSupport(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const StoreSupportPage()),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -46,8 +53,10 @@ class ProfilePage extends ConsumerWidget {
                       color: _lime,
                       shape: BoxShape.circle,
                     ),
-                    child:
-                        const Icon(Icons.person_outline_rounded, color: _ink),
+                    child: const Icon(
+                      Icons.person_outline_rounded,
+                      color: _ink,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   const Text(
@@ -89,6 +98,22 @@ class ProfilePage extends ConsumerWidget {
               onPressed: () => context.push('/register'),
               child: const Text('Create account'),
             ),
+            const SizedBox(height: 26),
+            const _SectionHeading(
+              eyebrow: 'STORE',
+              title: 'Store & support',
+            ),
+            const SizedBox(height: 12),
+            _AccountPanel(
+              children: <Widget>[
+                _AccountTile(
+                  icon: Icons.storefront_outlined,
+                  title: 'Store & Support',
+                  subtitle: 'Delivery, returns, contact, FAQ and store details',
+                  onTap: () => _openStoreSupport(context),
+                ),
+              ],
+            ),
           ],
         ),
       );
@@ -118,7 +143,9 @@ class ProfilePage extends ConsumerWidget {
                     height: 68,
                     alignment: Alignment.center,
                     decoration: const BoxDecoration(
-                        color: _lime, shape: BoxShape.circle),
+                      color: _lime,
+                      shape: BoxShape.circle,
+                    ),
                     child: Text(
                       user.firstName.isEmpty
                           ? '?'
@@ -151,7 +178,8 @@ class ProfilePage extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.68)),
+                            color: Colors.white.withValues(alpha: 0.68),
+                          ),
                         ),
                         const SizedBox(height: 10),
                         Wrap(
@@ -240,7 +268,9 @@ class ProfilePage extends ConsumerWidget {
             if (user.hasStaffAccess) ...<Widget>[
               const SizedBox(height: 26),
               const _SectionHeading(
-                  eyebrow: 'OPERATIONS', title: 'Staff access'),
+                eyebrow: 'OPERATIONS',
+                title: 'Staff access',
+              ),
               const SizedBox(height: 12),
               Material(
                 color: _lime,
@@ -296,7 +326,25 @@ class ProfilePage extends ConsumerWidget {
             ],
             const SizedBox(height: 26),
             const _SectionHeading(
-                eyebrow: 'ACCOUNT', title: 'Account & activity'),
+              eyebrow: 'STORE',
+              title: 'Store & support',
+            ),
+            const SizedBox(height: 12),
+            _AccountPanel(
+              children: <Widget>[
+                _AccountTile(
+                  icon: Icons.storefront_outlined,
+                  title: 'Store & Support',
+                  subtitle: 'Delivery, returns, contact, FAQ and store details',
+                  onTap: () => _openStoreSupport(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 26),
+            const _SectionHeading(
+              eyebrow: 'ACCOUNT',
+              title: 'Account & activity',
+            ),
             const SizedBox(height: 12),
             _AccountPanel(
               children: <Widget>[
@@ -340,7 +388,10 @@ class ProfilePage extends ConsumerWidget {
                         if (context.mounted) context.go('/');
                       },
                 child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 18, vertical: 17),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 17,
+                  ),
                   child: Row(
                     children: <Widget>[
                       Icon(Icons.logout_rounded),
@@ -409,7 +460,10 @@ class _StatusPill extends StatelessWidget {
 }
 
 class _VerificationCard extends StatelessWidget {
-  const _VerificationCard({required this.submitting, required this.onResend});
+  const _VerificationCard({
+    required this.submitting,
+    required this.onResend,
+  });
 
   final bool submitting;
   final VoidCallback onResend;
@@ -424,7 +478,10 @@ class _VerificationCard extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          const Icon(Icons.mark_email_unread_outlined, color: ProfilePage._ink),
+          const Icon(
+            Icons.mark_email_unread_outlined,
+            color: ProfilePage._ink,
+          ),
           const SizedBox(width: 12),
           const Expanded(
             child: Column(
@@ -457,7 +514,10 @@ class _VerificationCard extends StatelessWidget {
 }
 
 class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({required this.eyebrow, required this.title});
+  const _SectionHeading({
+    required this.eyebrow,
+    required this.title,
+  });
 
   final String eyebrow;
   final String title;
@@ -489,8 +549,11 @@ class _SectionHeading extends StatelessWidget {
 }
 
 class _QuickAction extends StatelessWidget {
-  const _QuickAction(
-      {required this.icon, required this.label, required this.onTap});
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String label;
@@ -515,15 +578,21 @@ class _QuickAction extends StatelessWidget {
                   color: ProfilePage._ink,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: ProfilePage._lime, size: 21),
+                child: Icon(
+                  icon,
+                  color: ProfilePage._lime,
+                  size: 21,
+                ),
               ),
               const SizedBox(height: 9),
               Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ],
           ),
@@ -584,7 +653,10 @@ class _AccountTile extends StatelessWidget {
         ),
         child: Icon(icon, color: ProfilePage._ink, size: 20),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w800),
+      ),
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.chevron_right_rounded),
       onTap: onTap,
