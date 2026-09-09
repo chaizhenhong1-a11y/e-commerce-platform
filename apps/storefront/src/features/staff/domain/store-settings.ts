@@ -19,7 +19,11 @@ export type StoreSettings = {
   timeZone: string;
   standardShippingCents: number;
   freeShippingThresholdCents: number;
+  estimatedDelivery: string;
   deliveryPolicy: string;
+  returnWindowDays: number;
+  returnCondition: string;
+  refundMethod: string;
   returnsPolicy: string;
   faqContent: string;
   trustSafetyContent: string;

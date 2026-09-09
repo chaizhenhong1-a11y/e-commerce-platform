@@ -85,8 +85,24 @@ export class UpdateStoreSettingsDto {
   freeShippingThresholdCents!: number;
 
   @IsString()
+  @MaxLength(120)
+  estimatedDelivery!: string;
+
+  @IsString()
   @MaxLength(6000)
   deliveryPolicy!: string;
+
+  @IsInt()
+  @Min(0)
+  returnWindowDays!: number;
+
+  @IsString()
+  @MaxLength(180)
+  returnCondition!: string;
+
+  @IsString()
+  @MaxLength(180)
+  refundMethod!: string;
 
   @IsString()
   @MaxLength(6000)

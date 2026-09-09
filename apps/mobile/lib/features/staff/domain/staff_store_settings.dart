@@ -19,7 +19,11 @@ class StaffStoreSettings {
     required this.timeZone,
     required this.standardShippingCents,
     required this.freeShippingThresholdCents,
+    required this.estimatedDelivery,
     required this.deliveryPolicy,
+    required this.returnWindowDays,
+    required this.returnCondition,
+    required this.refundMethod,
     required this.returnsPolicy,
     required this.faqContent,
     required this.trustSafetyContent,
@@ -58,7 +62,11 @@ class StaffStoreSettings {
       timeZone: text('timeZone', 'Asia/Kuala_Lumpur'),
       standardShippingCents: number('standardShippingCents'),
       freeShippingThresholdCents: number('freeShippingThresholdCents'),
+      estimatedDelivery: text('estimatedDelivery'),
       deliveryPolicy: text('deliveryPolicy'),
+      returnWindowDays: number('returnWindowDays'),
+      returnCondition: text('returnCondition'),
+      refundMethod: text('refundMethod'),
       returnsPolicy: text('returnsPolicy'),
       faqContent: text('faqContent'),
       trustSafetyContent: text('trustSafetyContent'),
@@ -89,7 +97,11 @@ class StaffStoreSettings {
   final String timeZone;
   final int standardShippingCents;
   final int freeShippingThresholdCents;
+  final String estimatedDelivery;
   final String deliveryPolicy;
+  final int returnWindowDays;
+  final String returnCondition;
+  final String refundMethod;
   final String returnsPolicy;
   final String faqContent;
   final String trustSafetyContent;
@@ -119,7 +131,11 @@ class StaffStoreSettings {
         'timeZone': timeZone,
         'standardShippingCents': standardShippingCents,
         'freeShippingThresholdCents': freeShippingThresholdCents,
+        'estimatedDelivery': estimatedDelivery,
         'deliveryPolicy': deliveryPolicy,
+        'returnWindowDays': returnWindowDays,
+        'returnCondition': returnCondition,
+        'refundMethod': refundMethod,
         'returnsPolicy': returnsPolicy,
         'faqContent': faqContent,
         'trustSafetyContent': trustSafetyContent,

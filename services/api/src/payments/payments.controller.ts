@@ -10,6 +10,7 @@ import type { AuthenticatedUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { ReconcilePaymentDto } from './dto/reconcile-payment.dto';
 import { PaymentsService } from './payments.service';
 
 @Controller('payments')
@@ -28,6 +29,18 @@ export class PaymentsController {
       user.id,
       undefined,
       body.returnBaseUrl,
+    );
+  }
+
+  @Post('reconcile')
+  reconcile(
+    @Body() body: ReconcilePaymentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.paymentsService.reconcile(
+      body.orderNumber,
+      user.id,
+      undefined,
     );
   }
 

@@ -31,12 +31,12 @@ export function RefundRequestButton({ orderNumber }: { orderNumber: string }) {
 
   return (
     <div className="order-cancel-confirm">
-      <strong>Refund the full order?</strong>
-      <span>RM funds will be returned through the original payment provider. Inventory is not automatically restocked.</span>
+      <strong>Request a full refund?</strong>
+      <span>This requests a full refund to the original payment method. Payment and inventory remain separate workflows.</span>
       {error ? <p>{error}</p> : null}
       <div>
         <button className="button" type="button" disabled={busy} onClick={() => setConfirming(false)}>Keep order</button>
-        <button className="button order-cancel-button" type="button" disabled={busy} onClick={requestRefund}>{busy ? "Submitting…" : "Confirm refund"}</button>
+        <button className="button order-cancel-button" type="button" disabled={busy} onClick={requestRefund}>{busy ? "Submitting…" : "Submit refund request"}</button>
       </div>
     </div>
   );

@@ -28,8 +28,10 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
   bool _cancelling = false;
   bool _paying = false;
   bool _refunding = false;
+  bool _reconcilingPayment = false;
   bool _returning = false;
   bool _liveRefreshInFlight = false;
+  bool _paymentReturnReconciled = false;
   Timer? _liveRefreshTimer;
 
   @override
@@ -37,6 +39,10 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _startLiveRefresh();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_reconcilePendingPayment());
+    });
   }
 
   @override
@@ -88,12 +94,10 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
 
     _liveRefreshInFlight = true;
     try {
-      ref.invalidate(orderDetailsProvider(widget.orderNumber));
-      ref.invalidate(customerOrdersProvider);
-
-      final refreshed =
-          await ref.read(orderDetailsProvider(widget.orderNumber).future);
-      await ref.read(customerOrdersProvider.future);
+      final refreshed = await ref.refresh(
+        orderDetailsProvider(widget.orderNumber).future,
+      );
+      await ref.refresh(customerOrdersProvider.future).then<void>((_) {});
 
       if (refreshed.status == 'DELIVERED' ||
           refreshed.status == 'FULFILLED' ||
@@ -160,6 +164,7 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
                 _PaymentRecoveryCard(
                   order: order,
                   paying: _paying,
+                  reconciling: _reconcilingPayment,
                   cancelling: _cancelling,
                   onPay: () => _continuePayment(order),
                   onCancel: () => _cancelOrder(order),
@@ -209,16 +214,77 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
   }
 
   Future<void> _refreshOrderState(String orderNumber) async {
-    ref.invalidate(orderDetailsProvider(orderNumber));
-    ref.invalidate(customerOrdersProvider);
-
     await Future.wait<void>(<Future<void>>[
-      ref.read(orderDetailsProvider(orderNumber).future).then((_) {}),
-      ref.read(customerOrdersProvider.future).then((_) {}),
+      ref.refresh(orderDetailsProvider(orderNumber).future).then((_) {}),
+      ref.refresh(customerOrdersProvider.future).then((_) {}),
     ]);
 
     if (mounted) {
       _startLiveRefresh();
+    }
+  }
+
+  Future<void> _reconcilePendingPayment() async {
+    if (!mounted || _paymentReturnReconciled) {
+      return;
+    }
+    _paymentReturnReconciled = true;
+    setState(() => _reconcilingPayment = true);
+
+    const maxAttempts = 10;
+    const retryDelay = Duration(seconds: 2);
+
+    for (var attempt = 0; attempt < maxAttempts && mounted; attempt++) {
+      try {
+        final order = await ref.refresh(
+          orderDetailsProvider(widget.orderNumber).future,
+        );
+
+        if (order.status != 'AWAITING_PAYMENT' ||
+            order.paymentStatus != 'PENDING') {
+          ref.invalidate(customerOrdersProvider);
+          return;
+        }
+
+        final existingProvider = order.payment?.provider;
+        if (existingProvider == null || existingProvider == 'MANUAL_TEST') {
+          if (mounted) setState(() => _reconcilingPayment = false);
+          return;
+        }
+
+        final payment =
+            await ref.read(checkoutRepositoryProvider).reconcilePayment(
+                  orderNumber: order.orderNumber,
+                );
+
+        if (payment.currency != order.currency ||
+            payment.amountCents != order.totalCents) {
+          throw StateError(
+            'Payment amount does not match the current order total.',
+          );
+        }
+
+        if (payment.status == 'PAID') {
+          await _refreshOrderState(order.orderNumber);
+          if (mounted) {
+            setState(() => _reconcilingPayment = false);
+          }
+          return;
+        }
+      } catch (_) {
+        // Stripe may still be finalising the Checkout Session or the webhook
+        // may still be in flight. Retry for a short bounded window instead of
+        // making the customer press Continue payment to trigger reconciliation.
+      }
+
+      if (attempt < maxAttempts - 1 && mounted) {
+        await Future<void>.delayed(retryDelay);
+      }
+    }
+
+    if (mounted) {
+      await _refreshOrderState(widget.orderNumber);
+      setState(() => _reconcilingPayment = false);
     }
   }
 
@@ -272,7 +338,10 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
         mode: kIsWeb
             ? LaunchMode.platformDefault
             : LaunchMode.externalApplication,
-        webOnlyWindowName: kIsWeb ? '_self' : null,
+        // Keep the running Flutter Web order page alive while Stripe is open.
+        // Replacing this tab would force Flutter, routing, auth, and providers
+        // to bootstrap again when Stripe redirects back.
+        webOnlyWindowName: kIsWeb ? '_blank' : null,
       );
       if (!opened) {
         throw StateError('Unable to open the payment provider.');
@@ -282,8 +351,11 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Secure payment opened. Return to TextShop after paying; '
-              'this order will refresh automatically.',
+              kIsWeb
+                  ? 'Secure payment opened in a new tab. Keep this TextShop '
+                      'tab open; the order will refresh automatically.'
+                  : 'Secure payment opened. Return to TextShop after paying; '
+                      'this order will refresh automatically.',
             ),
           ),
         );
@@ -397,7 +469,7 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Request full refund?'),
+        title: const Text('Request a full refund?'),
         content: const Text(
           'The full paid amount will be returned through the original payment provider. Inventory is handled separately.',
         ),
@@ -573,7 +645,7 @@ class _RefundCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               refund == null
-                  ? 'Eligible for a full refund to the original payment method.'
+                  ? 'You can request a full refund to the original payment method while this order is still confirmed.'
                   : 'Status: ${refund.status} · RM ${(refund.amountCents / 100).toStringAsFixed(2)}',
             ),
             const SizedBox(height: 12),
@@ -584,7 +656,7 @@ class _RefundCard extends StatelessWidget {
               ),
             const SizedBox(height: 6),
             Text(
-              'Refunding money does not automatically return inventory to stock.',
+              'Refunds and inventory are separate workflows. Delivered items must use the return process.',
               style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
@@ -599,6 +671,7 @@ class _PaymentRecoveryCard extends StatelessWidget {
   const _PaymentRecoveryCard({
     required this.order,
     required this.paying,
+    required this.reconciling,
     required this.cancelling,
     required this.onPay,
     required this.onCancel,
@@ -606,6 +679,7 @@ class _PaymentRecoveryCard extends StatelessWidget {
 
   final OrderDetails order;
   final bool paying;
+  final bool reconciling;
   final bool cancelling;
   final VoidCallback onPay;
   final VoidCallback onCancel;
@@ -622,7 +696,7 @@ class _PaymentRecoveryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             const Text(
-              'Payment recovery',
+              'Payment',
               style: TextStyle(fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 4),
@@ -631,7 +705,9 @@ class _PaymentRecoveryCard extends StatelessWidget {
                   ? 'The inventory reservation has expired.'
                   : order.payment == null
                       ? 'Complete payment before the 30-minute inventory reservation ends.'
-                      : 'Resume ${order.payment!.provider} payment or safely continue the pending order.',
+                      : reconciling
+                          ? 'We are confirming the latest payment with ${order.payment!.provider}.'
+                          : 'Payment has not been confirmed yet. You can pay now using ${order.payment!.provider}.',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -641,13 +717,20 @@ class _PaymentRecoveryCard extends StatelessWidget {
               children: <Widget>[
                 Expanded(
                   child: FilledButton(
-                    onPressed: expired || paying || cancelling ? null : onPay,
-                    child: Text(paying ? 'Checking…' : 'Continue payment'),
+                    onPressed: expired || paying || reconciling || cancelling
+                        ? null
+                        : onPay,
+                    child: Text(reconciling
+                        ? 'Confirming payment…'
+                        : paying
+                            ? 'Opening payment…'
+                            : 'Pay now'),
                   ),
                 ),
                 const SizedBox(width: 10),
                 TextButton(
-                  onPressed: paying || cancelling ? null : onCancel,
+                  onPressed:
+                      paying || reconciling || cancelling ? null : onCancel,
                   child: Text(cancelling ? 'Cancelling…' : 'Cancel order'),
                 ),
               ],

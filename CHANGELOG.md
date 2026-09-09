@@ -1,3 +1,234 @@
+## 0.52.33 - Phase 055.35.3: Web Stripe return parity hotfix
+
+- Fixed the Web Stripe success redirect 404 by adding a Storefront-owned lightweight `/payment-return.html`; this is a Web asset and does not modify Flutter.
+- Web Stripe checkout now opens in a separate tab while the original Storefront immediately moves to Order Details, matching the stable Flutter Web user flow.
+- Order Details listens for the lightweight return-page message and reconciles provider state until the backend confirms payment, with a focus fallback for browsers that sever `window.opener`.
+- Web checkout and Order Details no longer route normal Stripe payment through the `/payment` recovery screen.
+- `apps/mobile`, Flutter routing, Flutter checkout, and the locked Flutter payment-return implementation are untouched.
+
+## 0.52.31 - Phase 055.35.1: Refund approval Prisma field hotfix
+
+- Fixed the staff refund list Prisma projection to use the actual `Order.shippingName` field instead of the nonexistent `Order.customerName`.
+- Staff refund DTO output still exposes the stable `customerName` property by mapping it from `shippingName`.
+- This resolves the Prisma `OrderSelect` error and the follow-on missing `order` / `payment` relation type errors in `refunds.service.ts`.
+- No payment checkout, Stripe return, order routing, Prisma migration, return workflow, or customer payment-flow changes.
+
+## 0.52.30 - Phase 055.35: Staff refund approval workflow
+
+- Customer direct-refund requests now stop at `REQUESTED` and wait for staff review instead of immediately calling the payment provider.
+- Added staff-only refund queue API with status filtering plus atomic Approve and Reject actions.
+- Approve claims `REQUESTED -> PROCESSING` before calling the original payment provider; successful provider completion continues through the existing idempotent `REFUNDED` path and Stripe webhook synchronization.
+- Reject changes only a pending direct refund to `REJECTED`, records the staff reason, and notifies the customer without moving money.
+- Return-based refunds remain isolated in the existing return workflow and cannot be approved from the direct-refund queue.
+- Added Flutter Staff Center `Refund approvals` with queue filters, refund details, Approve confirmation and Reject note flow.
+- Added Web Staff `Refunds` navigation, review console, and authenticated BFF routes for list/approve/reject.
+- Existing Checkout, Stripe payment-return page, Order Details payment navigation, payment reconciliation, return handling and Prisma schema are unchanged.
+
+## 0.52.29 - Phase 055.34.5: Flutter checkout routes to Order details
+
+- After a Stripe Checkout session opens, the original Flutter TextShop tab now immediately navigates from Checkout to the newly created Order details page.
+- Flutter Web keeps Stripe in a separate tab, so the customer no longer remains stuck on the disabled `Processing...` checkout screen.
+- The customer cart is invalidated after the order has been created and the external Stripe tab is open.
+- The lightweight `/payment-return.html` flow from Phase 055.34.4 remains unchanged, preventing a second Flutter app from booting in the payment tab.
+- Native payment behavior continues to route to Order details after opening the external provider.
+- No API, Prisma, Web Storefront, refund, return, or router changes are included.
+
+## 0.52.28 - Phase 055.34.4: Flutter Web lightweight Stripe return
+
+- Stripe success and cancellation redirects for Flutter Web now target the static `/payment-return.html` page instead of booting a second Flutter `/orders/:orderNumber` route.
+- Added a lightweight payment-return page that requires no Flutter bootstrap, router, or authentication state and safely closes the Stripe tab after a successful payment.
+- The original TextShop tab remains responsible for live refresh/payment reconciliation, so a newly opened payment tab can no longer show `Sign in to view orders`.
+- Stripe return URLs continue to validate against the existing allowed return origin rules.
+- No Prisma migration, Web Storefront, refund, return, or Flutter router changes are included.
+
+## 0.52.26 - Phase 055.34.3: Flutter Web isolated Stripe checkout
+
+- Flutter Web opens Stripe Checkout in a separate browser tab instead of replacing the running TextShop tab with `_self`.
+- The original Order Details widget tree, router, authentication state, and Riverpod state remain mounted while payment is completed.
+- Existing live order refresh and dedicated payment reconciliation remain responsible for reflecting confirmed payment state.
+- Native Android/iOS payment launching is unchanged.
+- No Web Storefront, API, Prisma, refund, return, or router changes are included.
+
+## 0.52.25 - Phase 055.34.2.1: Flutter analyzer hotfix
+
+- Wrapped CheckoutRepository single-line `if` statements in blocks to satisfy `curly_braces_in_flow_control_structures`.
+- Consumed the Riverpod `ref.refresh(...)` result in the live order refresh path to satisfy the `unused_result` analyzer rule without changing refresh behavior.
+- No payment, refund, routing, Web, API, or database behavior changes.
+
+## 0.52.24 - Phase 055.34.2: Flutter payment return no-flash refresh
+
+- Fixed Flutter Order Details briefly flashing into a loading state during Stripe payment reconciliation and background order refreshes.
+- Payment reconciliation, manual refresh, and live refresh now use Riverpod `ref.refresh(...future)` so the existing order screen remains available while fresh data is fetched.
+- Keeps `Confirming payment...` active until confirmed order data has refreshed, then clears the local reconciliation state.
+- Preserves the Phase 055.32 root-navigator baseline and Phase 055.34.1 dedicated payment reconciliation flow.
+- No Web Storefront, API, Prisma, refund, or return behavior changes.
+
+## 0.52.22 - Phase 055.34: Payment and refund state UX
+
+## 0.52.23 - Phase 055.34.1: Dedicated payment reconciliation
+
+- Added authenticated `POST /payments/reconcile`; payment return confirmation no longer abuses payment creation/resume.
+- Reconciliation is idempotent and never creates a new checkout session.
+- Provider PAID confirms the order, PROCESSING remains non-actionable, EXPIRED is marked failed, and OPEN/UNPAID remains eligible for a real payment action.
+- Web automatically reconciles `?payment=success`, suppresses Pay/Cancel during confirmation, and retries short provider lag before refreshing.
+- Flutter automatic confirmation now calls the same reconciliation endpoint instead of `createPayment`.
+- No Prisma migration is required; Phase 055.32 routing remains untouched.
+
+- Unified Web and Flutter payment wording: unpaid orders use `Pay now`; paid state is presented as `Payment received`.
+- Flutter disables duplicate payment actions while the bounded Stripe confirmation/reconciliation window is active and shows `Confirming payment...`.
+- Reworked refund presentation so requested, processing, refunded, rejected and failed states are treated as explicit financial workflow states.
+- Clarified that refund and inventory/return handling are separate workflows.
+- Preserved the Phase 055.32 root-navigator routing baseline; no router changes are included.
+- No database migration is required; existing PaymentStatus, RefundStatus and ReturnStatus persistence remains unchanged.
+
+## 0.52.21 - Phase 055.33.2: Stripe confirmation retry window
+
+- Fixes the remaining case where automatic reconciliation ran only once, before Stripe had finished marking the Checkout Session as paid.
+- Pending Stripe payments are now reconciled automatically for a bounded 20-second window after the order page opens.
+- Each retry re-reads the current order, asks the existing payment endpoint to reconcile the provider session, and stops immediately once the order/payment is no longer pending.
+- Stripe processing/webhook timing no longer requires the customer to press `Continue payment` merely to trigger a second provider-status check.
+- Does not reopen Stripe Checkout and keeps genuine unpaid payment recovery available after the bounded confirmation window.
+- Preserves the Phase 055.32 navigation baseline.
+
+## 0.52.20 - Phase 055.33.1: Automatic pending-payment reconciliation
+
+- Reconciles an existing pending payment automatically whenever the Flutter order details page opens, instead of depending on the browser retaining `?payment=success`.
+- This mirrors the provider-status check that previously only happened after pressing `Continue payment`, but does not reopen the checkout URL.
+- A Stripe payment that is already paid is therefore confirmed by the backend and the order is refreshed without requiring a second customer click.
+- Genuine unpaid Stripe sessions remain pending and the normal `Continue payment` recovery action remains available.
+- Keeps Phase 055.32 navigation unchanged.
+
+## 0.52.19 - Phase 055.33: Stripe return payment reconciliation
+
+- Detects the Flutter Web Stripe success return (`?payment=success`) when an order detail page is opened.
+- Reuses the existing payment creation/resume endpoint to reconcile the pending Stripe Checkout Session with the provider.
+- Refreshes the order and customer order list immediately after reconciliation so a paid order no longer remains on the `Continue payment` recovery state while waiting for the webhook UI refresh.
+- Does not reopen Stripe Checkout during return reconciliation and preserves the existing payment recovery flow for genuinely unpaid orders.
+- Preserves the Phase 055.32 root-Navigator routing architecture and existing Stripe return URL handling.
+
+## 0.52.18 - Phase 055.32: Root-Navigator customer routes
+
+- Removed `ShellRoute` completely from the Flutter customer navigation graph.
+- Customer bottom-navigation destinations now render `MainShell` directly from ordinary `GoRoute` builders.
+- Leaves only the root GoRouter Navigator, eliminating the remaining shell-level nested Navigator/HeroControllerScope path.
+- Preserves customer URLs, authentication guards, staff routes, Store & Support routes, and Flutter Web Stripe return handling.
+- Targets the confirmed duplicate Page-key assertion that persisted after the earlier shell and auth-refresh fixes.
+
+## 0.52.17 - Phase 055.31.1: Remove auth-triggered router refresh
+
+- Removed the manual `appRouter.refresh()` call from the auth-state listener.
+- Keeps the auth listener responsible only for push-registration lifecycle work.
+- Prevents an auth-state transition from forcing a second GoRouter page-list rebuild while the current route is already updating.
+- Preserves the Phase 055.31 single-Navigator customer shell and all existing route definitions.
+- Targets the confirmed Web runtime assertion in `Navigator._debugCheckDuplicatedPageKeys` (`navigator.dart:4068`) originating from GoRouter's `HeroControllerScope`.
+
+## 0.52.16 - Phase 055.31: Single-Navigator customer shell
+
+- Replaced `StatefulShellRoute.indexedStack` with a plain `ShellRoute` for the four customer tabs.
+- Removed the four branch `GlobalKey<NavigatorState>` instances and the `StatefulNavigationShell`/`goBranch` navigation path.
+- MainShell now receives the active route and child directly, derives the selected bottom-navigation destination from the location, and switches tabs with `context.go`.
+- Preserves Home, Cart, Orders, Profile, product details, wishlist, order details, auth redirects, staff routes, Store & Support routes, and Flutter Web Stripe initial-location handling.
+- Targets the confirmed runtime failure in go_router's `HeroControllerScope` where the Navigator receives duplicate Page keys (`navigator.dart:4068`, `!keyReservation.contains(key)`).
+- Trade-off: customer tabs no longer retain independent nested Navigator stacks when switching tabs; this deliberately removes the StatefulShell navigator layer responsible for the duplicate-page-key failure.
+
+## 0.52.15 - Phase 055.30.3: Unified Store & Support routing
+
+- Replaced Profile → Store & Support local `MaterialPageRoute` navigation with GoRouter.
+- Registered Store & Support, information sections, and branch details as explicit routes outside the stateful bottom-navigation shell.
+- Replaced Store & Support's nested local Navigator pushes with GoRouter paths while preserving the existing pages and UI.
+- Includes the Profile ListTile Material-surface correction from Phase 055.30.2.
+- Preserves Flutter Web initial-location/Stripe return behavior, authenticated shell routes, StoreInfo provider, API behavior, and customer content.
+- Removes mixed local Navigator/go_router navigation from the Profile → Store & Support flow that was active around the runtime Navigator page-key assertion.
+
+## 0.52.13 - Phase 055.30.1: Stable shell navigator keys
+
+- Assigned an explicit, unique `GlobalKey<NavigatorState>` to each `StatefulShellBranch` instead of relying on generated branch navigator keys.
+- Added debug labels for the root, Home, Cart, Orders, and Profile navigators to make future navigation assertions identifiable.
+- Keeps the Phase 055.30 route-level authentication redirects and existing Flutter Web initial-location/Stripe return behavior unchanged.
+- Targets the Flutter red screen reporting the same generated Navigator GlobalKey being instantiated more than once under `HeroControllerScope`.
+
+## 0.52.12 - Phase 055.30: Flutter auth navigation red-screen fix
+
+- Moved protected-route navigation decisions into GoRouter `redirect` instead of calling `context.go()` from route widgets after build.
+- Added centralized authenticated/staff route checks for Profile, Cart, Orders, Wishlist, Checkout, account utilities, and Staff routes.
+- Kept the existing route guard widgets only as render gates while authentication is being restored.
+- Refresh GoRouter when authentication status or staff access changes so redirects stay synchronized with Riverpod auth state.
+- Preserved the Flutter Web initial-location/Stripe return behavior, existing routes, `returnTo`, UI, and authentication API behavior.
+- Fixes the Navigator GlobalKey reservation red screen caused by post-frame navigation during protected route rebuilds.
+
+## 0.52.11 - Phase 055.29.2: Flutter Web Enter-key interception
+
+- Added an explicit Email focus node keyboard handler for Enter and Numpad Enter.
+- Email Enter is now handled at the focus/key-event level and immediately transfers focus to Password.
+- Removed Email `onFieldSubmitted` to avoid duplicate keyboard processing on Flutter Web/Desktop.
+- Password Enter remains the only keyboard path that submits sign-in.
+- No authentication, API, routing, or visual design behavior was changed.
+
+## 0.52.10 - Phase 055.29.1: Flutter sign-in focus hotfix
+
+- Replaced implicit focus traversal with an explicit Password `FocusNode` so pressing Enter in Email reliably focuses Password on Flutter Web/Desktop.
+- Prevented the Email Enter action from accidentally advancing past Password and triggering form validation.
+- Kept Password Enter as the only keyboard action that submits the sign-in form.
+- No authentication, API, routing, or visual design behavior was changed.
+
+## 0.52.09 - Phase 055.29: Flutter sign-in keyboard flow
+
+- Fixed the Flutter sign-in form so submitting the Email field moves focus directly to Password.
+- Added explicit `TextInputAction.next` for Email and `TextInputAction.done` for Password.
+- Preserved the existing Password Enter behavior so submitting Password still runs the existing sign-in flow.
+- No authentication, API, routing, or visual design behavior was changed.
+
+## 0.52.08 - Phase 055.28: Store information content cards
+
+- Refined all customer-facing footer information pages with consistent soft-grey content cards instead of flat text blocks.
+- Applied the card treatment across Delivery, Returns, Contact us, FAQ, Trust & safety, Terms, Privacy and the About store description.
+- Preserved the existing Store details sidebar, branch directory, dynamic merchant content, structured delivery/returns settings, routes and backend behavior.
+- Added a dedicated content-style module so the existing Store Information stylesheet is not overwritten or regressed.
+
+## 0.52.07 - Phase 055.27: Staff Center section switcher
+
+- Reorganized the existing Flutter Staff Center into three internal switchable sections directly below the existing hero.
+- Operations is the default first section and keeps the existing workspace actions unchanged.
+- Owner snapshot is the second section and keeps the existing PostgreSQL-backed sales metrics unchanged.
+- Commerce health is the third section and keeps the existing operational health metrics unchanged.
+- No new dashboard features, API changes, database changes, or customer-facing changes were introduced.
+
+## 0.52.06 - Phase 055.26.1: Flutter Staff Settings helper scope hotfix
+
+- Fixed the Phase 055.26 Flutter analyzer errors caused by duplicated delivery/returns hint helpers being inserted into the `_Section` widget.
+- Keeps the hint helpers only in `_StaffStoreSettingsPageState`, where the form controllers are available.
+- No API, database, Stripe, checkout, or customer-facing behavior changed.
+
+## 0.52.05 - Phase 055.26: Professional delivery and returns staff settings
+
+- Split Staff Settings into clear Commerce defaults, Delivery settings, and Returns settings sections on Web and Flutter.
+- Added contextual field guidance for currency, timezone, estimated delivery, return condition, and refund method.
+- Added live human-readable shipping and free-delivery amount hints while preserving cents as the backend storage format.
+- Added return-window guidance so zero and positive values have clear customer-facing meaning.
+- Preserved the Phase 055.25 structured settings API, database fields, customer pages, Stripe, and checkout behavior.
+
+## 0.52.04 - Phase 055.25.2: Deduplicate StoreSettings serializers
+
+- Removed the duplicate `toPublic()` implementation introduced by the previous hotfix.
+- Kept exactly one `toStaff()` and one `toPublic()` implementation in `StoreSettingsService`.
+- Preserved the new structured delivery and returns fields in public serialization.
+- No database, Stripe, checkout, Web UI, or Flutter UI changes.
+
+## 0.52.03 - Phase 055.25.1: Restore StoreSettings service serializers
+
+- Restored `toStaff()` and `toPublic()` in `StoreSettingsService` after the Phase 055.25 service baseline accidentally omitted them.
+- Public serialization includes the new structured delivery and returns fields.
+- No database, Stripe, checkout, Web UI, or Flutter UI changes.
+
+## 0.52.02 - Phase 055.25: Structured delivery and returns settings
+
+- Added merchant-managed `Estimated delivery`, `Return window`, `Return item condition`, and `Refund method`.
+- Added an additive StoreSettings migration for the four structured fields without removing existing policy content.
+- Connected the fields through API, Web Staff, Flutter Staff, Web customer pages, and Flutter Store & Support.
+- Delivery now separates price, free-delivery threshold, estimated timing, and delivery information.
+- Returns now separates return window, item condition, refund method, and returns information.
+- Updated demo seed values. No Stripe or checkout calculation changes.
+
 ## 0.52.01 - Phase 055.24: Professional Web branch details
 
 - Upgraded Web `Our Store` branch details to match the richer Flutter branch-detail experience.

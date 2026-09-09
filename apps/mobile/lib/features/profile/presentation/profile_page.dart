@@ -8,7 +8,6 @@ import '../../auth/presentation/auth_providers.dart';
 import '../../cart/presentation/cart_providers.dart';
 import '../../notifications/presentation/notification_providers.dart';
 import '../../orders/presentation/order_providers.dart';
-import '../../store/presentation/store_support_page.dart';
 import '../../wishlist/presentation/wishlist_providers.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -18,9 +17,7 @@ class ProfilePage extends ConsumerWidget {
   static const Color _ink = Color(0xFF171717);
 
   void _openStoreSupport(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const StoreSupportPage()),
-    );
+    context.push('/store-support');
   }
 
   @override
@@ -609,11 +606,10 @@ class _AccountPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(22),
-      ),
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(22),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: <Widget>[
           for (var i = 0; i < children.length; i++) ...<Widget>[

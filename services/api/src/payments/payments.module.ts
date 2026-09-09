@@ -12,6 +12,7 @@ import { BillplzPaymentProvider } from './providers/billplz.provider';
 import { StripeWebhookController } from './webhooks/stripe-webhook.controller';
 import { BillplzWebhookController } from './webhooks/billplz-webhook.controller';
 import { RefundsController } from './refunds/refunds.controller';
+import { StaffRefundsController } from './refunds/staff-refunds.controller';
 import { RefundsService } from './refunds/refunds.service';
 import { ReturnsController } from './returns/returns.controller';
 import { StaffReturnsController } from './returns/staff-returns.controller';
@@ -24,6 +25,7 @@ import { ReturnsService } from './returns/returns.service';
     StripeWebhookController,
     BillplzWebhookController,
     RefundsController,
+    StaffRefundsController,
     ReturnsController,
     StaffReturnsController,
   ],

@@ -24,7 +24,11 @@ type StoreSettingsRow = {
   timeZone: string;
   standardShippingCents: number;
   freeShippingThresholdCents: number;
+  estimatedDelivery: string;
   deliveryPolicy: string;
+  returnWindowDays: number;
+  returnCondition: string;
+  refundMethod: string;
   returnsPolicy: string;
   faqContent: string;
   trustSafetyContent: string;
@@ -58,7 +62,11 @@ const DEFAULTS: Omit<StoreSettingsRow, 'createdAt' | 'updatedAt'> = {
   timeZone: 'Asia/Kuala_Lumpur',
   standardShippingCents: 0,
   freeShippingThresholdCents: 0,
+  estimatedDelivery: '',
   deliveryPolicy: '',
+  returnWindowDays: 0,
+  returnCondition: '',
+  refundMethod: '',
   returnsPolicy: '',
   faqContent: '',
   trustSafetyContent: '',
@@ -86,7 +94,7 @@ export class StoreSettingsService {
         "contactEmail", "contactPhone", "businessHours", "addressLine1",
         "addressLine2", "city", "state", "postcode", "countryCode",
         "currency", "timeZone", "standardShippingCents",
-        "freeShippingThresholdCents", "deliveryPolicy", "returnsPolicy",
+        "freeShippingThresholdCents", "estimatedDelivery", "deliveryPolicy", "returnWindowDays", "returnCondition", "refundMethod", "returnsPolicy",
         "faqContent", "trustSafetyContent", "termsContent", "privacyContent",
         "instagramUrl", "facebookUrl", "tiktokUrl", "createdAt", "updatedAt"
       ) VALUES (
@@ -96,8 +104,8 @@ export class StoreSettingsService {
         ${DEFAULTS.addressLine1}, ${DEFAULTS.addressLine2}, ${DEFAULTS.city},
         ${DEFAULTS.state}, ${DEFAULTS.postcode}, ${DEFAULTS.countryCode},
         ${DEFAULTS.currency}, ${DEFAULTS.timeZone}, ${DEFAULTS.standardShippingCents},
-        ${DEFAULTS.freeShippingThresholdCents}, ${DEFAULTS.deliveryPolicy},
-        ${DEFAULTS.returnsPolicy}, ${DEFAULTS.faqContent}, ${DEFAULTS.trustSafetyContent},
+        ${DEFAULTS.freeShippingThresholdCents}, ${DEFAULTS.estimatedDelivery}, ${DEFAULTS.deliveryPolicy},
+        ${DEFAULTS.returnWindowDays}, ${DEFAULTS.returnCondition}, ${DEFAULTS.refundMethod}, ${DEFAULTS.returnsPolicy}, ${DEFAULTS.faqContent}, ${DEFAULTS.trustSafetyContent},
         ${DEFAULTS.termsContent}, ${DEFAULTS.privacyContent}, ${DEFAULTS.instagramUrl},
         ${DEFAULTS.facebookUrl}, ${DEFAULTS.tiktokUrl}, NOW(), NOW()
       ) ON CONFLICT ("id") DO NOTHING
@@ -137,7 +145,11 @@ export class StoreSettingsService {
       currency: settings.currency,
       standardShippingCents: settings.standardShippingCents,
       freeShippingThresholdCents: settings.freeShippingThresholdCents,
+      estimatedDelivery: settings.estimatedDelivery,
       deliveryPolicy: settings.deliveryPolicy,
+      returnWindowDays: settings.returnWindowDays,
+      returnCondition: settings.returnCondition,
+      refundMethod: settings.refundMethod,
       returnsPolicy: settings.returnsPolicy,
       faqContent: settings.faqContent,
       trustSafetyContent: settings.trustSafetyContent,
@@ -169,7 +181,7 @@ export class StoreSettingsService {
         "contactEmail", "contactPhone", "businessHours", "addressLine1",
         "addressLine2", "city", "state", "postcode", "countryCode",
         "currency", "timeZone", "standardShippingCents",
-        "freeShippingThresholdCents", "deliveryPolicy", "returnsPolicy",
+        "freeShippingThresholdCents", "estimatedDelivery", "deliveryPolicy", "returnWindowDays", "returnCondition", "refundMethod", "returnsPolicy",
         "faqContent", "trustSafetyContent", "termsContent", "privacyContent",
         "instagramUrl", "facebookUrl", "tiktokUrl", "createdAt", "updatedAt"
       ) VALUES (
@@ -179,8 +191,8 @@ export class StoreSettingsService {
         ${text(dto.addressLine2)}, ${text(dto.city)}, ${text(dto.state)},
         ${text(dto.postcode)}, ${text(dto.countryCode).toUpperCase()},
         ${text(dto.currency).toUpperCase()}, ${text(dto.timeZone)},
-        ${dto.standardShippingCents}, ${dto.freeShippingThresholdCents},
-        ${text(dto.deliveryPolicy)}, ${text(dto.returnsPolicy)}, ${text(dto.faqContent)},
+        ${dto.standardShippingCents}, ${dto.freeShippingThresholdCents}, ${text(dto.estimatedDelivery)},
+        ${text(dto.deliveryPolicy)}, ${dto.returnWindowDays}, ${text(dto.returnCondition)}, ${text(dto.refundMethod)}, ${text(dto.returnsPolicy)}, ${text(dto.faqContent)},
         ${text(dto.trustSafetyContent)}, ${text(dto.termsContent)}, ${text(dto.privacyContent)},
         ${text(dto.instagramUrl)}, ${text(dto.facebookUrl)}, ${text(dto.tiktokUrl)}, NOW(), NOW()
       ) ON CONFLICT ("id") DO UPDATE SET
@@ -203,7 +215,11 @@ export class StoreSettingsService {
         "timeZone" = EXCLUDED."timeZone",
         "standardShippingCents" = EXCLUDED."standardShippingCents",
         "freeShippingThresholdCents" = EXCLUDED."freeShippingThresholdCents",
+        "estimatedDelivery" = EXCLUDED."estimatedDelivery",
         "deliveryPolicy" = EXCLUDED."deliveryPolicy",
+        "returnWindowDays" = EXCLUDED."returnWindowDays",
+        "returnCondition" = EXCLUDED."returnCondition",
+        "refundMethod" = EXCLUDED."refundMethod",
         "returnsPolicy" = EXCLUDED."returnsPolicy",
         "faqContent" = EXCLUDED."faqContent",
         "trustSafetyContent" = EXCLUDED."trustSafetyContent",

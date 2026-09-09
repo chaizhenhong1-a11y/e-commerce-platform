@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CancelOrderButton } from "./cancel-order-button";
 import { RefundRequestButton } from "./refund-request-button";
 import { ReturnRequestButton } from "./return-request-button";
+import { StripePaymentLaunchButton } from "@/features/payment/components/stripe-payment-launch-button";
 import type {
   OrderStatus,
   PublicOrderStatus,
@@ -73,14 +74,26 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-export function OrderStatusView({ order }: { order: PublicOrderStatus }) {
+export function OrderStatusView({
+  order,
+  suppressPaymentActions = false,
+}: {
+  order: PublicOrderStatus;
+  suppressPaymentActions?: boolean;
+}) {
   const paid =
     order.paymentStatus === "PAID" ||
     order.paymentStatus === "PARTIALLY_REFUNDED";
   const refunded = order.paymentStatus === "REFUNDED";
   const expired = order.status === "EXPIRED";
   const timeline = buildTimeline(order);
-  const canRefund = order.paymentStatus === "PAID" && order.status === "CONFIRMED" && !order.refund;
+  const canRefund =
+    order.paymentStatus === "PAID" &&
+    order.status === "CONFIRMED" &&
+    !order.refund;
+  const refundPending =
+    order.refund?.status === "REQUESTED" ||
+    order.refund?.status === "PROCESSING";
   const returnAllowsRetry =
     !order.returnRequest ||
     ["REJECTED", "CANCELLED", "COMPLETED"].includes(order.returnRequest.status);
@@ -125,7 +138,17 @@ export function OrderStatusView({ order }: { order: PublicOrderStatus }) {
           </div>
           <div>
             <span>Payment</span>
-            <strong>{order.paymentStatus}</strong>
+            <strong>
+              {order.paymentStatus === "PENDING"
+                ? "Awaiting payment"
+                : order.paymentStatus === "PAID"
+                  ? "Payment received"
+                  : order.paymentStatus === "PARTIALLY_REFUNDED"
+                    ? "Partially refunded"
+                    : order.paymentStatus === "REFUNDED"
+                      ? "Refunded"
+                      : "Payment failed"}
+            </strong>
           </div>
           <div>
             <span>Total</span>
@@ -149,14 +172,9 @@ export function OrderStatusView({ order }: { order: PublicOrderStatus }) {
         </div>
 
         <div className="order-status-card__actions">
-          {order.status === "AWAITING_PAYMENT" ? (
+          {order.status === "AWAITING_PAYMENT" && !suppressPaymentActions ? (
             <>
-              <Link
-                className="button button--primary"
-                href={`/payment?order=${encodeURIComponent(order.orderNumber)}`}
-              >
-                Continue payment
-              </Link>
+              <StripePaymentLaunchButton orderNumber={order.orderNumber} />
               <CancelOrderButton orderNumber={order.orderNumber} />
             </>
           ) : null}
@@ -238,12 +256,30 @@ export function OrderStatusView({ order }: { order: PublicOrderStatus }) {
         {order.refund ? (
           <section className="order-detail-panel">
             <span className="section-kicker">REFUND</span>
-            <h2>{order.refund.status === "REFUNDED" ? "Refund completed" : "Refund status"}</h2>
+            <h2>
+              {order.refund.status === "REFUNDED"
+                ? "Refund completed"
+                : refundPending
+                  ? "Refund in progress"
+                  : order.refund.status === "REJECTED"
+                    ? "Refund not approved"
+                    : "Refund needs attention"}
+            </h2>
             <div className="order-detail-meta">
               <div><span>Status</span><strong>{order.refund.status}</strong></div>
               <div><span>Amount</span><strong>{money(order.refund.amountCents)}</strong></div>
             </div>
-            <p>Refunds are financial transactions only. Returned inventory is handled separately.</p>
+            <p>
+              {order.refund.status === "REQUESTED"
+                ? "Your refund request has been recorded. Do not submit another refund action while it is pending."
+                : order.refund.status === "PROCESSING"
+                  ? "The refund is being processed through the original payment provider."
+                  : order.refund.status === "REFUNDED"
+                    ? "The refund has been completed. Bank posting times may still vary."
+                    : order.refund.status === "REJECTED"
+                      ? "This refund request was not approved. Contact support if you need help."
+                      : "The refund could not be completed. Contact support before trying another action."}
+            </p>
           </section>
         ) : null}
 

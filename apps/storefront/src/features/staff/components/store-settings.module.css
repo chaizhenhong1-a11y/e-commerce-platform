@@ -33,3 +33,10 @@
 @media (max-width: 560px) { .photoHeader { flex-direction: column; } .photoHeader .uploadButton { width: 100%; justify-content: center; } }
 
 .logoManager p{margin:0 0 12px;color:#666}.logoPreview{display:flex;align-items:center;gap:16px;flex-wrap:wrap}.logoPreview img{width:112px;height:112px;object-fit:contain;border:1px solid #e3e3dc;border-radius:18px;background:#fff;padding:10px}.logoActions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.logoActions .uploadButton{margin-top:0}.removeLogoButton{border:1px solid #e8d2d2;background:#fff;color:#991b1b;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}
+
+.sectionHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.sectionHeading > div { display: grid; gap: 5px; }
+.sectionHeading p { max-width: 520px; margin: 0; color: #6b6b65; font-size: .86rem; line-height: 1.5; }
+.kicker { font-size: .7rem; font-weight: 900; letter-spacing: .12em; color: #6b6b65; }
+.hint { color: #73736c; font-size: .76rem; line-height: 1.4; }
+@media (max-width: 720px) { .sectionHeading { flex-direction: column; gap: 8px; } }

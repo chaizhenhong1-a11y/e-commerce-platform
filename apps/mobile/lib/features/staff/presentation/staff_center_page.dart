@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'staff_providers.dart';
+import 'staff_refunds_page.dart';
 import 'staff_store_settings_page.dart';
 import 'staff_ui_theme.dart';
 
@@ -23,6 +24,7 @@ class _StaffCenterPageState extends ConsumerState<StaffCenterPage>
 
   Timer? _refreshTimer;
   bool _refreshInFlight = false;
+  int _selectedSection = 0;
 
   @override
   void initState() {
@@ -102,157 +104,179 @@ class _StaffCenterPageState extends ConsumerState<StaffCenterPage>
                       todayOrders: data.todayOrders,
                       readyToFulfill: data.readyToFulfill,
                     ),
+                    const SizedBox(height: 16),
+                    _StaffSectionSwitcher(
+                      selectedIndex: _selectedSection,
+                      onSelected: (index) {
+                        setState(() => _selectedSection = index);
+                      },
+                    ),
                     const SizedBox(height: 22),
-                    const _SectionTitle(
-                      eyebrow: 'SALES',
-                      title: 'Owner snapshot',
-                      subtitle: 'Real order and refund totals from PostgreSQL.',
-                    ),
-                    const SizedBox(height: 10),
-                    _Grid(
-                      columns: columns,
-                      children: <Widget>[
-                        _Metric(
-                          label: 'Today net sales',
-                          value: _money(data.currency, data.todayNetSalesCents),
-                          icon: Icons.payments_outlined,
-                          highlighted: true,
-                        ),
-                        _Metric(
-                          label: 'Today orders',
-                          value: '${data.todayOrders}',
-                          icon: Icons.receipt_long_outlined,
-                        ),
-                        _Metric(
-                          label: 'Today refunds',
-                          value: _money(data.currency, data.todayRefundsCents),
-                          icon: Icons.currency_exchange_rounded,
-                        ),
-                        _Metric(
-                          label: 'Month net sales',
-                          value: _money(data.currency, data.monthNetSalesCents),
-                          icon: Icons.trending_up_rounded,
-                        ),
-                        _Metric(
-                          label: 'Month gross sales',
-                          value:
-                              _money(data.currency, data.monthGrossSalesCents),
-                          icon: Icons.account_balance_wallet_outlined,
-                        ),
-                        _Metric(
-                          label: 'Average order value',
-                          value: _money(
-                            data.currency,
-                            data.averageOrderValueCents,
+                    if (_selectedSection == 0) ...<Widget>[
+                      const _SectionTitle(
+                        eyebrow: 'WORKSPACE',
+                        title: 'Operations',
+                        subtitle:
+                            'Manage the store without leaving the Staff Center.',
+                      ),
+                      const SizedBox(height: 10),
+                      _Grid(
+                        columns: wide ? 3 : 1,
+                        children: <Widget>[
+                          _Action(
+                            icon: Icons.local_shipping_outlined,
+                            title: 'Orders & fulfillment',
+                            subtitle: 'Process, ship and deliver paid orders.',
+                            badge: data.readyToFulfill,
+                            onTap: () => context.push('/staff/orders'),
                           ),
-                          icon: Icons.analytics_outlined,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    const _SectionTitle(
-                      eyebrow: 'WORKSPACE',
-                      title: 'Operations',
-                      subtitle:
-                          'Manage the store without leaving the Staff Center.',
-                    ),
-                    const SizedBox(height: 10),
-                    _Grid(
-                      columns: wide ? 3 : 1,
-                      children: <Widget>[
-                        _Action(
-                          icon: Icons.local_shipping_outlined,
-                          title: 'Orders & fulfillment',
-                          subtitle: 'Process, ship and deliver paid orders.',
-                          badge: data.readyToFulfill,
-                          onTap: () => context.push('/staff/orders'),
-                        ),
-                        _Action(
-                          icon: Icons.assignment_return_outlined,
-                          title: 'Returns operations',
-                          subtitle: 'Review, inspect and complete returns.',
-                          badge: data.activeReturns,
-                          onTap: () => context.push('/staff/returns'),
-                        ),
-                        _Action(
-                          icon: Icons.inventory_2_outlined,
-                          title: 'Catalog & inventory',
-                          subtitle: 'Manage products, SKUs, media and stock.',
-                          badge: data.lowStockVariants,
-                          onTap: () => context.push('/staff/catalog'),
-                        ),
-                        _Action(
-                          icon: Icons.category_outlined,
-                          title: 'Categories',
-                          subtitle: 'Organize storefront categories.',
-                          onTap: () => context.push('/staff/categories'),
-                        ),
-                        _Action(
-                          icon: Icons.local_offer_outlined,
-                          title: 'Promotions',
-                          subtitle: 'Manage coupons and automatic discounts.',
-                          onTap: () => context.push('/staff/promotions'),
-                        ),
-                        _Action(
-                          icon: Icons.settings_outlined,
-                          title: 'Store settings',
-                          subtitle:
-                              'Brand, contact, currency, timezone and shipping.',
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const StaffStoreSettingsPage(),
+                          _Action(
+                            icon: Icons.currency_exchange_rounded,
+                            title: 'Refund approvals',
+                            subtitle: 'Approve or reject customer refund requests.',
+                            badge: data.refundProcessing,
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(builder: (_) => const StaffRefundsPage()),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    const _SectionTitle(
-                      eyebrow: 'OPERATIONS',
-                      title: 'Commerce health',
-                      subtitle:
-                          'Current workload that may need your attention.',
-                    ),
-                    const SizedBox(height: 10),
-                    _Grid(
-                      columns: columns,
-                      children: <Widget>[
-                        _Metric(
-                          label: 'Total orders',
-                          value: '${data.totalOrders}',
-                          icon: Icons.receipt_long_outlined,
-                        ),
-                        _Metric(
-                          label: 'Awaiting payment',
-                          value: '${data.awaitingPayment}',
-                          icon: Icons.hourglass_bottom_rounded,
-                        ),
-                        _Metric(
-                          label: 'Ready to fulfill',
-                          value: '${data.readyToFulfill}',
-                          icon: Icons.local_shipping_outlined,
-                          highlighted: data.readyToFulfill > 0,
-                        ),
-                        _Metric(
-                          label: 'Active returns',
-                          value: '${data.activeReturns}',
-                          icon: Icons.assignment_return_outlined,
-                          highlighted: data.activeReturns > 0,
-                        ),
-                        _Metric(
-                          label: 'Refund processing',
-                          value: '${data.refundProcessing}',
-                          icon: Icons.currency_exchange_rounded,
-                          highlighted: data.refundProcessing > 0,
-                        ),
-                        _Metric(
-                          label: 'Low-stock variants',
-                          value: '${data.lowStockVariants}',
-                          icon: Icons.inventory_2_outlined,
-                          highlighted: data.lowStockVariants > 0,
-                        ),
-                      ],
-                    ),
+                          _Action(
+                            icon: Icons.assignment_return_outlined,
+                            title: 'Returns operations',
+                            subtitle: 'Review, inspect and complete returns.',
+                            badge: data.activeReturns,
+                            onTap: () => context.push('/staff/returns'),
+                          ),
+                          _Action(
+                            icon: Icons.inventory_2_outlined,
+                            title: 'Catalog & inventory',
+                            subtitle: 'Manage products, SKUs, media and stock.',
+                            badge: data.lowStockVariants,
+                            onTap: () => context.push('/staff/catalog'),
+                          ),
+                          _Action(
+                            icon: Icons.category_outlined,
+                            title: 'Categories',
+                            subtitle: 'Organize storefront categories.',
+                            onTap: () => context.push('/staff/categories'),
+                          ),
+                          _Action(
+                            icon: Icons.local_offer_outlined,
+                            title: 'Promotions',
+                            subtitle: 'Manage coupons and automatic discounts.',
+                            onTap: () => context.push('/staff/promotions'),
+                          ),
+                          _Action(
+                            icon: Icons.settings_outlined,
+                            title: 'Store settings',
+                            subtitle:
+                                'Brand, contact, currency, timezone and shipping.',
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const StaffStoreSettingsPage(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else if (_selectedSection == 1) ...<Widget>[
+                      const _SectionTitle(
+                        eyebrow: 'SALES',
+                        title: 'Owner snapshot',
+                        subtitle:
+                            'Real order and refund totals from PostgreSQL.',
+                      ),
+                      const SizedBox(height: 10),
+                      _Grid(
+                        columns: columns,
+                        children: <Widget>[
+                          _Metric(
+                            label: 'Today net sales',
+                            value:
+                                _money(data.currency, data.todayNetSalesCents),
+                            icon: Icons.payments_outlined,
+                            highlighted: true,
+                          ),
+                          _Metric(
+                            label: 'Today orders',
+                            value: '${data.todayOrders}',
+                            icon: Icons.receipt_long_outlined,
+                          ),
+                          _Metric(
+                            label: 'Today refunds',
+                            value:
+                                _money(data.currency, data.todayRefundsCents),
+                            icon: Icons.currency_exchange_rounded,
+                          ),
+                          _Metric(
+                            label: 'Month net sales',
+                            value:
+                                _money(data.currency, data.monthNetSalesCents),
+                            icon: Icons.trending_up_rounded,
+                          ),
+                          _Metric(
+                            label: 'Month gross sales',
+                            value: _money(
+                                data.currency, data.monthGrossSalesCents),
+                            icon: Icons.account_balance_wallet_outlined,
+                          ),
+                          _Metric(
+                            label: 'Average order value',
+                            value: _money(
+                              data.currency,
+                              data.averageOrderValueCents,
+                            ),
+                            icon: Icons.analytics_outlined,
+                          ),
+                        ],
+                      ),
+                    ] else ...<Widget>[
+                      const _SectionTitle(
+                        eyebrow: 'OPERATIONS',
+                        title: 'Commerce health',
+                        subtitle:
+                            'Current workload that may need your attention.',
+                      ),
+                      const SizedBox(height: 10),
+                      _Grid(
+                        columns: columns,
+                        children: <Widget>[
+                          _Metric(
+                            label: 'Total orders',
+                            value: '${data.totalOrders}',
+                            icon: Icons.receipt_long_outlined,
+                          ),
+                          _Metric(
+                            label: 'Awaiting payment',
+                            value: '${data.awaitingPayment}',
+                            icon: Icons.hourglass_bottom_rounded,
+                          ),
+                          _Metric(
+                            label: 'Ready to fulfill',
+                            value: '${data.readyToFulfill}',
+                            icon: Icons.local_shipping_outlined,
+                            highlighted: data.readyToFulfill > 0,
+                          ),
+                          _Metric(
+                            label: 'Active returns',
+                            value: '${data.activeReturns}',
+                            icon: Icons.assignment_return_outlined,
+                            highlighted: data.activeReturns > 0,
+                          ),
+                          _Metric(
+                            label: 'Refund processing',
+                            value: '${data.refundProcessing}',
+                            icon: Icons.currency_exchange_rounded,
+                            highlighted: data.refundProcessing > 0,
+                          ),
+                          _Metric(
+                            label: 'Low-stock variants',
+                            value: '${data.lowStockVariants}',
+                            icon: Icons.inventory_2_outlined,
+                            highlighted: data.lowStockVariants > 0,
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 );
               },
@@ -267,6 +291,85 @@ class _StaffCenterPageState extends ConsumerState<StaffCenterPage>
           ),
         ),
       ),
+    );
+  }
+}
+
+class _StaffSectionSwitcher extends StatelessWidget {
+  const _StaffSectionSwitcher({
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    const items = <({IconData icon, String label})>[
+      (icon: Icons.dashboard_customize_outlined, label: 'Operations'),
+      (icon: Icons.insights_outlined, label: 'Owner snapshot'),
+      (icon: Icons.monitor_heart_outlined, label: 'Commerce health'),
+    ];
+
+    return Row(
+      children: List<Widget>.generate(items.length, (index) {
+        final item = items[index];
+        final selected = selectedIndex == index;
+
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: index == items.length - 1 ? 0 : 8),
+            child: Material(
+              color: selected ? _StaffCenterPageState._ink : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                onTap: () => onSelected(index),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 68),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: selected
+                          ? _StaffCenterPageState._ink
+                          : const Color(0xFFE5E5DF),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Icon(
+                        item.icon,
+                        size: 20,
+                        color: selected
+                            ? _StaffCenterPageState._lime
+                            : _StaffCenterPageState._ink,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        item.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: selected
+                              ? Colors.white
+                              : _StaffCenterPageState._ink,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

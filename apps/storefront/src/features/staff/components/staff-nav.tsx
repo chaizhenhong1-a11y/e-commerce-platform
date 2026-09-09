@@ -1,18 +1,7 @@
 import Link from "next/link";
 import styles from "./staff-console.module.css";
 
-export function StaffNav({
-  active,
-}: {
-  active:
-    | "overview"
-    | "orders"
-    | "catalog"
-    | "categories"
-    | "promotions"
-    | "returns"
-    | "settings";
-}) {
+export function StaffNav({ active }: { active: "overview" | "orders" | "catalog" | "categories" | "promotions" | "returns" | "refunds" | "settings"; }) {
   return (
     <nav className={styles.nav} aria-label="Staff console">
       <Link className={active === "overview" ? styles.navActive : ""} href="/staff">Overview</Link>
@@ -21,6 +10,7 @@ export function StaffNav({
       <Link className={active === "categories" ? styles.navActive : ""} href="/staff/categories">Categories</Link>
       <Link className={active === "promotions" ? styles.navActive : ""} href="/staff/promotions">Promotions</Link>
       <Link className={active === "returns" ? styles.navActive : ""} href="/staff/returns">Returns</Link>
+      <Link className={active === "refunds" ? styles.navActive : ""} href="/staff/refunds">Refunds</Link>
       <Link className={active === "settings" ? styles.navActive : ""} href="/staff/settings">Settings</Link>
     </nav>
   );

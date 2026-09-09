@@ -24,10 +24,12 @@ import '../../features/staff/presentation/staff_returns_page.dart';
 import '../../features/staff/presentation/staff_catalog_page.dart';
 import '../../features/staff/presentation/staff_product_editor_page.dart';
 import '../../features/staff/presentation/staff_promotions_page.dart';
+import '../../features/store/domain/store_info.dart';
+import '../../features/store/presentation/store_support_page.dart';
 import '../../features/wishlist/presentation/wishlist_page.dart';
 import '../shell/main_shell.dart';
 
-final rootNavigatorKey = GlobalKey<NavigatorState>();
+final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
 String _signInLocation(String returnTo) {
   return Uri(
@@ -56,12 +58,6 @@ class _AuthRequiredRoute extends ConsumerWidget {
     }
 
     if (!auth.isAuthenticated) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) {
-          return;
-        }
-        context.go(_signInLocation(returnTo));
-      });
       return const SizedBox.shrink();
     }
 
@@ -84,26 +80,59 @@ class _StaffRequiredRoute extends ConsumerWidget {
       );
     }
 
-    if (!auth.isAuthenticated) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) {
-          context.go(_signInLocation('/staff'));
-        }
-      });
-      return const SizedBox.shrink();
-    }
-
-    if (!(auth.user?.hasStaffAccess ?? false)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) {
-          context.go('/profile');
-        }
-      });
+    if (!auth.isAuthenticated || !(auth.user?.hasStaffAccess ?? false)) {
       return const SizedBox.shrink();
     }
 
     return child;
   }
+}
+
+bool _isStaffPath(String path) {
+  return path == '/staff' || path.startsWith('/staff/');
+}
+
+bool _isAuthRequiredPath(String path) {
+  return path == '/addresses' ||
+      path == '/notifications' ||
+      path == '/checkout' ||
+      path == '/wishlist' ||
+      path == '/cart' ||
+      path == '/orders' ||
+      path.startsWith('/orders/') ||
+      path == '/profile' ||
+      _isStaffPath(path);
+}
+
+String? _redirectForAuth(BuildContext context, GoRouterState state) {
+  final auth = ProviderScope.containerOf(
+    context,
+    listen: false,
+  ).read(authControllerProvider);
+
+  if (auth.status == AuthStatus.checking) {
+    return null;
+  }
+
+  final path = state.uri.path;
+
+  if (_isStaffPath(path)) {
+    if (!auth.isAuthenticated) {
+      return _signInLocation(state.uri.toString());
+    }
+
+    if (!(auth.user?.hasStaffAccess ?? false)) {
+      return '/profile';
+    }
+
+    return null;
+  }
+
+  if (_isAuthRequiredPath(path) && !auth.isAuthenticated) {
+    return _signInLocation(state.uri.toString());
+  }
+
+  return null;
 }
 
 String _initialLocation() {
@@ -121,6 +150,7 @@ final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: _initialLocation(),
   overridePlatformDefaultLocation: true,
+  redirect: _redirectForAuth,
   routes: <RouteBase>[
     GoRoute(
       path: '/sign-in',
@@ -158,6 +188,47 @@ final GoRouter appRouter = GoRouter(
         returnTo: state.uri.toString(),
         child: const CheckoutPage(),
       ),
+    ),
+    GoRoute(
+      path: '/store-support',
+      builder: (context, state) => const StoreSupportPage(),
+    ),
+    GoRoute(
+      path: '/store-support/:section',
+      builder: (context, state) {
+        final raw = state.pathParameters['section'];
+        StoreSupportSection? section;
+        for (final value in StoreSupportSection.values) {
+          if (value.name == raw) {
+            section = value;
+            break;
+          }
+        }
+
+        final store = state.extra;
+        if (section == null || store is! StoreInfo) {
+          return const StoreSupportPage();
+        }
+
+        return StoreSupportDetailPage(store: store, section: section);
+      },
+    ),
+    GoRoute(
+      path: '/store-support/about/location/:locationId',
+      builder: (context, state) {
+        final extra = state.extra;
+        if (extra is! List<Object> ||
+            extra.length != 2 ||
+            extra[0] is! StoreInfo ||
+            extra[1] is! StoreLocation) {
+          return const StoreSupportPage();
+        }
+
+        return StoreLocationDetailPage(
+          store: extra[0] as StoreInfo,
+          location: extra[1] as StoreLocation,
+        );
+      },
     ),
     GoRoute(
       path: '/staff',
@@ -217,79 +288,68 @@ final GoRouter appRouter = GoRouter(
         ),
       ),
     ),
-    StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) => MainShell(
-        navigationShell: navigationShell,
+    GoRoute(
+      path: '/',
+      builder: (context, state) => MainShell(
+        location: state.uri.path,
+        child: const HomePage(),
       ),
-      branches: <StatefulShellBranch>[
-        StatefulShellBranch(
-          routes: <RouteBase>[
-            GoRoute(
-              path: '/',
-              builder: (context, state) => const HomePage(),
-              routes: <RouteBase>[
-                GoRoute(
-                  path: 'products/:productId',
-                  builder: (context, state) => ProductDetailsPage(
-                    productId: state.pathParameters['productId']!,
-                  ),
-                ),
-                GoRoute(
-                  path: 'wishlist',
-                  builder: (context, state) => _AuthRequiredRoute(
-                    returnTo: state.uri.toString(),
-                    child: const WishlistPage(),
-                  ),
-                ),
-              ],
-            ),
-          ],
+      routes: <RouteBase>[
+        GoRoute(
+          path: 'products/:productId',
+          builder: (context, state) => ProductDetailsPage(
+            productId: state.pathParameters['productId']!,
+          ),
         ),
-        StatefulShellBranch(
-          routes: <RouteBase>[
-            GoRoute(
-              path: '/cart',
-              builder: (context, state) => _AuthRequiredRoute(
-                returnTo: state.uri.toString(),
-                child: const CartPage(),
-              ),
+        GoRoute(
+          path: 'wishlist',
+          builder: (context, state) => MainShell(
+            location: state.uri.path,
+            child: _AuthRequiredRoute(
+              returnTo: state.uri.toString(),
+              child: const WishlistPage(),
             ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: <RouteBase>[
-            GoRoute(
-              path: '/orders',
-              builder: (context, state) => _AuthRequiredRoute(
-                returnTo: state.uri.toString(),
-                child: const OrdersPage(),
-              ),
-              routes: <RouteBase>[
-                GoRoute(
-                  path: ':orderNumber',
-                  builder: (context, state) => _AuthRequiredRoute(
-                    returnTo: state.uri.toString(),
-                    child: OrderDetailsPage(
-                      orderNumber: state.pathParameters['orderNumber']!,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: <RouteBase>[
-            GoRoute(
-              path: '/profile',
-              builder: (context, state) => _AuthRequiredRoute(
-                returnTo: state.uri.toString(),
-                child: const ProfilePage(),
-              ),
-            ),
-          ],
+          ),
         ),
       ],
+    ),
+    GoRoute(
+      path: '/cart',
+      builder: (context, state) => MainShell(
+        location: state.uri.path,
+        child: _AuthRequiredRoute(
+          returnTo: state.uri.toString(),
+          child: const CartPage(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/orders',
+      builder: (context, state) => MainShell(
+        location: state.uri.path,
+        child: _AuthRequiredRoute(
+          returnTo: state.uri.toString(),
+          child: const OrdersPage(),
+        ),
+      ),
+      routes: <RouteBase>[
+        GoRoute(
+          path: ':orderNumber',
+          builder: (context, state) => OrderDetailsPage(
+            orderNumber: state.pathParameters['orderNumber']!,
+          ),
+        ),
+      ],
+    ),
+    GoRoute(
+      path: '/profile',
+      builder: (context, state) => MainShell(
+        location: state.uri.path,
+        child: _AuthRequiredRoute(
+          returnTo: state.uri.toString(),
+          child: const ProfilePage(),
+        ),
+      ),
     ),
   ],
 );

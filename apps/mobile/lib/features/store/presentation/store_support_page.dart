@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../domain/store_info.dart';
@@ -20,14 +21,54 @@ class StoreSupportPage extends ConsumerWidget {
   const StoreSupportPage({super.key});
 
   static const _items = <(StoreSupportSection, IconData, String, String)>[
-    (StoreSupportSection.about, Icons.storefront_outlined, 'Our store', 'Who we are and what the shop stands for'),
-    (StoreSupportSection.delivery, Icons.local_shipping_outlined, 'Delivery', 'Shipping rates, timing and free-delivery rules'),
-    (StoreSupportSection.returns, Icons.assignment_return_outlined, 'Returns', 'Return process and eligibility'),
-    (StoreSupportSection.contact, Icons.support_agent_outlined, 'Contact us', 'Store contact details and support hours'),
-    (StoreSupportSection.faq, Icons.help_outline_rounded, 'FAQ', 'Common customer questions'),
-    (StoreSupportSection.trust, Icons.verified_user_outlined, 'Trust & safety', 'How the store keeps shopping clear and safe'),
-    (StoreSupportSection.terms, Icons.description_outlined, 'Terms', 'Store terms and conditions'),
-    (StoreSupportSection.privacy, Icons.privacy_tip_outlined, 'Privacy', 'How customer information is handled'),
+    (
+      StoreSupportSection.about,
+      Icons.storefront_outlined,
+      'Our store',
+      'Who we are and what the shop stands for'
+    ),
+    (
+      StoreSupportSection.delivery,
+      Icons.local_shipping_outlined,
+      'Delivery',
+      'Shipping rates, timing and free-delivery rules'
+    ),
+    (
+      StoreSupportSection.returns,
+      Icons.assignment_return_outlined,
+      'Returns',
+      'Return process and eligibility'
+    ),
+    (
+      StoreSupportSection.contact,
+      Icons.support_agent_outlined,
+      'Contact us',
+      'Store contact details and support hours'
+    ),
+    (
+      StoreSupportSection.faq,
+      Icons.help_outline_rounded,
+      'FAQ',
+      'Common customer questions'
+    ),
+    (
+      StoreSupportSection.trust,
+      Icons.verified_user_outlined,
+      'Trust & safety',
+      'How the store keeps shopping clear and safe'
+    ),
+    (
+      StoreSupportSection.terms,
+      Icons.description_outlined,
+      'Terms',
+      'Store terms and conditions'
+    ),
+    (
+      StoreSupportSection.privacy,
+      Icons.privacy_tip_outlined,
+      'Privacy',
+      'How customer information is handled'
+    ),
   ];
 
   @override
@@ -55,12 +96,20 @@ class StoreSupportPage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  const Icon(Icons.storefront_rounded, color: Color(0xFFDBFF4B), size: 32),
+                  const Icon(Icons.storefront_rounded,
+                      color: Color(0xFFDBFF4B), size: 32),
                   const SizedBox(height: 18),
-                  Text(store.storeName, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
+                  Text(store.storeName,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900)),
                   if (store.storeTagline.trim().isNotEmpty) ...<Widget>[
                     const SizedBox(height: 8),
-                    Text(store.storeTagline, style: TextStyle(color: Colors.white.withValues(alpha: .72), height: 1.45)),
+                    Text(store.storeTagline,
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: .72),
+                            height: 1.45)),
                   ],
                 ],
               ),
@@ -71,19 +120,20 @@ class StoreSupportPage extends ConsumerWidget {
                   child: Card(
                     elevation: 0,
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 6),
                       leading: CircleAvatar(
                         backgroundColor: const Color(0xFFDBFF4B),
                         foregroundColor: const Color(0xFF171717),
                         child: Icon(item.$2),
                       ),
-                      title: Text(item.$3, style: const TextStyle(fontWeight: FontWeight.w800)),
+                      title: Text(item.$3,
+                          style: const TextStyle(fontWeight: FontWeight.w800)),
                       subtitle: Text(item.$4),
                       trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => StoreSupportDetailPage(store: store, section: item.$1),
-                        ),
+                      onTap: () => context.push(
+                        '/store-support/${item.$1.name}',
+                        extra: store,
                       ),
                     ),
                   ),
@@ -240,6 +290,14 @@ class StoreSupportDetailPage extends StatelessWidget {
                 ],
               ],
             ),
+            if (store.estimatedDelivery.trim().isNotEmpty) ...<Widget>[
+              const SizedBox(height: 10),
+              _SupportInfoCard(
+                icon: Icons.schedule_outlined,
+                label: 'Estimated delivery',
+                value: store.estimatedDelivery,
+              ),
+            ],
             const SizedBox(height: 22),
             _SupportSectionLabel(title: 'Delivery details'),
             const SizedBox(height: 10),
@@ -260,13 +318,9 @@ class StoreSupportDetailPage extends StatelessWidget {
                     clipBehavior: Clip.antiAlias,
                     elevation: 0,
                     child: InkWell(
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => StoreLocationDetailPage(
-                            store: store,
-                            location: location,
-                          ),
-                        ),
+                      onTap: () => context.push(
+                        '/store-support/about/location/${Uri.encodeComponent(location.id)}',
+                        extra: <Object>[store, location],
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
@@ -381,6 +435,25 @@ class StoreSupportDetailPage extends StatelessWidget {
                   'Check eligibility, item condition and refund details below.',
             ),
             const SizedBox(height: 18),
+            if (store.returnWindowDays > 0)
+              _SupportInfoCard(
+                icon: Icons.calendar_month_outlined,
+                label: 'Return window',
+                value: '${store.returnWindowDays} days',
+              ),
+            if (store.returnCondition.trim().isNotEmpty)
+              _SupportInfoCard(
+                icon: Icons.inventory_2_outlined,
+                label: 'Item condition',
+                value: store.returnCondition,
+              ),
+            if (store.refundMethod.trim().isNotEmpty)
+              _SupportInfoCard(
+                icon: Icons.payments_outlined,
+                label: 'Refund method',
+                value: store.refundMethod,
+              ),
+            const SizedBox(height: 8),
             _SupportSectionLabel(title: 'Returns policy'),
             const SizedBox(height: 10),
             _SupportReadingCard(text: body),
@@ -919,8 +992,7 @@ class StoreLocationDetailPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          if (location.isPrimary)
-                            const _PrimaryStoreBadge(),
+                          if (location.isPrimary) const _PrimaryStoreBadge(),
                           if (location.isPrimary) const SizedBox(height: 8),
                           Text(
                             location.name,
@@ -930,7 +1002,9 @@ class StoreLocationDetailPage extends StatelessWidget {
                               fontWeight: FontWeight.w900,
                             ),
                           ),
-                          if (location.formattedAddress.trim().isNotEmpty) ...<Widget>[
+                          if (location.formattedAddress
+                              .trim()
+                              .isNotEmpty) ...<Widget>[
                             const SizedBox(height: 7),
                             Text(
                               location.formattedAddress,

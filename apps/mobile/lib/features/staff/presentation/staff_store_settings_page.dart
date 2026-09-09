@@ -137,7 +137,11 @@ class _StaffStoreSettingsPageState
           int.tryParse(_controller('standardShippingCents').text) ?? 0,
       freeShippingThresholdCents:
           int.tryParse(_controller('freeShippingThresholdCents').text) ?? 0,
+      estimatedDelivery: _controller('estimatedDelivery').text.trim(),
       deliveryPolicy: _controller('deliveryPolicy').text.trim(),
+      returnWindowDays: int.tryParse(_controller('returnWindowDays').text) ?? 0,
+      returnCondition: _controller('returnCondition').text.trim(),
+      refundMethod: _controller('refundMethod').text.trim(),
       returnsPolicy: _controller('returnsPolicy').text.trim(),
       faqContent: _controller('faqContent').text.trim(),
       trustSafetyContent: _controller('trustSafetyContent').text.trim(),
@@ -165,6 +169,29 @@ class _StaffStoreSettingsPageState
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  String _moneyHint(String key) {
+    final cents = int.tryParse(_controller(key).text) ?? 0;
+    final currency = _controller('currency').text.trim().toUpperCase();
+    return 'Customer sees ${currency.isEmpty ? 'MYR' : currency} ${(cents / 100).toStringAsFixed(2)}.';
+  }
+
+  String _freeShippingHint() {
+    final cents =
+        int.tryParse(_controller('freeShippingThresholdCents').text) ?? 0;
+    if (cents <= 0) {
+      return 'Set 0 to hide the free-delivery threshold.';
+    }
+    final currency = _controller('currency').text.trim().toUpperCase();
+    return 'Free delivery from ${currency.isEmpty ? 'MYR' : currency} ${(cents / 100).toStringAsFixed(2)}.';
+  }
+
+  String _returnWindowHint() {
+    final days = int.tryParse(_controller('returnWindowDays').text) ?? 0;
+    return days > 0
+        ? 'Customers see a $days-day return window.'
+        : 'Set 0 if no standard return window should be shown.';
   }
 
   @override
@@ -265,26 +292,80 @@ class _StaffStoreSettingsPageState
                   ),
                   const SizedBox(height: 14),
                   _Section(
-                    title: 'Commerce & delivery',
+                    title: 'Commerce defaults',
+                    description:
+                        'System-level defaults used by pricing, checkout, and store operations.',
                     children: <Widget>[
-                      _field('currency', 'Currency', required: true),
-                      _field('timeZone', 'Timezone', required: true),
+                      _field(
+                        'currency',
+                        'Currency',
+                        required: true,
+                        helperText: 'Three-letter ISO code, for example MYR.',
+                      ),
+                      _field(
+                        'timeZone',
+                        'Timezone',
+                        required: true,
+                        helperText: 'Used for store operations and reporting.',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  _Section(
+                    title: 'Delivery settings',
+                    description:
+                        'Configure customer-facing shipping prices, eligibility, timing, and delivery guidance.',
+                    children: <Widget>[
                       _field(
                         'standardShippingCents',
                         'Standard shipping (cents)',
                         required: true,
                         keyboardType: TextInputType.number,
+                        helperText: _moneyHint('standardShippingCents'),
                       ),
                       _field(
                         'freeShippingThresholdCents',
                         'Free shipping threshold (cents)',
                         required: true,
                         keyboardType: TextInputType.number,
+                        helperText: _freeShippingHint(),
+                      ),
+                      _field(
+                        'estimatedDelivery',
+                        'Estimated delivery',
+                        helperText:
+                            'Example: 2–5 business days after dispatch.',
                       ),
                       _field(
                         'deliveryPolicy',
                         'Delivery information',
                         maxLines: 6,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  _Section(
+                    title: 'Returns settings',
+                    description:
+                        'Define the structured rules customers see before the full returns information.',
+                    children: <Widget>[
+                      _field(
+                        'returnWindowDays',
+                        'Return window (days)',
+                        required: true,
+                        keyboardType: TextInputType.number,
+                        helperText: _returnWindowHint(),
+                      ),
+                      _field(
+                        'returnCondition',
+                        'Return item condition',
+                        helperText:
+                            'Example: Unused, original condition and packaging.',
+                      ),
+                      _field(
+                        'refundMethod',
+                        'Refund method',
+                        helperText: 'Example: Original payment method.',
                       ),
                       _field(
                         'returnsPolicy',
@@ -349,13 +430,19 @@ class _StaffStoreSettingsPageState
     bool required = false,
     TextInputType? keyboardType,
     int maxLines = 1,
+    String? helperText,
   }) {
     return TextFormField(
       controller: _controller(key),
       keyboardType: keyboardType,
       minLines: maxLines > 1 ? 3 : 1,
       maxLines: maxLines,
-      decoration: InputDecoration(labelText: label, alignLabelWithHint: true),
+      decoration: InputDecoration(
+        labelText: label,
+        helperText: helperText,
+        helperMaxLines: 2,
+        alignLabelWithHint: true,
+      ),
       validator: required
           ? (value) => value == null || value.trim().isEmpty
               ? '$label is required.'
@@ -366,9 +453,14 @@ class _StaffStoreSettingsPageState
 }
 
 class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.children});
+  const _Section({
+    required this.title,
+    required this.children,
+    this.description,
+  });
 
   final String title;
+  final String? description;
   final List<Widget> children;
 
   @override
@@ -386,6 +478,13 @@ class _Section extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                   ),
             ),
+            if (description != null) ...<Widget>[
+              const SizedBox(height: 5),
+              Text(
+                description!,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
             const SizedBox(height: 12),
             ...children.expand(
               (child) => <Widget>[child, const SizedBox(height: 10)],

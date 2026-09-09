@@ -75,7 +75,11 @@ class StoreInfo {
     required this.currency,
     required this.standardShippingCents,
     required this.freeShippingThresholdCents,
+    required this.estimatedDelivery,
     required this.deliveryPolicy,
+    required this.returnWindowDays,
+    required this.returnCondition,
+    required this.refundMethod,
     required this.returnsPolicy,
     required this.faqContent,
     required this.trustSafetyContent,
@@ -114,7 +118,11 @@ class StoreInfo {
       currency: text('currency', 'MYR'),
       standardShippingCents: number('standardShippingCents'),
       freeShippingThresholdCents: number('freeShippingThresholdCents'),
+      estimatedDelivery: text('estimatedDelivery'),
       deliveryPolicy: text('deliveryPolicy'),
+      returnWindowDays: number('returnWindowDays'),
+      returnCondition: text('returnCondition'),
+      refundMethod: text('refundMethod'),
       returnsPolicy: text('returnsPolicy'),
       faqContent: text('faqContent'),
       trustSafetyContent: text('trustSafetyContent'),
@@ -148,7 +156,11 @@ class StoreInfo {
   final String currency;
   final int standardShippingCents;
   final int freeShippingThresholdCents;
+  final String estimatedDelivery;
   final String deliveryPolicy;
+  final int returnWindowDays;
+  final String returnCondition;
+  final String refundMethod;
   final String returnsPolicy;
   final String faqContent;
   final String trustSafetyContent;

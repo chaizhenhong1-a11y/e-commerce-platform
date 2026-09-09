@@ -46,7 +46,11 @@ const EMPTY: UpdateStoreSettingsInput = {
   timeZone: "Asia/Kuala_Lumpur",
   standardShippingCents: 0,
   freeShippingThresholdCents: 0,
+  estimatedDelivery: "",
   deliveryPolicy: "",
+  returnWindowDays: 0,
+  returnCondition: "",
+  refundMethod: "",
   returnsPolicy: "",
   faqContent: "",
   trustSafetyContent: "",
@@ -126,7 +130,7 @@ export function StoreSettingsManager() {
     }
   }
 
-  const input = (label: string, key: keyof UpdateStoreSettingsInput, options?: { type?: string; required?: boolean; maxLength?: number }) => (
+  const input = (label: string, key: keyof UpdateStoreSettingsInput, options?: { type?: string; required?: boolean; maxLength?: number; hint?: string }) => (
     <label className={styles.field}>
       <span>{label}</span>
       <input
@@ -143,6 +147,7 @@ export function StoreSettingsManager() {
           set(key, normalized as never);
         }}
       />
+      {options?.hint ? <small className={styles.hint}>{options.hint}</small> : null}
     </label>
   );
 
@@ -208,13 +213,38 @@ export function StoreSettingsManager() {
           </section>
 
           <section className={styles.section}>
-            <h2>Commerce & delivery</h2>
+            <div className={styles.sectionHeading}>
+              <div><span className={styles.kicker}>COMMERCE</span><h2>Commerce defaults</h2></div>
+              <p>System-level defaults used by pricing, checkout, and store operations.</p>
+            </div>
             <div className={styles.grid}>
-              {input("Currency", "currency", { required: true, maxLength: 3 })}
-              {input("Timezone", "timeZone", { required: true })}
-              {input("Standard shipping (cents)", "standardShippingCents", { type: "number", required: true })}
-              {input("Free shipping threshold (cents)", "freeShippingThresholdCents", { type: "number", required: true })}
+              {input("Currency", "currency", { required: true, maxLength: 3, hint: "Three-letter ISO code, for example MYR." })}
+              {input("Timezone", "timeZone", { required: true, hint: "Used for store operations and reporting." })}
+            </div>
+          </section>
+
+          <section className={styles.section}>
+            <div className={styles.sectionHeading}>
+              <div><span className={styles.kicker}>DELIVERY</span><h2>Delivery settings</h2></div>
+              <p>Configure customer-facing shipping prices, eligibility, timing, and delivery guidance.</p>
+            </div>
+            <div className={styles.grid}>
+              {input("Standard shipping (cents)", "standardShippingCents", { type: "number", required: true, hint: `Customer sees ${form.currency || "MYR"} ${(Number(form.standardShippingCents || 0) / 100).toFixed(2)}.` })}
+              {input("Free shipping threshold (cents)", "freeShippingThresholdCents", { type: "number", required: true, hint: Number(form.freeShippingThresholdCents || 0) > 0 ? `Free delivery from ${form.currency || "MYR"} ${(Number(form.freeShippingThresholdCents) / 100).toFixed(2)}.` : "Set 0 to hide the free-delivery threshold." })}
+              {input("Estimated delivery", "estimatedDelivery", { maxLength: 120, hint: "Example: 2–5 business days after dispatch." })}
               {textarea("Delivery information", "deliveryPolicy", 6)}
+            </div>
+          </section>
+
+          <section className={styles.section}>
+            <div className={styles.sectionHeading}>
+              <div><span className={styles.kicker}>RETURNS</span><h2>Returns settings</h2></div>
+              <p>Define the structured rules customers see before reading the full returns information.</p>
+            </div>
+            <div className={styles.grid}>
+              {input("Return window (days)", "returnWindowDays", { type: "number", required: true, hint: Number(form.returnWindowDays || 0) > 0 ? `Customers see a ${form.returnWindowDays}-day return window.` : "Set 0 if no standard return window should be shown." })}
+              {input("Return item condition", "returnCondition", { maxLength: 180, hint: "Example: Unused, original condition and packaging." })}
+              {input("Refund method", "refundMethod", { maxLength: 180, hint: "Example: Original payment method." })}
               {textarea("Returns information", "returnsPolicy", 6)}
             </div>
           </section>

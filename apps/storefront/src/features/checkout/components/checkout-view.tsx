@@ -15,6 +15,7 @@ import {
 import type { Cart } from "@/features/cart/domain/cart";
 import { createCheckoutOrder, previewAutomaticPromotion, validateCoupon } from "../data/checkout-api";
 import type { AutomaticPromotionPreview, CheckoutOrder, CouponValidation } from "../domain/checkout";
+import { StripePaymentLaunchButton } from "@/features/payment/components/stripe-payment-launch-button";
 
 type CheckoutForm = {
   email: string;
@@ -325,12 +326,10 @@ export function CheckoutView() {
         </div>
 
         <div className="checkout-success__actions">
-          <Link
-            className="button button--primary"
-            href={`/payment?order=${encodeURIComponent(order.orderNumber)}`}
-          >
-            Continue to payment
-          </Link>
+          <StripePaymentLaunchButton
+            orderNumber={order.orderNumber}
+            label="Continue to payment"
+          />
           <Link
             className="button"
             href={`/orders/${encodeURIComponent(order.orderNumber)}`}

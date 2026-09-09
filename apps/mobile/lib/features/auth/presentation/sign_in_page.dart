@@ -18,6 +18,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _passwordFocusNode = FocusNode();
 
   String get _safeReturnTo {
     final target = widget.returnTo;
@@ -42,6 +43,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -71,6 +73,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
               autofillHints: const <String>[AutofillHints.email],
               decoration: const InputDecoration(
                 labelText: 'Email address',
@@ -79,11 +82,16 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               validator: (value) => value == null || !value.contains('@')
                   ? 'Enter a valid email.'
                   : null,
+              onFieldSubmitted: (_) {
+                _passwordFocusNode.requestFocus();
+              },
             ),
             const SizedBox(height: 14),
             TextFormField(
               controller: _passwordController,
+              focusNode: _passwordFocusNode,
               obscureText: true,
+              textInputAction: TextInputAction.done,
               autofillHints: const <String>[AutofillHints.password],
               decoration: const InputDecoration(
                 labelText: 'Password',
@@ -92,7 +100,11 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               validator: (value) => value == null || value.isEmpty
                   ? 'Enter your password.'
                   : null,
-              onFieldSubmitted: (_) => _submit(),
+              onFieldSubmitted: (_) {
+                if (!auth.isSubmitting) {
+                  _submit();
+                }
+              },
             ),
             if (auth.message != null) ...<Widget>[
               const SizedBox(height: 14),
@@ -114,14 +126,16 @@ class _SignInPageState extends ConsumerState<SignInPage> {
             const SizedBox(height: 12),
             TextButton(
               style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF171717)),
+                foregroundColor: const Color(0xFF171717),
+              ),
               onPressed: () => context.push('/forgot-password'),
               child: const Text('Forgot password?'),
             ),
             const Divider(height: 28),
             TextButton(
               style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF171717)),
+                foregroundColor: const Color(0xFF171717),
+              ),
               onPressed: () => context.push(_registerLocation()),
               child: const Text('Create a TextShop account'),
             ),

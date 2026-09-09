@@ -1,6 +1,7 @@
 import type {
   Payment,
   PaymentProvider,
+  PaymentReconciliation,
 } from "../domain/payment";
 
 async function request(
@@ -54,4 +55,18 @@ export function confirmDevelopmentPayment(
       body: JSON.stringify({ orderNumber }),
     },
   );
+}
+
+export async function reconcilePayment(orderNumber: string): Promise<PaymentReconciliation> {
+  const response = await fetch("/api/payments/reconcile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ orderNumber }),
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { message?: string | string[] } | null;
+    const message = Array.isArray(body?.message) ? body.message.join(" ") : body?.message;
+    throw new Error(message || "Unable to confirm payment.");
+  }
+  return response.json() as Promise<PaymentReconciliation>;
 }

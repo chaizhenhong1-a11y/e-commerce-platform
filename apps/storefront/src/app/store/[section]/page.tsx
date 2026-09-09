@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getStoreInfo } from "@/features/store/data/store-info-api";
 import type { StoreInfoSection } from "@/features/store/domain/store-info";
 import styles from "./store-info.module.css";
+import detailStyles from "./info-content.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -72,38 +73,91 @@ export default async function StoreInformationPage({ params }: { params: Promise
           {section === "contact" ? (
             <>
               <h2>Talk to {info.storeName}</h2>
-              <div className={styles.meta}>
-                <div className={styles.metaItem}><span>Email</span><a href={`mailto:${info.contactEmail}`}>{info.contactEmail}</a></div>
-                {info.contactPhone ? <div className={styles.metaItem}><span>Phone</span><a href={`tel:${info.contactPhone}`}>{info.contactPhone}</a></div> : null}
-                {info.businessHours ? <div className={styles.metaItem}><span>Hours</span><strong>{info.businessHours}</strong></div> : null}
+              <div className={detailStyles.infoGrid}>
+                <div className={detailStyles.infoBox}>
+                  <span>Email</span>
+                  <a href={`mailto:${info.contactEmail}`}>{info.contactEmail}</a>
+                </div>
+                {info.contactPhone ? (
+                  <div className={detailStyles.infoBox}>
+                    <span>Phone</span>
+                    <a href={`tel:${info.contactPhone}`}>{info.contactPhone}</a>
+                  </div>
+                ) : null}
+                {info.businessHours ? (
+                  <div className={detailStyles.infoBox}>
+                    <span>Support hours</span>
+                    <strong>{info.businessHours}</strong>
+                  </div>
+                ) : null}
               </div>
             </>
           ) : section === "delivery" ? (
             <>
               <h2>Delivery</h2>
-              <div className={styles.meta}>
-                <div className={styles.metaItem}>
+              <div className={detailStyles.infoGrid}>
+                <div className={detailStyles.infoBox}>
                   <span>Standard delivery</span>
                   <strong>{money(info.standardShippingCents, info.currency)}</strong>
                 </div>
                 {info.freeShippingThresholdCents > 0 ? (
-                  <div className={styles.metaItem}>
+                  <div className={detailStyles.infoBox}>
                     <span>Free delivery</span>
                     <strong>Orders over {money(info.freeShippingThresholdCents, info.currency)}</strong>
                   </div>
                 ) : null}
+                {info.estimatedDelivery ? (
+                  <div className={detailStyles.infoBox}>
+                    <span>Estimated delivery</span>
+                    <strong>{info.estimatedDelivery}</strong>
+                  </div>
+                ) : null}
               </div>
-              <div style={{ marginTop: 32 }}>
-                <h3 style={{ margin: "0 0 12px" }}>Delivery information</h3>
-                <div className={styles.content}>
-                  {content || "This information is being prepared by the store team."}
+              <div className={detailStyles.readingSection}>
+                <h3>Delivery information</h3>
+                <div className={detailStyles.readingBox}>
+                  <div className={styles.content}>
+                    {content || "This information is being prepared by the store team."}
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : section === "returns" ? (
+            <>
+              <h2>Returns</h2>
+              <div className={detailStyles.infoGrid}>
+                {info.returnWindowDays > 0 ? (
+                  <div className={detailStyles.infoBox}>
+                    <span>Return window</span>
+                    <strong>{info.returnWindowDays} days</strong>
+                  </div>
+                ) : null}
+                {info.returnCondition ? (
+                  <div className={detailStyles.infoBox}>
+                    <span>Item condition</span>
+                    <strong>{info.returnCondition}</strong>
+                  </div>
+                ) : null}
+                {info.refundMethod ? (
+                  <div className={detailStyles.infoBox}>
+                    <span>Refund method</span>
+                    <strong>{info.refundMethod}</strong>
+                  </div>
+                ) : null}
+              </div>
+              <div className={detailStyles.readingSection}>
+                <h3>Returns information</h3>
+                <div className={detailStyles.readingBox}>
+                  <div className={styles.content}>{content || "This information is being prepared by the store team."}</div>
                 </div>
               </div>
             </>
           ) : section === "about" ? (
             <>
               <h2>About {info.storeName}</h2>
-              <div className={styles.content}>{content || "This information is being prepared by the store team."}</div>
+              <div className={detailStyles.readingBox}>
+                <div className={styles.content}>{content || "This information is being prepared by the store team."}</div>
+              </div>
               <div className={styles.locations}>
                 {info.locations.map((location) => {
                   const branchAddress = [location.addressLine1, location.addressLine2, location.postcode, location.city, location.state, location.countryCode].filter(Boolean).join(", ");
@@ -131,7 +185,9 @@ export default async function StoreInformationPage({ params }: { params: Promise
           ) : (
             <>
               <h2>{current.title}</h2>
-              <div className={styles.content}>{content || "This information is being prepared by the store team."}</div>
+              <div className={detailStyles.readingBox}>
+                <div className={styles.content}>{content || "This information is being prepared by the store team."}</div>
+              </div>
             </>
           )}
         </section>

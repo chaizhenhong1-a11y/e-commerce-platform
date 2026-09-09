@@ -25,6 +25,148 @@ export class PaymentsService {
     private readonly notifications: NotificationsService,
   ) {}
 
+  async reconcile(
+    orderNumber: string,
+    userId?: string,
+    guestToken?: string,
+  ) {
+    const order = await this.prisma.order.findUnique({
+      where: { orderNumber },
+      include: {
+        payments: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found.');
+    }
+
+    this.orderAccess.assertCanAccess(order, userId, guestToken);
+
+    if (
+      order.paymentStatus === PaymentStatus.PAID ||
+      order.paymentStatus === PaymentStatus.PARTIALLY_REFUNDED ||
+      order.paymentStatus === PaymentStatus.REFUNDED
+    ) {
+      const paidPayment = order.payments.find(
+        (payment) =>
+          payment.status === PaymentStatus.PAID ||
+          payment.status === PaymentStatus.PARTIALLY_REFUNDED ||
+          payment.status === PaymentStatus.REFUNDED,
+      );
+      return {
+        orderNumber: order.orderNumber,
+        orderStatus: order.status,
+        paymentStatus: order.paymentStatus,
+        payment: paidPayment ? this.toResponse(paidPayment) : null,
+        state: 'CONFIRMED',
+      };
+    }
+
+    if (
+      order.status !== 'AWAITING_PAYMENT' ||
+      order.paymentStatus !== PaymentStatus.PENDING
+    ) {
+      return {
+        orderNumber: order.orderNumber,
+        orderStatus: order.status,
+        paymentStatus: order.paymentStatus,
+        payment: order.payments[0] ? this.toResponse(order.payments[0]) : null,
+        state: 'TERMINAL',
+      };
+    }
+
+    const pending = order.payments.find(
+      (payment) => payment.status === PaymentStatus.PENDING,
+    );
+
+    if (!pending) {
+      return {
+        orderNumber: order.orderNumber,
+        orderStatus: order.status,
+        paymentStatus: order.paymentStatus,
+        payment: null,
+        state: 'UNPAID',
+      };
+    }
+
+    if (!pending.providerRef) {
+      return {
+        orderNumber: order.orderNumber,
+        orderStatus: order.status,
+        paymentStatus: order.paymentStatus,
+        payment: this.toResponse(pending),
+        state: 'PROCESSING',
+      };
+    }
+
+    if (pending.provider === PaymentProvider.MANUAL_TEST) {
+      return {
+        orderNumber: order.orderNumber,
+        orderStatus: order.status,
+        paymentStatus: order.paymentStatus,
+        payment: this.toResponse(pending),
+        state: 'UNPAID',
+      };
+    }
+
+    const session = await this.providers
+      .get(pending.provider)
+      .resumeSession(pending.providerRef);
+
+    if (session.state === 'PAID') {
+      const payment = await this.confirmProviderPayment(
+        pending.id,
+        pending.providerRef,
+      );
+      return {
+        orderNumber: order.orderNumber,
+        orderStatus: 'CONFIRMED',
+        paymentStatus: PaymentStatus.PAID,
+        payment,
+        state: 'CONFIRMED',
+      };
+    }
+
+    if (session.state === 'PROCESSING') {
+      return {
+        orderNumber: order.orderNumber,
+        orderStatus: order.status,
+        paymentStatus: order.paymentStatus,
+        payment: this.toResponse(pending),
+        state: 'PROCESSING',
+      };
+    }
+
+    if (session.state === 'EXPIRED') {
+      const payment = await this.markPaymentFailed(
+        pending.id,
+        'PROVIDER_SESSION_EXPIRED',
+        'The payment session expired before completion.',
+      );
+      return {
+        orderNumber: order.orderNumber,
+        orderStatus: order.status,
+        paymentStatus: PaymentStatus.FAILED,
+        payment,
+        state: 'EXPIRED',
+      };
+    }
+
+    return {
+      orderNumber: order.orderNumber,
+      orderStatus: order.status,
+      paymentStatus: order.paymentStatus,
+      payment: {
+        ...this.toResponse(pending),
+        checkoutUrl: session.checkoutUrl,
+      },
+      state: 'UNPAID',
+    };
+  }
+
   async create(
     orderNumber: string,
     provider: PaymentProvider,
@@ -43,15 +185,8 @@ export class PaymentsService {
       },
     });
 
-    if (!order) {
-      throw new NotFoundException('Order not found.');
-    }
-
-    this.orderAccess.assertCanAccess(
-      order,
-      userId,
-      guestToken,
-    );
+    if (!order) throw new NotFoundException('Order not found.');
+    this.orderAccess.assertCanAccess(order, userId, guestToken);
 
     if (
       order.status !== 'AWAITING_PAYMENT' ||
@@ -64,9 +199,7 @@ export class PaymentsService {
       order.reservationExpiresAt &&
       order.reservationExpiresAt <= new Date()
     ) {
-      throw new BadRequestException(
-        'Order inventory reservation has expired.',
-      );
+      throw new BadRequestException('Order inventory reservation has expired.');
     }
 
     for (const pending of order.payments) {
@@ -80,18 +213,13 @@ export class PaymentsService {
       const session = await adapter.resumeSession(pending.providerRef);
 
       if (session.state === 'PAID') {
-        return this.confirmProviderPayment(
-          pending.id,
-          pending.providerRef,
-        );
+        return this.confirmProviderPayment(pending.id, pending.providerRef);
       }
-
       if (session.state === 'PROCESSING') {
         throw new BadRequestException(
           'A payment is still being processed. Refresh the order before starting another payment.',
         );
       }
-
       if (session.state === 'EXPIRED') {
         await this.markPaymentFailed(
           pending.id,
@@ -100,7 +228,6 @@ export class PaymentsService {
         );
         continue;
       }
-
       if (pending.provider === provider) {
         return {
           ...this.toResponse(pending),
@@ -152,9 +279,7 @@ export class PaymentsService {
 
       const updated = await this.prisma.payment.update({
         where: { id: payment.id },
-        data: {
-          providerRef: session.providerRef,
-        },
+        data: { providerRef: session.providerRef },
       });
 
       if (payment.attempts[0]) {
@@ -183,31 +308,17 @@ export class PaymentsService {
           ? error.message
           : 'Unable to create payment session.',
       );
-
       throw error;
     }
   }
 
-  async findOne(
-    id: string,
-    userId?: string,
-    guestToken?: string,
-  ) {
+  async findOne(id: string, userId?: string, guestToken?: string) {
     const payment = await this.prisma.payment.findUnique({
       where: { id },
       include: { order: true },
     });
-
-    if (!payment) {
-      throw new NotFoundException('Payment not found.');
-    }
-
-    this.orderAccess.assertCanAccess(
-      payment.order,
-      userId,
-      guestToken,
-    );
-
+    if (!payment) throw new NotFoundException('Payment not found.');
+    this.orderAccess.assertCanAccess(payment.order, userId, guestToken);
     return this.toResponse(payment);
   }
 
@@ -216,37 +327,20 @@ export class PaymentsService {
     userId?: string,
     guestToken?: string,
   ) {
-    this.assertDevelopmentProviderAllowed(
-      PaymentProvider.MANUAL_TEST,
-    );
-
+    this.assertDevelopmentProviderAllowed(PaymentProvider.MANUAL_TEST);
     const payment = await this.prisma.payment.findUnique({
       where: { id },
       include: { order: true },
     });
-
-    if (!payment) {
-      throw new NotFoundException('Payment not found.');
-    }
-
-    this.orderAccess.assertCanAccess(
-      payment.order,
-      userId,
-      guestToken,
-    );
-
+    if (!payment) throw new NotFoundException('Payment not found.');
+    this.orderAccess.assertCanAccess(payment.order, userId, guestToken);
     if (payment.provider !== PaymentProvider.MANUAL_TEST) {
       throw new BadRequestException(
         'This endpoint only supports development payments.',
       );
     }
-
-    return this.confirmProviderPayment(
-      payment.id,
-      payment.providerRef,
-    );
+    return this.confirmProviderPayment(payment.id, payment.providerRef);
   }
-
 
   async confirmBillplzCallback(
     providerRef: string,
@@ -256,19 +350,15 @@ export class PaymentsService {
     const payment = await this.prisma.payment.findUnique({
       where: { providerRef },
     });
-
     if (!payment || payment.provider !== PaymentProvider.BILLPLZ) {
       throw new NotFoundException('Billplz payment not found.');
     }
-
     if (payment.amountCents !== amountCents) {
-      throw new BadRequestException('Billplz callback amount does not match the payment.');
+      throw new BadRequestException(
+        'Billplz callback amount does not match the payment.',
+      );
     }
-
-    if (!paid) {
-      return this.toResponse(payment);
-    }
-
+    if (!paid) return this.toResponse(payment);
     return this.confirmProviderPayment(payment.id, providerRef);
   }
 
@@ -281,33 +371,23 @@ export class PaymentsService {
         const payment = await tx.payment.findUnique({
           where: { id: paymentId },
           include: {
-            order: {
-              include: { items: true },
-            },
+            order: { include: { items: true } },
             attempts: {
               orderBy: { createdAt: 'desc' },
               take: 1,
             },
           },
         });
-
-        if (!payment) {
-          throw new NotFoundException('Payment not found.');
-        }
-
+        if (!payment) throw new NotFoundException('Payment not found.');
         if (payment.status === PaymentStatus.PAID) {
           return this.toResponse(payment);
         }
-
         if (
           payment.order.status !== 'AWAITING_PAYMENT' ||
           payment.order.paymentStatus !== 'PENDING'
         ) {
-          throw new BadRequestException(
-            'Order is not awaiting payment.',
-          );
+          throw new BadRequestException('Order is not awaiting payment.');
         }
-
         if (
           payment.order.reservationExpiresAt &&
           payment.order.reservationExpiresAt <= new Date()
@@ -321,7 +401,6 @@ export class PaymentsService {
           const inventory = await tx.inventory.findUnique({
             where: { variantId: item.variantId },
           });
-
           if (
             !inventory ||
             inventory.reserved < item.quantity ||
@@ -331,7 +410,6 @@ export class PaymentsService {
               `Reserved inventory is unavailable for ${item.productName}.`,
             );
           }
-
           await tx.inventory.update({
             where: { id: inventory.id },
             data: {
@@ -384,9 +462,7 @@ export class PaymentsService {
             },
             status: PaymentStatus.PENDING,
           },
-          data: {
-            status: PaymentStatus.FAILED,
-          },
+          data: { status: PaymentStatus.FAILED },
         });
 
         await tx.order.update({
@@ -397,14 +473,13 @@ export class PaymentsService {
             reservationExpiresAt: null,
           },
         });
-
         return this.toResponse(updated);
       },
       {
-        isolationLevel:
-          Prisma.TransactionIsolationLevel.Serializable,
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
+
     const confirmedPayment = await this.prisma.payment.findUnique({
       where: { id: paymentId },
       include: { order: true },
@@ -450,15 +525,10 @@ export class PaymentsService {
           },
         },
       });
-
-      if (!payment) {
-        throw new NotFoundException('Payment not found.');
-      }
-
+      if (!payment) throw new NotFoundException('Payment not found.');
       if (payment.status === PaymentStatus.PAID) {
         return this.toResponse(payment);
       }
-
       const updated = await tx.payment.update({
         where: { id: payment.id },
         data: {
@@ -467,23 +537,17 @@ export class PaymentsService {
           failureMessage,
         },
       });
-
       if (payment.attempts[0]) {
         await tx.paymentAttempt.update({
           where: { id: payment.attempts[0].id },
-          data: {
-            status: PaymentStatus.FAILED,
-          },
+          data: { status: PaymentStatus.FAILED },
         });
       }
-
       return this.toResponse(updated);
     });
   }
 
-  private assertDevelopmentProviderAllowed(
-    provider: PaymentProvider,
-  ) {
+  private assertDevelopmentProviderAllowed(provider: PaymentProvider) {
     if (
       provider === PaymentProvider.MANUAL_TEST &&
       this.configService.get<string>('NODE_ENV') === 'production'

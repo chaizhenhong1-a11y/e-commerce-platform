@@ -55,12 +55,16 @@ export class StripePaymentProvider implements PaymentProviderAdapter {
           },
         },
       ],
-      success_url: `${returnBaseUrl}/orders/${encodeURIComponent(
+      success_url: this.buildReturnUrl(
+        returnBaseUrl,
         request.orderNumber,
-      )}?payment=success`,
-      cancel_url: `${returnBaseUrl}/orders/${encodeURIComponent(
+        'success',
+      ),
+      cancel_url: this.buildReturnUrl(
+        returnBaseUrl,
         request.orderNumber,
-      )}?payment=cancelled`,
+        'cancelled',
+      ),
     });
 
     if (!session.url) {
@@ -78,6 +82,17 @@ export class StripePaymentProvider implements PaymentProviderAdapter {
         stripeSessionId: session.id,
       },
     };
+  }
+
+  private buildReturnUrl(
+    returnBaseUrl: string,
+    orderNumber: string,
+    status: 'success' | 'cancelled',
+  ) {
+    const url = new URL('/payment-return.html', returnBaseUrl);
+    url.searchParams.set('orderNumber', orderNumber);
+    url.searchParams.set('payment', status);
+    return url.toString();
   }
 
   private resolveReturnBaseUrl(requested?: string) {

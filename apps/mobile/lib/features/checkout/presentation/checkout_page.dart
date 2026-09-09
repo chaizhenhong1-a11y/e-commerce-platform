@@ -341,23 +341,19 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         mode: kIsWeb
             ? LaunchMode.platformDefault
             : LaunchMode.externalApplication,
-        webOnlyWindowName: kIsWeb ? '_self' : null,
+        webOnlyWindowName: kIsWeb ? '_blank' : null,
       );
       if (!launched) {
         throw StateError('Unable to open the payment page.');
       }
 
-      // On Flutter Web the hosted checkout replaces this tab. Do not race the
-      // browser navigation by routing the app to Order details first; that
-      // briefly renders an emptied-cart/order state before Stripe takes over.
-      // Stripe's return URL is responsible for bringing Web back to the order.
+      // Stripe opens outside the running TextShop tab. Move the original app
+      // straight to Order details so the customer sees the reserved order and
+      // its live payment state while the Stripe tab is open.
       if (kIsWeb) {
-        return;
+        ref.invalidate(customerCartProvider);
       }
-
       if (!mounted) return;
-      // Native platforms keep TextShop alive while the external payment page
-      // is open, so showing Order details behind it remains useful.
       context.go('/orders/${createdOrder.orderNumber}');
     } on DioException catch (error) {
       if (!mounted) {

@@ -46,8 +46,34 @@ class CheckoutRepository {
       data: <String, dynamic>{'sessionId': sessionId},
     );
     final data = response.data?['automaticPromotion'];
-    if (data is! Map<String, dynamic>) return null;
+    if (data is! Map<String, dynamic>) {
+      return null;
+    }
     return AutomaticPromotionPreview.fromJson(data);
+  }
+
+  Future<PaymentSession> reconcilePayment({
+    required String orderNumber,
+  }) async {
+    final response = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/payments/reconcile',
+      data: <String, dynamic>{'orderNumber': orderNumber},
+    );
+    final data = response.data;
+    if (data == null) {
+      throw StateError('Payment reconciliation response was empty.');
+    }
+
+    final payment = data['payment'];
+    if (payment is Map<String, dynamic>) {
+      return PaymentSession.fromJson(payment);
+    }
+    if (payment is Map) {
+      return PaymentSession.fromJson(
+        Map<String, dynamic>.from(payment),
+      );
+    }
+    throw StateError('Payment reconciliation did not return a payment.');
   }
 
   Future<PaymentSession> createPayment({
@@ -70,8 +96,6 @@ class CheckoutRepository {
   }
 
   Future<void> confirmDevelopmentPayment(String paymentId) async {
-    await _apiClient.dio.post<void>(
-      '/payments/$paymentId/dev-confirm',
-    );
+    await _apiClient.dio.post<void>('/payments/$paymentId/dev-confirm');
   }
 }

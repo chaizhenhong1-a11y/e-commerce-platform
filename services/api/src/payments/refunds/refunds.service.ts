@@ -78,24 +78,97 @@ export class RefundsService {
       },
     });
 
-    await this.prisma.refund.update({
-      where: { id: refund.id },
-      data: { status: RefundStatus.PROCESSING },
-    });
     await this.notifications.create({
       userId: order.userId,
       type: 'REFUND',
       title: 'Refund requested',
-      message: `Your refund for order ${order.orderNumber} is being processed.`,
+      message: `Your refund request for order ${order.orderNumber} is waiting for staff review.`,
       orderNumber: order.orderNumber,
       actionPath: `/orders/${order.orderNumber}`,
       eventKey: `refund-requested:${refund.id}`,
     });
 
+    return refund;
+  }
+
+  async listForStaff(status?: RefundStatus) {
+    const refunds = await this.prisma.refund.findMany({
+      where: status ? { status } : undefined,
+      include: {
+        order: {
+          select: {
+            orderNumber: true,
+            email: true,
+            shippingName: true,
+            totalCents: true,
+          },
+        },
+        payment: { select: { provider: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+
+    return refunds.map((refund) => ({
+      id: refund.id,
+      orderNumber: refund.order.orderNumber,
+      customerName: refund.order.shippingName,
+      email: refund.order.email,
+      reason: refund.reason,
+      customerNote: refund.customerNote,
+      amountCents: refund.amountCents,
+      orderTotalCents: refund.order.totalCents,
+      currency: refund.currency,
+      status: refund.status,
+      provider: refund.payment.provider,
+      requestedAt: refund.requestedAt,
+      processedAt: refund.processedAt,
+      failureMessage: refund.failureMessage,
+    }));
+  }
+
+  async approve(refundId: string) {
+    const refund = await this.prisma.refund.findUnique({
+      where: { id: refundId },
+      include: { order: true, payment: true },
+    });
+    if (!refund) throw new NotFoundException('Refund not found.');
+    if (refund.returnRequestId) {
+      throw new BadRequestException('Return refunds are handled by the return workflow.');
+    }
+    if (refund.status !== RefundStatus.REQUESTED) {
+      throw new BadRequestException('Only requested refunds can be approved.');
+    }
+    if (!refund.payment.providerRef) {
+      throw new BadRequestException('The payment cannot be matched to its provider.');
+    }
+
+    const claimed = await this.prisma.refund.updateMany({
+      where: { id: refund.id, status: RefundStatus.REQUESTED },
+      data: {
+        status: RefundStatus.PROCESSING,
+        failureCode: null,
+        failureMessage: null,
+      },
+    });
+    if (claimed.count !== 1) {
+      throw new BadRequestException('Refund request is already being reviewed.');
+    }
+
+    await this.notifications.create({
+      userId: refund.order.userId,
+      type: 'REFUND',
+      title: 'Refund approved',
+      message: `Your refund for order ${refund.order.orderNumber} was approved and is being processed.`,
+      orderNumber: refund.order.orderNumber,
+      actionPath: `/orders/${refund.order.orderNumber}`,
+      eventKey: `refund-approved:${refund.id}`,
+    });
+
     try {
-      const result = await this.providers.get(payment.provider).refund({
+      const result = await this.providers.get(refund.payment.provider).refund({
         refundId: refund.id,
-        paymentProviderRef: payment.providerRef,
+        paymentProviderRef: refund.payment.providerRef,
         amountCents: refund.amountCents,
         currency: refund.currency,
       });
@@ -121,6 +194,46 @@ export class RefundsService {
       });
       throw error;
     }
+  }
+
+  async reject(refundId: string, note?: string) {
+    const refund = await this.prisma.refund.findUnique({
+      where: { id: refundId },
+      include: { order: true },
+    });
+    if (!refund) throw new NotFoundException('Refund not found.');
+    if (refund.returnRequestId) {
+      throw new BadRequestException('Return refunds are handled by the return workflow.');
+    }
+    if (refund.status !== RefundStatus.REQUESTED) {
+      throw new BadRequestException('Only requested refunds can be rejected.');
+    }
+
+    const message = note?.trim() || 'Refund request was not approved by staff.';
+    const claimed = await this.prisma.refund.updateMany({
+      where: { id: refund.id, status: RefundStatus.REQUESTED },
+      data: {
+        status: RefundStatus.REJECTED,
+        failureCode: 'STAFF_REJECTED',
+        failureMessage: message,
+        processedAt: new Date(),
+      },
+    });
+    if (claimed.count !== 1) {
+      throw new BadRequestException('Refund request is already being reviewed.');
+    }
+
+    await this.notifications.create({
+      userId: refund.order.userId,
+      type: 'REFUND',
+      title: 'Refund request not approved',
+      message: `Your refund request for order ${refund.order.orderNumber} was not approved.`,
+      orderNumber: refund.order.orderNumber,
+      actionPath: `/orders/${refund.order.orderNumber}`,
+      eventKey: `refund-rejected:${refund.id}`,
+    });
+
+    return this.prisma.refund.findUnique({ where: { id: refund.id } });
   }
 
   async issueForReturn(returnRequestId: string) {

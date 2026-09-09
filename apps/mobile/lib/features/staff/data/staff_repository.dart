@@ -7,6 +7,7 @@ import '../domain/staff_category.dart';
 import '../domain/staff_order.dart';
 import '../domain/staff_promotion.dart';
 import '../domain/staff_return_case.dart';
+import '../domain/staff_refund_case.dart';
 
 class StaffRepository {
   const StaffRepository(this._apiClient);
@@ -70,6 +71,28 @@ class StaffRepository {
   Future<void> markDelivered(String orderNumber) async {
     await _apiClient.dio.post<void>(
       '/staff/orders/${Uri.encodeComponent(orderNumber)}/deliver',
+    );
+  }
+
+  Future<List<StaffRefundCase>> getRefunds({String? status}) async {
+    final response = await _apiClient.dio.get<List<dynamic>>(
+      '/staff/refunds',
+      queryParameters: <String, dynamic>{
+        if (status != null && status != 'ALL') 'status': status,
+      },
+    );
+    final data = response.data ?? const <dynamic>[];
+    return data.whereType<Map<String, dynamic>>().map(StaffRefundCase.fromJson).toList(growable: false);
+  }
+
+  Future<void> approveRefund(String refundId) async {
+    await _apiClient.dio.post<void>('/staff/refunds/${Uri.encodeComponent(refundId)}/approve');
+  }
+
+  Future<void> rejectRefund(String refundId, {String note = ''}) async {
+    await _apiClient.dio.post<void>(
+      '/staff/refunds/${Uri.encodeComponent(refundId)}/reject',
+      data: <String, dynamic>{'note': note.trim()},
     );
   }
 
