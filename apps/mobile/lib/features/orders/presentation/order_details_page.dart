@@ -352,9 +352,9 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage>
           const SnackBar(
             content: Text(
               kIsWeb
-                  ? 'Secure payment opened in a new tab. Keep this TextShop '
+                  ? 'Secure payment opened in a new tab. Keep this Elvane '
                       'tab open; the order will refresh automatically.'
-                  : 'Secure payment opened. Return to TextShop after paying; '
+                  : 'Secure payment opened. Return to Elvane after paying; '
                       'this order will refresh automatically.',
             ),
           ),
@@ -1199,7 +1199,7 @@ List<_TimelineStep> _timelineSteps(OrderDetails order) {
     return const <_TimelineStep>[
       _TimelineStep(
           label: 'Order created',
-          description: 'Your order was received by TextShop.',
+          description: 'Your order was received by Elvane.',
           active: true),
       _TimelineStep(
           label: 'Order cancelled',
@@ -1237,7 +1237,7 @@ List<_TimelineStep> _timelineSteps(OrderDetails order) {
   return <_TimelineStep>[
     const _TimelineStep(
         label: 'Order created',
-        description: 'Your order was received by TextShop.',
+        description: 'Your order was received by Elvane.',
         active: true),
     _TimelineStep(
         label: 'Payment confirmed',

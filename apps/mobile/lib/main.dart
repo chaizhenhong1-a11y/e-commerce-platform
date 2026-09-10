@@ -27,5 +27,5 @@ Future<void> main() async {
     // The app remains usable until Android/iOS Firebase setup is installed.
   }
 
-  runApp(const ProviderScope(child: TextShopApp()));
+  runApp(const ProviderScope(child: ElvaneApp()));
 }

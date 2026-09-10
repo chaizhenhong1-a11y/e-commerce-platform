@@ -295,7 +295,7 @@ export function AccountDashboard() {
         </div>
         <div className="account-hero__actions">
           {customer.role === "STAFF" || customer.role === "ADMIN" ? (
-            <Link className="button account-hero__staff" href="/staff/returns">Staff operations</Link>
+            <Link className="button account-hero__staff" href="/staff">Staff operations</Link>
           ) : null}
           <button className="button account-hero__signout" type="button" onClick={signOut}>Sign out</button>
         </div>

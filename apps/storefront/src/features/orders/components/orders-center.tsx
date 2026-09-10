@@ -183,7 +183,7 @@ export function OrdersCenter() {
           <div className="commerce-guest-card__content">
             <span className="commerce-guest-card__kicker">PURCHASES</span>
             <h1>Sign in to view your purchases.</h1>
-            <p>Track orders, payment status and delivery progress from your TextShop account.</p>
+            <p>Track orders, payment status and delivery progress from your Elvane account.</p>
             <Link className="button button--primary" href="/account/sign-in?returnTo=%2Faccount%2Forders">
               Sign in
             </Link>

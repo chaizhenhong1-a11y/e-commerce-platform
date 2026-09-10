@@ -4096,7 +4096,7 @@ a {
 
 .notification-bell{position:relative;font-size:24px}.notification-bell b{position:absolute;right:-8px;top:-7px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:currentColor;color:Canvas;font-size:10px;display:grid;place-items:center}.notification-center{padding-block:48px 80px}.notification-center__head{display:flex;justify-content:space-between;gap:24px;align-items:end;margin-bottom:24px}.notification-list{display:grid;gap:12px}.notification-card{display:flex;justify-content:space-between;gap:24px;padding:20px;border:1px solid var(--border, #ddd);border-radius:18px;background:#fff}.notification-card--unread{border-width:2px}.notification-card h2{font-size:1rem;margin:6px 0}.notification-card p,.notification-card small{color:#666}.notification-card__actions{display:flex;gap:8px;align-items:center}.notification-empty{padding:40px;border:1px dashed #ccc;border-radius:18px;text-align:center}@media(max-width:720px){.notification-card,.notification-center__head{align-items:stretch;flex-direction:column}.notification-card__actions{justify-content:flex-start}}
 
-/* Phase 054.31.8 — TextShop web black/lime visual consistency */
+/* Phase 054.31.8 — Elvane web black/lime visual consistency */
 :root{--brand-lime:#DBFF4B;--brand-ink:#171717;--brand-canvas:#F6F6F3;--brand-border:#E5E5DF;--brand-muted:#70706B}
 body{background:var(--brand-canvas)}
 .site-header{background:rgba(246,246,243,.96);border-bottom-color:var(--brand-border)}
@@ -10495,4 +10495,177 @@ body {
   .wishlist-state-card p {
     font-size: 16px;
   }
+}
+
+
+/* Phase 055.47 — customer storefront professionalization */
+.hero-market__visual{
+  display:flex;
+  align-items:flex-end;
+  padding:32px;
+  background:
+    radial-gradient(circle at 78% 18%,rgba(255,255,255,.68) 0 9%,transparent 9.5%),
+    linear-gradient(145deg,#c9b8a3 0%,#a99782 52%,#817b6f 100%);
+}
+.hero-market__visual::before{
+  content:"";
+  position:absolute;
+  width:240px;
+  height:300px;
+  right:-34px;
+  top:46px;
+  border:1px solid rgba(255,255,255,.34);
+  border-radius:120px 120px 26px 26px;
+  transform:rotate(8deg);
+}
+.hero-market__visual-copy{
+  position:relative;
+  z-index:2;
+  display:grid;
+  gap:10px;
+  max-width:310px;
+  padding:22px;
+  border:1px solid rgba(255,255,255,.3);
+  border-radius:18px;
+  background:rgba(255,255,255,.16);
+  color:#fff;
+  backdrop-filter:blur(12px);
+}
+.hero-market__visual-copy span{font-size:9px;font-weight:850;letter-spacing:.14em}
+.hero-market__visual-copy strong{font-size:28px;line-height:1.03;letter-spacing:-.045em}
+.hero-market__visual-copy small{color:rgba(255,255,255,.8);font-size:11px;line-height:1.5}
+.hero-market__visual-mark{
+  position:absolute;
+  right:22px;
+  top:22px;
+  color:rgba(255,255,255,.7);
+  font-size:11px;
+  font-weight:900;
+  line-height:1.05;
+  letter-spacing:.08em;
+  text-align:right;
+}
+.section-market--catalog{padding-top:64px}
+.catalog-controls{
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:#faf9f7;
+}
+.catalog-select input,.catalog-select select{
+  width:100%;
+  min-height:42px;
+  padding:0 11px;
+  border:1px solid #d9d5cf;
+  border-radius:9px;
+  background:#fff;
+  color:var(--ink);
+}
+.catalog-controls__actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  align-self:end;
+}
+.catalog-controls__submit{min-height:42px}
+.market-product-card{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+}
+.market-product-card__media{
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.market-product-card:hover .market-product-card__media{
+  transform:translateY(-2px);
+  box-shadow:0 16px 34px rgba(23,23,23,.09);
+}
+.market-product-card__media-link{
+  position:absolute;
+  inset:0;
+  display:block;
+}
+.market-product-card__image{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  transition:transform .3s ease;
+}
+.market-product-card:hover .market-product-card__image{transform:scale(1.025)}
+.market-product-card__category{
+  display:block;
+  margin-bottom:5px;
+  color:var(--muted);
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+.market-product-card__title{line-height:1.3}
+.market-product-card__bottom{margin-top:auto}
+.quick-shop{
+  width:auto;
+  height:36px;
+  gap:7px;
+  padding:0 11px;
+  border-radius:9px;
+  font-size:10px;
+  font-weight:850;
+}
+.quick-shop b{font-size:13px}
+.delivery-box>div{
+  padding:13px 14px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:#faf9f7;
+}
+.delivery-box a{
+  width:max-content;
+  margin-top:3px;
+  color:var(--ink);
+  font-size:11px;
+  font-weight:800;
+  text-decoration:none;
+}
+.delivery-box a:hover{text-decoration:underline}
+@media(max-width:900px){
+  .hero-market__visual{min-height:330px}
+}
+@media(max-width:620px){
+  .hero-market__visual{min-height:280px;padding:18px}
+  .hero-market__visual-copy{max-width:270px;padding:17px}
+  .hero-market__visual-copy strong{font-size:23px}
+  .catalog-controls{padding:11px}
+  .quick-shop span{display:none}
+  .quick-shop{width:36px;padding:0}
+}
+@media(prefers-reduced-motion:reduce){
+  .market-product-card__media,.market-product-card__image{transition:none}
+}
+
+
+/* Phase 055.47.1 — hero palette hotfix
+   Keep the existing hero structure; remove the brown/chocolate palette. */
+.hero-market__visual{
+  background:
+    radial-gradient(circle at 78% 18%,rgba(219,255,75,.12) 0 8%,transparent 8.5%),
+    linear-gradient(145deg,#20201e 0%,#171715 54%,#0f0f0e 100%);
+}
+.hero-market__visual::before{
+  border-color:rgba(219,255,75,.24);
+}
+.hero-market__visual-copy{
+  border-color:rgba(255,255,255,.18);
+  background:rgba(255,255,255,.07);
+  color:#fff;
+}
+.hero-market__visual-copy span{
+  color:#DBFF4B;
+}
+.hero-market__visual-copy small{
+  color:rgba(255,255,255,.72);
+}
+.hero-market__visual-mark{
+  color:#DBFF4B;
 }

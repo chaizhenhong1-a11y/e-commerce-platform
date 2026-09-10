@@ -43,7 +43,7 @@ type StoreSettingsRow = {
 
 const DEFAULTS: Omit<StoreSettingsRow, 'createdAt' | 'updatedAt'> = {
   id: 'primary',
-  storeName: 'TextShop',
+  storeName: 'Elvane',
   logoUrl: '',
   storeCoverUrl: '',
   storeGalleryUrls: '[]',

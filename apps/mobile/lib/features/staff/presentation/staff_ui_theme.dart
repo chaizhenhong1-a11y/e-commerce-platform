@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Local visual system for Staff surfaces only.
 ///
-/// Keeps TextShop's light canvas while standardising operational actions around
+/// Keeps Elvane's light canvas while standardising operational actions around
 /// the brand black + fluorescent-lime language. Customer-facing theme remains
 /// untouched.
 class StaffUiTheme extends StatelessWidget {

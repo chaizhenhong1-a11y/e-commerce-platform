@@ -26,7 +26,7 @@ export function StripePaymentLaunchButton({
     // asynchronous payment-session request completes.
     const stripeTab = window.open("about:blank", "_blank");
     if (!stripeTab) {
-      setError("Allow pop-ups for TextShop to open secure payment.");
+      setError("Allow pop-ups for Elvane to open secure payment.");
       return;
     }
 
@@ -50,7 +50,7 @@ export function StripePaymentLaunchButton({
 
       stripeTab.location.replace(payment.checkoutUrl);
 
-      // Match the stable Flutter Web flow: the original TextShop tab becomes
+      // Match the stable Flutter Web flow: the original Elvane tab becomes
       // the live order-status surface while Stripe stays isolated in its tab.
       router.push(`/orders/${encodeURIComponent(orderNumber)}`);
     } catch (cause) {

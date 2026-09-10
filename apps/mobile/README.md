@@ -1,8 +1,8 @@
-# TextShop Mobile
+# Elvane Mobile
 
 Flutter customer app for Android and iOS.
 
-The mobile app consumes the same TextShop API as the Next.js storefront. It must never connect directly to PostgreSQL.
+The mobile app consumes the same Elvane API as the Next.js storefront. It must never connect directly to PostgreSQL.
 
 ## Setup
 

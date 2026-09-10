@@ -67,7 +67,7 @@ export function NotificationCenter() {
           <div className="commerce-guest-card__content">
             <span className="commerce-guest-card__kicker">UPDATES</span>
             <h1>Sign in to see account updates.</h1>
-            <p>Order, delivery, return and refund activity stays connected to your TextShop account.</p>
+            <p>Order, delivery, return and refund activity stays connected to your Elvane account.</p>
             <Link
               className="button button--primary"
               href="/account/sign-in?returnTo=%2Fnotifications"

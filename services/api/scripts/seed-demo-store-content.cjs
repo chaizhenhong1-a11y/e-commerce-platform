@@ -27,9 +27,9 @@ const photoSet = (offset) =>
 const locations = [
   {
     id: 'demo-location-kl',
-    name: 'TextShop Kuala Lumpur',
+    name: 'Elvane Kuala Lumpur',
     description:
-      'Our flagship city store with the widest TextShop selection, new arrivals, pickup support, and a relaxed space for discovering everyday essentials.',
+      'Our flagship city store with the widest Elvane selection, new arrivals, pickup support, and a relaxed space for discovering everyday essentials.',
     addressLine1: '168 Jalan Bukit Bintang',
     addressLine2: 'Bukit Bintang',
     city: 'Kuala Lumpur',
@@ -45,7 +45,7 @@ const locations = [
   },
   {
     id: 'demo-location-pj',
-    name: 'TextShop Petaling Jaya',
+    name: 'Elvane Petaling Jaya',
     description:
       'A convenient neighbourhood branch serving Petaling Jaya with curated collections, friendly assistance, and in-store order pickup.',
     addressLine1: '12 Jalan SS 21/39',
@@ -63,9 +63,9 @@ const locations = [
   },
   {
     id: 'demo-location-subang',
-    name: 'TextShop Subang Jaya',
+    name: 'Elvane Subang Jaya',
     description:
-      'Our Subang Jaya branch brings popular TextShop picks closer to the community, with easy collection and customer support.',
+      'Our Subang Jaya branch brings popular Elvane picks closer to the community, with easy collection and customer support.',
     addressLine1: '25 Jalan SS 15/4',
     addressLine2: 'SS15',
     city: 'Subang Jaya',
@@ -81,9 +81,9 @@ const locations = [
   },
   {
     id: 'demo-location-jb',
-    name: 'TextShop Johor Bahru',
+    name: 'Elvane Johor Bahru',
     description:
-      'Our southern branch offers TextShop favourites, seasonal collections, pickup service, and local customer assistance in Johor Bahru.',
+      'Our southern branch offers Elvane favourites, seasonal collections, pickup service, and local customer assistance in Johor Bahru.',
     addressLine1: '88 Jalan Wong Ah Fook',
     addressLine2: '',
     city: 'Johor Bahru',
@@ -142,7 +142,7 @@ async function main() {
         'Original payment method',
         'Proof of purchase is required. Final-sale, hygiene-sensitive, and personalised items may be excluded.',
         'How long does delivery take?\nMost orders arrive within 2-5 business days after dispatch.\n\nCan I collect from a store?\nStore pickup may be offered when the selected branch and item are eligible.\n\nHow do I track my order?\nTracking information is shown with your order when the courier provides it.\n\nCan I return an item bought online?\nEligible items can be returned according to our Returns policy.\n\nHow can I contact support?\nUse the Contact us page for the latest email, phone number, and support hours.',
-        'We work to keep product, pricing, order, and store information clear and accurate. Payments should only be completed through official TextShop checkout flows. Never share passwords or one-time verification codes with anyone claiming to represent the store.',
+        'We work to keep product, pricing, order, and store information clear and accurate. Payments should only be completed through official Elvane checkout flows. Never share passwords or one-time verification codes with anyone claiming to represent the store.',
         'By using this store, you agree to provide accurate order and contact information and to use the service lawfully. Product availability, prices, promotions, delivery estimates, and store hours may change. Orders may be cancelled or refunded when fulfilment is not possible.',
         'We use information needed to operate the store, process orders, provide support, improve the shopping experience, and meet legal obligations. Access to personal information is limited to authorised purposes. Payment information is handled through the configured payment provider rather than being stored as plain card details by the storefront.',
       ],

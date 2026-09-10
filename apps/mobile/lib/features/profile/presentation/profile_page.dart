@@ -57,7 +57,7 @@ class ProfilePage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
                   const Text(
-                    'YOUR TEXTSHOP\nSTARTS HERE.',
+                    'YOUR ELVANE\nSTARTS HERE.',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 28,

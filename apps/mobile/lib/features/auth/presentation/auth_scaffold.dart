@@ -6,7 +6,7 @@ class AuthScaffold extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.child,
-    this.eyebrow = 'TEXTSHOP ACCOUNT',
+    this.eyebrow = 'ELVANE ACCOUNT',
     super.key,
   });
 
@@ -133,7 +133,7 @@ class _BrandPanel extends StatelessWidget {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: const Text(
-                    'TEXTSHOP',
+                    'ELVANE',
                     style: TextStyle(
                       color: AuthScaffold._ink,
                       fontSize: 12,
@@ -225,7 +225,7 @@ class _MobileBrandHeader extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.only(left: 8),
                 child: Text(
-                  'TEXTSHOP',
+                  'ELVANE',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 22,

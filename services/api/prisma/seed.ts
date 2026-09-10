@@ -5,7 +5,7 @@ import { PrismaClient, ProductStatus } from "@prisma/client";
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error("DATABASE_URL is required to seed TextShop.");
+  throw new Error("DATABASE_URL is required to seed Elvane.");
 }
 
 const prisma = new PrismaClient({
@@ -278,7 +278,7 @@ async function main() {
     }
   }
 
-  console.log(`TextShop demo seed completed: ${catalog.length} products.`);
+  console.log(`Elvane demo seed completed: ${catalog.length} products.`);
 }
 
 main()

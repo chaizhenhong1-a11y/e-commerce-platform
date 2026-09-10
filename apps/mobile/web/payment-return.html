@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex,nofollow">
-  <title>TextShop payment</title>
+  <title>Elvane payment</title>
   <style>
     :root { color-scheme: light; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     * { box-sizing: border-box; }
@@ -21,8 +21,8 @@
   <main>
     <div class="mark" id="mark">✓</div>
     <h1 id="title">Payment received</h1>
-    <p id="message">Your TextShop order is being confirmed in the original tab.</p>
-    <button id="closeButton" type="button">Return to TextShop</button>
+    <p id="message">Your Elvane order is being confirmed in the original tab.</p>
+    <button id="closeButton" type="button">Return to Elvane</button>
     <small id="hint">This payment tab can be closed safely.</small>
   </main>
   <script>
@@ -35,14 +35,14 @@
         document.getElementById('mark').textContent = '×';
         document.getElementById('title').textContent = 'Payment not completed';
         document.getElementById('message').textContent =
-          'No payment was confirmed. You can return to TextShop and try again.';
+          'No payment was confirmed. You can return to Elvane and try again.';
       }
 
       try {
         if (window.opener && !window.opener.closed) {
           window.opener.postMessage(
             {
-              type: 'textshop-payment-return',
+              type: 'elvane-payment-return',
               status,
               orderNumber,
             },
@@ -50,14 +50,14 @@
           );
         }
       } catch (_) {
-        // The original TextShop tab also polls/reconciles payment state.
+        // The original Elvane tab also polls/reconciles payment state.
       }
 
       const closeTab = () => {
         window.close();
         setTimeout(() => {
           document.getElementById('hint').textContent =
-            'You can close this tab and return to the original TextShop tab.';
+            'You can close this tab and return to the original Elvane tab.';
         }, 150);
       };
 

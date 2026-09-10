@@ -20,7 +20,7 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  console.log(`TextShop API running at http://localhost:${port}`);
+  console.log(`Elvane API running at http://localhost:${port}`);
 }
 
 void bootstrap();

@@ -98,7 +98,7 @@ export function CartView() {
         <div className="commerce-guest-card__content">
           <span className="commerce-guest-card__kicker">SHOPPING CART</span>
           <h1>Sign in to use your cart.</h1>
-          <p>Your TextShop cart stays private and follows your account across devices.</p>
+          <p>Your Elvane cart stays private and follows your account across devices.</p>
           <Link className="button button--primary" href="/account/sign-in?returnTo=%2Fcart">
             Sign in
           </Link>
@@ -133,7 +133,7 @@ export function CartView() {
         <div className="cart-state-card__icon">BAG</div>
         <span className="section-kicker">YOUR BAG</span>
         <h2>Your cart is empty</h2>
-        <p>Looks like you haven&apos;t added anything yet. Explore the latest TextShop collection and find something you like.</p>
+        <p>Looks like you haven&apos;t added anything yet. Explore the latest Elvane collection and find something you like.</p>
         <Link className="button button--primary" href="/#shop">
           Start shopping
         </Link>
@@ -184,7 +184,7 @@ export function CartView() {
 
                   <div className="cart-market-item__info">
                     <div className="cart-market-item__topline">
-                      <span className="cart-market-item__brand">TEXTSHOP SELECT</span>
+                      <span className="cart-market-item__brand">ELVANE SELECT</span>
                       <button className="cart-remove-icon" type="button" disabled={busy} onClick={() => remove(item.id)} aria-label={`Remove ${item.productName}`}>
                         ×
                       </button>

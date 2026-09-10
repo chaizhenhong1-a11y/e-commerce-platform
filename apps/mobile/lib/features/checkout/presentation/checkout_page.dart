@@ -347,7 +347,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         throw StateError('Unable to open the payment page.');
       }
 
-      // Stripe opens outside the running TextShop tab. Move the original app
+      // Stripe opens outside the running Elvane tab. Move the original app
       // straight to Order details so the customer sees the reserved order and
       // its live payment state while the Stripe tab is open.
       if (kIsWeb) {

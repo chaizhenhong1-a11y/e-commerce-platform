@@ -68,33 +68,35 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </div>
           </div>
           <div className="hero-market__visual" aria-hidden="true">
-            <div className="hero-object hero-object--one">01</div>
-            <div className="hero-object hero-object--two">02</div>
-            <div className="hero-object hero-object--three">03</div>
-            <span className="hero-market__caption">Curated essentials</span>
+            <div className="hero-market__visual-copy">
+              <span>CURATED FOR DAILY LIFE</span>
+              <strong>Useful objects.<br />Quiet design.</strong>
+              <small>Thoughtful essentials selected for home, work, and everyday routines.</small>
+            </div>
+            <div className="hero-market__visual-mark">NEW<br />EDIT</div>
           </div>
         </div>
 
         <div className="hero-market__side">
           <article className="promo-card promo-card--dark">
-            <span>MEMBER PRICE</span>
-            <strong>Up to 20% off selected essentials</strong>
-            <Link href="#shop">Shop the edit →</Link>
+            <span>SHOP BY CATEGORY</span>
+            <strong>Find the right essentials faster.</strong>
+            <Link href="#shop">Browse the catalog →</Link>
           </article>
           <article className="promo-card promo-card--soft">
-            <span>WEEKEND DROP</span>
-            <strong>Simple pieces. Better routines.</strong>
-            <Link href="#shop">Discover more →</Link>
+            <span>STORE INFORMATION</span>
+            <strong>Delivery, returns, support, and store details.</strong>
+            <Link href="/store/about">Visit our store →</Link>
           </article>
         </div>
       </section>
 
       <section className="trust-strip">
         <div className="shell trust-strip__grid">
-          <div><strong>Free shipping</strong><span>Orders RM150+</span></div>
-          <div><strong>14-day returns</strong><span>Simple return process</span></div>
-          <div><strong>Secure payments</strong><span>Protected checkout</span></div>
-          <div><strong>Local support</strong><span>Help when you need it</span></div>
+          <div><strong>Real inventory</strong><span>Live availability from the catalog</span></div>
+          <div><strong>Clear delivery</strong><span>Store delivery terms before purchase</span></div>
+          <div><strong>Secure checkout</strong><span>Protected payment flow</span></div>
+          <div><strong>Customer support</strong><span>Store contact and policy information</span></div>
         </div>
       </section>
 
@@ -156,23 +158,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       <section className="shell campaign-grid">
         <article className="campaign-card campaign-card--large">
-          <span className="section-kicker">HOME EDIT</span>
-          <h2>Make everyday spaces feel considered.</h2>
-          <p>Functional pieces with a quieter, cleaner point of view.</p>
-          <Link className="button button--light" href="#shop">Shop home</Link>
+          <span className="section-kicker">DISCOVER THE CATALOG</span>
+          <h2>Good products should be easy to find.</h2>
+          <p>Use category, price, availability, and sorting controls to narrow the live catalog without the noise.</p>
+          <Link className="button button--light" href="#shop">Explore products</Link>
         </article>
 
         <article className="campaign-card campaign-card--small">
-          <span className="section-kicker">ESSENTIALS</span>
-          <h2>Built for daily use.</h2>
-          <Link href="#shop">Explore essentials →</Link>
+          <span className="section-kicker">YOUR ACCOUNT</span>
+          <h2>Orders and saved items, together.</h2>
+          <Link href="/account">Open your account →</Link>
         </article>
       </section>
 
       <section className="shell reassurance" id="about">
         <div className="market-heading">
           <div>
-            <span className="section-kicker">WHY TEXTSHOP</span>
+            <span className="section-kicker">WHY SHOP HERE</span>
             <h2>Shopping without the noise.</h2>
           </div>
         </div>
@@ -180,8 +182,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <div className="reassurance-grid">
           <article>
             <span>01</span>
-            <h3>Clear prices</h3>
-            <p>No hidden product pricing. What you see is what the store uses.</p>
+            <h3>Clear product information</h3>
+            <p>Pricing, variants, availability, and product details stay close to the buying decision.</p>
           </article>
           <article>
             <span>02</span>
@@ -190,8 +192,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </article>
           <article>
             <span>03</span>
-            <h3>Reliable architecture</h3>
-            <p>Web and mobile share the same trusted commerce backend.</p>
+            <h3>Consistent shopping</h3>
+            <p>Your catalog, inventory, orders, and customer account are backed by the same commerce system.</p>
           </article>
         </div>
       </section>

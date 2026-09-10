@@ -7,11 +7,11 @@ import '../../auth/presentation/auth_providers.dart';
 import '../domain/customer_cart.dart';
 import 'cart_providers.dart';
 
-const Color _textShopInk = Color(0xFF171717);
-const Color _textShopAccent = Color(0xFFDBFF4B);
-const Color _textShopMuted = Color(0xFF70706B);
-const Color _textShopBorder = Color(0xFFE5E5DF);
-const Color _textShopSoft = Color(0xFFF1F1EC);
+const Color _elvaneInk = Color(0xFF171717);
+const Color _elvaneAccent = Color(0xFFDBFF4B);
+const Color _elvaneMuted = Color(0xFF70706B);
+const Color _elvaneBorder = Color(0xFFE5E5DF);
+const Color _elvaneSoft = Color(0xFFF1F1EC);
 
 class CartPage extends ConsumerWidget {
   const CartPage({super.key});
@@ -71,7 +71,7 @@ class _SignedOutCart extends StatelessWidget {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: _textShopBorder),
+              border: Border.all(color: _elvaneBorder),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -80,12 +80,12 @@ class _SignedOutCart extends StatelessWidget {
                   width: 68,
                   height: 68,
                   decoration: const BoxDecoration(
-                    color: _textShopAccent,
+                    color: _elvaneAccent,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.shopping_bag_outlined,
-                    color: _textShopInk,
+                    color: _elvaneInk,
                     size: 32,
                   ),
                 ),
@@ -94,7 +94,7 @@ class _SignedOutCart extends StatelessWidget {
                   'Your bag follows you',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: _textShopInk,
+                    color: _elvaneInk,
                     fontWeight: FontWeight.w900,
                     fontSize: 24,
                     letterSpacing: -0.5,
@@ -102,10 +102,10 @@ class _SignedOutCart extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Sign in to keep your cart private and synced across TextShop.',
+                  'Sign in to keep your cart private and synced across Elvane.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: _textShopMuted,
+                    color: _elvaneMuted,
                     height: 1.45,
                   ),
                 ),
@@ -114,7 +114,7 @@ class _SignedOutCart extends StatelessWidget {
                   width: double.infinity,
                   child: FilledButton(
                     style: FilledButton.styleFrom(
-                      backgroundColor: _textShopInk,
+                      backgroundColor: _elvaneInk,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
@@ -157,7 +157,7 @@ class _CartContent extends ConsumerWidget {
                   Text(
                     'IN YOUR BAG',
                     style: TextStyle(
-                      color: _textShopMuted,
+                      color: _elvaneMuted,
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.3,
@@ -167,7 +167,7 @@ class _CartContent extends ConsumerWidget {
                   Text(
                     'Ready when you are.',
                     style: TextStyle(
-                      color: _textShopInk,
+                      color: _elvaneInk,
                       fontSize: 21,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.4,
@@ -179,7 +179,7 @@ class _CartContent extends ConsumerWidget {
             Text(
               '${cart.items.length} line${cart.items.length == 1 ? '' : 's'}',
               style: const TextStyle(
-                color: _textShopMuted,
+                color: _elvaneMuted,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -213,7 +213,7 @@ class _CartHero extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: _textShopInk,
+        color: _elvaneInk,
         borderRadius: BorderRadius.circular(28),
       ),
       child: Stack(
@@ -225,7 +225,7 @@ class _CartHero extends StatelessWidget {
               width: 108,
               height: 108,
               decoration: const BoxDecoration(
-                color: _textShopAccent,
+                color: _elvaneAccent,
                 shape: BoxShape.circle,
               ),
             ),
@@ -239,7 +239,7 @@ class _CartHero extends StatelessWidget {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  border: Border.all(color: _textShopAccent, width: 3),
+                  border: Border.all(color: _elvaneAccent, width: 3),
                   borderRadius: BorderRadius.circular(18),
                 ),
               ),
@@ -249,9 +249,9 @@ class _CartHero extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               const Text(
-                'TEXTSHOP BAG',
+                'ELVANE BAG',
                 style: TextStyle(
-                  color: _textShopAccent,
+                  color: _elvaneAccent,
                   fontSize: 11,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.5,
@@ -280,13 +280,13 @@ class _CartHero extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
                 decoration: BoxDecoration(
-                  color: _textShopAccent,
+                  color: _elvaneAccent,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   'RM ${cart.subtotal.toStringAsFixed(2)} subtotal',
                   style: const TextStyle(
-                    color: _textShopInk,
+                    color: _elvaneInk,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -348,7 +348,7 @@ class _OrderSummary extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: _textShopBorder),
+        border: Border.all(color: _elvaneBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,7 +356,7 @@ class _OrderSummary extends StatelessWidget {
           const Text(
             'ORDER SUMMARY',
             style: TextStyle(
-              color: _textShopMuted,
+              color: _elvaneMuted,
               fontSize: 11,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.3,
@@ -376,7 +376,7 @@ class _OrderSummary extends StatelessWidget {
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 17),
-            child: Divider(height: 1, color: _textShopBorder),
+            child: Divider(height: 1, color: _elvaneBorder),
           ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -388,7 +388,7 @@ class _OrderSummary extends StatelessWidget {
                     Text(
                       'ESTIMATED TOTAL',
                       style: TextStyle(
-                        color: _textShopMuted,
+                        color: _elvaneMuted,
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.1,
@@ -398,7 +398,7 @@ class _OrderSummary extends StatelessWidget {
                     Text(
                       'Taxes and discounts confirmed next.',
                       style: TextStyle(
-                        color: _textShopMuted,
+                        color: _elvaneMuted,
                         fontSize: 12,
                       ),
                     ),
@@ -409,7 +409,7 @@ class _OrderSummary extends StatelessWidget {
               Text(
                 'RM ${cart.subtotal.toStringAsFixed(2)}',
                 style: const TextStyle(
-                  color: _textShopInk,
+                  color: _elvaneInk,
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -0.5,
@@ -423,11 +423,11 @@ class _OrderSummary extends StatelessWidget {
             child: FilledButton.icon(
               style: FilledButton.styleFrom(
                 backgroundColor:
-                    cart.canCheckout ? _textShopInk : _textShopSoft,
+                    cart.canCheckout ? _elvaneInk : _elvaneSoft,
                 foregroundColor:
-                    cart.canCheckout ? Colors.white : _textShopMuted,
-                disabledBackgroundColor: _textShopSoft,
-                disabledForegroundColor: _textShopMuted,
+                    cart.canCheckout ? Colors.white : _elvaneMuted,
+                disabledBackgroundColor: _elvaneSoft,
+                disabledForegroundColor: _elvaneMuted,
                 padding: const EdgeInsets.symmetric(vertical: 17),
               ),
               onPressed:
@@ -444,7 +444,7 @@ class _OrderSummary extends StatelessWidget {
             const Text(
               'Checkout unlocks after every cart item is available.',
               style: TextStyle(
-                color: _textShopMuted,
+                color: _elvaneMuted,
                 fontSize: 12,
               ),
             ),
@@ -475,7 +475,7 @@ class _SummaryRow extends StatelessWidget {
           child: Text(
             label,
             style: const TextStyle(
-              color: _textShopMuted,
+              color: _elvaneMuted,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -486,7 +486,7 @@ class _SummaryRow extends StatelessWidget {
             value,
             textAlign: TextAlign.right,
             style: TextStyle(
-              color: _textShopInk,
+              color: _elvaneInk,
               fontSize: compactValue ? 12 : 15,
               fontWeight: FontWeight.w900,
             ),
@@ -606,7 +606,7 @@ class _CartItemCardState extends ConsumerState<_CartItemCard> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color:
-              hasIssue ? Theme.of(context).colorScheme.error : _textShopBorder,
+              hasIssue ? Theme.of(context).colorScheme.error : _elvaneBorder,
         ),
       ),
       child: Row(
@@ -641,7 +641,7 @@ class _CartItemCardState extends ConsumerState<_CartItemCard> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: _textShopInk,
+                          color: _elvaneInk,
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
                           height: 1.18,
@@ -688,7 +688,7 @@ class _CartItemCardState extends ConsumerState<_CartItemCard> {
                     Text(
                       'RM ${item.lineTotal.toStringAsFixed(2)}',
                       style: const TextStyle(
-                        color: _textShopInk,
+                        color: _elvaneInk,
                         fontSize: 17,
                         fontWeight: FontWeight.w900,
                       ),
@@ -699,7 +699,7 @@ class _CartItemCardState extends ConsumerState<_CartItemCard> {
                 Text(
                   'RM ${item.price.toStringAsFixed(2)} each',
                   style: const TextStyle(
-                    color: _textShopMuted,
+                    color: _elvaneMuted,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -713,8 +713,8 @@ class _CartItemCardState extends ConsumerState<_CartItemCard> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: _textShopInk,
-                        side: const BorderSide(color: _textShopInk),
+                        foregroundColor: _elvaneInk,
+                        side: const BorderSide(color: _elvaneInk),
                       ),
                       onPressed:
                           _busy ? null : () => _update(item.availableStock),
@@ -766,13 +766,13 @@ class _MetaChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: _textShopSoft,
+        color: _elvaneSoft,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
         style: const TextStyle(
-          color: _textShopMuted,
+          color: _elvaneMuted,
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),
@@ -797,8 +797,8 @@ class _StockLabel extends StatelessWidget {
     final color = isError
         ? Theme.of(context).colorScheme.error
         : isLowStock
-            ? _textShopInk
-            : _textShopMuted;
+            ? _elvaneInk
+            : _elvaneMuted;
 
     return Row(
       children: <Widget>[
@@ -809,7 +809,7 @@ class _StockLabel extends StatelessWidget {
             color: isError
                 ? Theme.of(context).colorScheme.error
                 : isLowStock
-                    ? _textShopAccent
+                    ? _elvaneAccent
                     : const Color(0xFFB8B8B1),
             shape: BoxShape.circle,
           ),
@@ -853,7 +853,7 @@ class _QuantityControl extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: _textShopSoft,
+        color: _elvaneSoft,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -870,7 +870,7 @@ class _QuantityControl extends StatelessWidget {
               '$quantity',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: _textShopInk,
+                color: _elvaneInk,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -904,7 +904,7 @@ class _QuantityButton extends StatelessWidget {
       padding: EdgeInsets.zero,
       onPressed: enabled ? onTap : null,
       icon: Icon(icon, size: 18),
-      color: _textShopInk,
+      color: _elvaneInk,
       disabledColor: const Color(0xFFB8B8B1),
     );
   }
@@ -924,12 +924,12 @@ class _EmptyCart extends StatelessWidget {
             width: 82,
             height: 82,
             decoration: const BoxDecoration(
-              color: _textShopAccent,
+              color: _elvaneAccent,
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.shopping_bag_outlined,
-              color: _textShopInk,
+              color: _elvaneInk,
               size: 38,
             ),
           ),
@@ -939,7 +939,7 @@ class _EmptyCart extends StatelessWidget {
           'Nothing in your bag yet',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: _textShopInk,
+            color: _elvaneInk,
             fontSize: 25,
             fontWeight: FontWeight.w900,
             letterSpacing: -0.6,
@@ -947,10 +947,10 @@ class _EmptyCart extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Find something you like, choose a variant, and it will stay synced with your TextShop account.',
+          'Find something you like, choose a variant, and it will stay synced with your Elvane account.',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: _textShopMuted,
+            color: _elvaneMuted,
             height: 1.45,
           ),
         ),
@@ -958,7 +958,7 @@ class _EmptyCart extends StatelessWidget {
         Center(
           child: FilledButton.icon(
             style: FilledButton.styleFrom(
-              backgroundColor: _textShopInk,
+              backgroundColor: _elvaneInk,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
             ),
@@ -987,11 +987,11 @@ class _CartLoading extends StatelessWidget {
         Container(
           height: 176,
           decoration: BoxDecoration(
-            color: _textShopInk,
+            color: _elvaneInk,
             borderRadius: BorderRadius.circular(28),
           ),
           child: const Center(
-            child: CircularProgressIndicator(color: _textShopAccent),
+            child: CircularProgressIndicator(color: _elvaneAccent),
           ),
         ),
       ],
@@ -1022,7 +1022,7 @@ class _CartError extends StatelessWidget {
           'Could not load cart',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: _textShopInk,
+            color: _elvaneInk,
             fontSize: 22,
             fontWeight: FontWeight.w900,
           ),
@@ -1031,13 +1031,13 @@ class _CartError extends StatelessWidget {
         Text(
           message,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: _textShopMuted),
+          style: const TextStyle(color: _elvaneMuted),
         ),
         const SizedBox(height: 20),
         Center(
           child: FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: _textShopInk,
+              backgroundColor: _elvaneInk,
               foregroundColor: Colors.white,
             ),
             onPressed: onRetry,
@@ -1055,11 +1055,11 @@ class _CartImageFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const ColoredBox(
-      color: _textShopSoft,
+      color: _elvaneSoft,
       child: Center(
         child: Icon(
           Icons.inventory_2_outlined,
-          color: _textShopMuted,
+          color: _elvaneMuted,
         ),
       ),
     );

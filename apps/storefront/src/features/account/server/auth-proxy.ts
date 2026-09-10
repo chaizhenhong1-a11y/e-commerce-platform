@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-const ACCESS_COOKIE = "textshop_access";
-const REFRESH_COOKIE = "textshop_refresh";
+const ACCESS_COOKIE = "elvane_access";
+const REFRESH_COOKIE = "elvane_refresh";
 const ACCESS_MAX_AGE = 15 * 60;
 const REFRESH_MAX_AGE = 30 * 24 * 60 * 60;
 
@@ -70,8 +70,8 @@ async function refreshSession(
 
 function apiBaseUrl() {
   return (
-    process.env.TEXTSHOP_API_BASE_URL ??
-    process.env.NEXT_PUBLIC_TEXTSHOP_API_BASE_URL ??
+    process.env.ELVANE_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_ELVANE_API_BASE_URL ??
     "http://localhost:3001"
   ).replace(/\/$/, "");
 }

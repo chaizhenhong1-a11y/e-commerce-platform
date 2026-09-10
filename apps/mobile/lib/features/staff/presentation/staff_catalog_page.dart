@@ -132,7 +132,7 @@ class _StaffCatalogPageState extends ConsumerState<StaffCatalogPage> {
         title: const Text('Delete product?'),
         content: Text(
           'Permanently delete "${product.name}"?\n\n'
-          'If it has order, cart, or inventory-audit history, TextShop will archive it instead so commerce history stays safe.',
+          'If it has order, cart, or inventory-audit history, Elvane will archive it instead so commerce history stays safe.',
         ),
         actions: <Widget>[
           TextButton(

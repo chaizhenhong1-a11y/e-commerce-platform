@@ -22,7 +22,7 @@ export function CatalogControls({
   const filtering = Boolean(query || category || sort !== "newest" || minPrice != null || maxPrice != null || inStock);
 
   return (
-    <form className="catalog-controls" action="/#shop" method="get">
+    <form className="catalog-controls" action="/#shop" method="get" aria-label="Catalog filters">
       {query ? <input type="hidden" name="q" value={query} /> : null}
 
       <label className="catalog-select">
@@ -67,7 +67,7 @@ export function CatalogControls({
 
       <div className="catalog-controls__actions">
         <button className="button button--primary catalog-controls__submit" type="submit">
-          Apply filters
+          Update results
         </button>
 
         {filtering ? (

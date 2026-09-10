@@ -3,7 +3,15 @@ export type StaffOrder = {
   currency: string; totalCents: number; createdAt: string; itemCount: number; canProcess: boolean; canShip: boolean; canDeliver: boolean; canFulfill: boolean;
   courierName: string | null; trackingNumber: string | null; trackingUrl: string | null;
   processingAt: string | null; shippedAt: string | null; deliveredAt: string | null;
-  items: Array<{ id: string; sku: string; productName: string; variantName: string; quantity: number }>;
+  items: Array<{
+    id: string;
+    sku: string;
+    productName: string;
+    variantName: string;
+    quantity: number;
+    imageUrl: string | null;
+    imageAltText: string | null;
+  }>;
   latestRefund: { status: string; amountCents: number } | null;
   latestReturn: { id: string; status: string } | null;
 };

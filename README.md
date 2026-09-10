@@ -1,11 +1,11 @@
-# TextShop
+# Elvane
 
-TextShop is the temporary working name for a professional single-merchant commerce platform. Branding can be changed later without changing the system boundaries.
+Elvane is a professional single-merchant commerce platform.
 
 ## Workspace
 
 ```text
-textshop/
+elvane/
 ├── apps/
 │   ├── storefront/   # Next.js customer website
 │   └── mobile/       # Flutter Android/iOS app
@@ -65,7 +65,7 @@ Account cart synchronization adds `Cart.userId`. After applying this increment,
 run the Prisma migration and regenerate the API client before starting NestJS:
 
 ```powershell
-cd "C:\flutter project\textshop"
-npm --workspace @textshop/api run prisma:migrate
-npm --workspace @textshop/api run prisma:generate
+# Run these commands from the repository root.
+npm --workspace @elvane/api run prisma:migrate
+npm --workspace @elvane/api run prisma:generate
 ```

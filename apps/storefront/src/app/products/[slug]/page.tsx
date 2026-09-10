@@ -59,7 +59,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         <div className="product-info-panel">
           <div className="product-info-panel__eyebrow">
-            <span className="product-brand">TEXTSHOP SELECT</span>
+            <span className="product-brand">PRODUCT</span>
             <span className="product-category-label">{product.category}</span>
           </div>
           <div className="product-title-row">
@@ -82,12 +82,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
           <div className="delivery-box">
             <div>
-              <strong>Free delivery over RM150</strong>
-              <span>Estimated delivery: 2–5 working days</span>
+              <strong>Delivery information</strong>
+              <span>Review current delivery terms and shipping information before checkout.</span>
+              <Link href="/store/delivery">View delivery details →</Link>
             </div>
             <div>
-              <strong>Easy 14-day returns</strong>
-              <span>Return eligible items in original condition</span>
+              <strong>Returns information</strong>
+              <span>Eligibility and return conditions follow the store&apos;s current return policy.</span>
+              <Link href="/store/returns">View return policy →</Link>
             </div>
           </div>
 
@@ -104,7 +106,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div>
           <span className="section-kicker">DETAILS</span>
           <h2>Product details</h2>
-          <p className="product-details-section__intro">Information maintained with this product in TextShop Admin.</p>
+          <p className="product-details-section__intro">Product information maintained by the store.</p>
         </div>
         <div className="product-detail-copy">
           {product.description ? <p>{product.description}</p> : null}

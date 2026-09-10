@@ -9,11 +9,11 @@ import '../../auth/presentation/auth_providers.dart';
 import '../domain/customer_order.dart';
 import 'order_providers.dart';
 
-const _textShopBlack = Color(0xFF171717);
-const _textShopLime = Color(0xFFDBFF4B);
-const _textShopCanvas = Color(0xFFF6F6F3);
-const _textShopBorder = Color(0xFFE5E5DF);
-const _textShopMuted = Color(0xFF70706B);
+const _elvaneBlack = Color(0xFF171717);
+const _elvaneLime = Color(0xFFDBFF4B);
+const _elvaneCanvas = Color(0xFFF6F6F3);
+const _elvaneBorder = Color(0xFFE5E5DF);
+const _elvaneMuted = Color(0xFF70706B);
 
 class OrdersPage extends ConsumerStatefulWidget {
   const OrdersPage({super.key});
@@ -87,14 +87,14 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
 
     if (auth.status == AuthStatus.checking) {
       return const Scaffold(
-        backgroundColor: _textShopCanvas,
+        backgroundColor: _elvaneCanvas,
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (!auth.isAuthenticated) {
       return Scaffold(
-        backgroundColor: _textShopCanvas,
+        backgroundColor: _elvaneCanvas,
         appBar: AppBar(title: const Text('Orders')),
         body: _SignedOutOrders(onSignIn: () => context.push('/sign-in')),
       );
@@ -102,9 +102,9 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
 
     final orders = ref.watch(customerOrdersProvider);
     return Scaffold(
-      backgroundColor: _textShopCanvas,
+      backgroundColor: _elvaneCanvas,
       appBar: AppBar(
-        backgroundColor: _textShopCanvas,
+        backgroundColor: _elvaneCanvas,
         surfaceTintColor: Colors.transparent,
         title: const Text('Orders'),
         actions: <Widget>[
@@ -209,7 +209,7 @@ class _OrdersHero extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: _textShopBlack,
+        color: _elvaneBlack,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
@@ -222,13 +222,13 @@ class _OrdersHero extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                   decoration: BoxDecoration(
-                    color: _textShopLime,
+                    color: _elvaneLime,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: const Text(
-                    'MY TEXTSHOP',
+                    'MY ELVANE',
                     style: TextStyle(
-                      color: _textShopBlack,
+                      color: _elvaneBlack,
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.1,
@@ -260,11 +260,11 @@ class _OrdersHero extends StatelessWidget {
             width: 58,
             height: 58,
             decoration: const BoxDecoration(
-              color: _textShopLime,
+              color: _elvaneLime,
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.local_mall_outlined,
-                color: _textShopBlack, size: 28),
+                color: _elvaneBlack, size: 28),
           ),
         ],
       ),
@@ -291,7 +291,7 @@ class _SectionHeader extends StatelessWidget {
         Text(
           eyebrow,
           style: const TextStyle(
-            color: _textShopMuted,
+            color: _elvaneMuted,
             fontSize: 10,
             fontWeight: FontWeight.w900,
             letterSpacing: 1.3,
@@ -301,12 +301,12 @@ class _SectionHeader extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: _textShopBlack,
+                color: _elvaneBlack,
                 fontWeight: FontWeight.w900,
               ),
         ),
         const SizedBox(height: 4),
-        Text(description, style: const TextStyle(color: _textShopMuted)),
+        Text(description, style: const TextStyle(color: _elvaneMuted)),
       ],
     );
   }
@@ -339,10 +339,10 @@ class _OrderFilters extends StatelessWidget {
               onSelected: (_) => onSelected(entry.$1),
               showCheckmark: false,
               backgroundColor: Colors.white,
-              selectedColor: _textShopBlack,
-              side: const BorderSide(color: _textShopBorder),
+              selectedColor: _elvaneBlack,
+              side: const BorderSide(color: _elvaneBorder),
               labelStyle: TextStyle(
-                color: isSelected ? Colors.white : _textShopBlack,
+                color: isSelected ? Colors.white : _elvaneBlack,
                 fontWeight: FontWeight.w800,
               ),
               shape: RoundedRectangleBorder(
@@ -377,21 +377,21 @@ class _SignedOutOrders extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w900,
-                      color: _textShopBlack,
+                      color: _elvaneBlack,
                     ),
               ),
               const SizedBox(height: 8),
               const Text(
                 'Sign in to follow payment, fulfillment, shipping and delivery from one place.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: _textShopMuted, height: 1.45),
+                style: TextStyle(color: _elvaneMuted, height: 1.45),
               ),
               const SizedBox(height: 22),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: _textShopBlack,
+                    backgroundColor: _elvaneBlack,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
@@ -419,9 +419,9 @@ class _OrdersLoading extends StatelessWidget {
         Container(
           height: 158,
           decoration: BoxDecoration(
-              color: _textShopBlack, borderRadius: BorderRadius.circular(24)),
+              color: _elvaneBlack, borderRadius: BorderRadius.circular(24)),
           child: const Center(
-              child: CircularProgressIndicator(color: _textShopLime)),
+              child: CircularProgressIndicator(color: _elvaneLime)),
         ),
         const SizedBox(height: 20),
         ...List.generate(
@@ -431,7 +431,7 @@ class _OrdersLoading extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 14),
             decoration: BoxDecoration(
               color: Colors.white,
-              border: Border.all(color: _textShopBorder),
+              border: Border.all(color: _elvaneBorder),
               borderRadius: BorderRadius.circular(20),
             ),
           ),
@@ -467,10 +467,10 @@ class _OrdersError extends StatelessWidget {
         const SizedBox(height: 8),
         Text(message,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: _textShopMuted)),
+            style: const TextStyle(color: _elvaneMuted)),
         const SizedBox(height: 20),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: _textShopBlack),
+          style: FilledButton.styleFrom(backgroundColor: _elvaneBlack),
           onPressed: onRetry,
           child: const Text('Try again'),
         ),
@@ -501,9 +501,9 @@ class _EmptyOrders extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         const Text(
-          'When you place your first TextShop order, its journey will appear here.',
+          'When you place your first Elvane order, its journey will appear here.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: _textShopMuted, height: 1.45),
+          style: TextStyle(color: _elvaneMuted, height: 1.45),
         ),
       ],
     );
@@ -521,7 +521,7 @@ class _FilteredEmpty extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: _textShopBorder),
+        border: Border.all(color: _elvaneBorder),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -550,8 +550,8 @@ class _StateIcon extends StatelessWidget {
         width: 72,
         height: 72,
         decoration:
-            const BoxDecoration(color: _textShopLime, shape: BoxShape.circle),
-        child: Icon(icon, color: _textShopBlack, size: 34),
+            const BoxDecoration(color: _elvaneLime, shape: BoxShape.circle),
+        child: Icon(icon, color: _elvaneBlack, size: 34),
       ),
     );
   }
@@ -575,7 +575,7 @@ class _OrderCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            border: Border.all(color: _textShopBorder),
+            border: Border.all(color: _elvaneBorder),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
@@ -591,7 +591,7 @@ class _OrderCard extends StatelessWidget {
                         const Text(
                           'ORDER',
                           style: TextStyle(
-                            color: _textShopMuted,
+                            color: _elvaneMuted,
                             fontSize: 9,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.2,
@@ -604,7 +604,7 @@ class _OrderCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(_formatDate(order.createdAt),
                             style: const TextStyle(
-                                color: _textShopMuted, fontSize: 12)),
+                                color: _elvaneMuted, fontSize: 12)),
                       ],
                     ),
                   ),
@@ -619,7 +619,7 @@ class _OrderCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: _textShopCanvas,
+                  color: _elvaneCanvas,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Column(
@@ -643,7 +643,7 @@ class _OrderCard extends StatelessWidget {
                                 const SizedBox(width: 12),
                                 Text('×${item.quantity}',
                                     style: const TextStyle(
-                                        color: _textShopMuted,
+                                        color: _elvaneMuted,
                                         fontWeight: FontWeight.w800)),
                               ],
                             ),
@@ -655,7 +655,7 @@ class _OrderCard extends StatelessWidget {
                         child: Text(
                           '+ ${order.items.length - 3} more item types',
                           style: const TextStyle(
-                              color: _textShopMuted, fontSize: 12),
+                              color: _elvaneMuted, fontSize: 12),
                         ),
                       ),
                   ],
@@ -671,7 +671,7 @@ class _OrderCard extends StatelessWidget {
                         Text(
                           '${order.itemCount} item${order.itemCount == 1 ? '' : 's'} · ${_pretty(order.paymentStatus)}',
                           style: const TextStyle(
-                              color: _textShopMuted,
+                              color: _elvaneMuted,
                               fontSize: 12,
                               fontWeight: FontWeight.w700),
                         ),
@@ -681,7 +681,7 @@ class _OrderCard extends StatelessWidget {
                           style: const TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 19,
-                              color: _textShopBlack),
+                              color: _elvaneBlack),
                         ),
                       ],
                     ),
@@ -690,9 +690,9 @@ class _OrderCard extends StatelessWidget {
                     width: 42,
                     height: 42,
                     decoration: const BoxDecoration(
-                        color: _textShopBlack, shape: BoxShape.circle),
+                        color: _elvaneBlack, shape: BoxShape.circle),
                     child: const Icon(Icons.arrow_forward_rounded,
-                        color: _textShopLime),
+                        color: _elvaneLime),
                   ),
                 ],
               ),
@@ -749,7 +749,7 @@ class _DeliveryProgress extends StatelessWidget {
               return Expanded(
                 child: Container(
                     height: 2,
-                    color: step < progress ? _textShopBlack : _textShopBorder),
+                    color: step < progress ? _elvaneBlack : _elvaneBorder),
               );
             }
             final step = index ~/ 2 + 1;
@@ -758,10 +758,10 @@ class _DeliveryProgress extends StatelessWidget {
               width: 14,
               height: 14,
               decoration: BoxDecoration(
-                color: reached ? _textShopLime : Colors.white,
+                color: reached ? _elvaneLime : Colors.white,
                 shape: BoxShape.circle,
                 border: Border.all(
-                    color: reached ? _textShopBlack : _textShopBorder,
+                    color: reached ? _elvaneBlack : _elvaneBorder,
                     width: 2),
               ),
             );
@@ -774,7 +774,7 @@ class _DeliveryProgress extends StatelessWidget {
               .map((label) => Text(label,
                   style: const TextStyle(
                       fontSize: 9,
-                      color: _textShopMuted,
+                      color: _elvaneMuted,
                       fontWeight: FontWeight.w700)))
               .toList(growable: false),
         ),
@@ -795,13 +795,13 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: highlight ? _textShopLime : _textShopBlack,
+        color: highlight ? _elvaneLime : _elvaneBlack,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         status.replaceAll('_', ' '),
         style: TextStyle(
-          color: highlight ? _textShopBlack : Colors.white,
+          color: highlight ? _elvaneBlack : Colors.white,
           fontSize: 10,
           fontWeight: FontWeight.w900,
         ),

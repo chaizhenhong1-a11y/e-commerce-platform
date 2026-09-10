@@ -16,8 +16,8 @@ export class AccountEmailService {
     const url = this.accountUrl('/account/verify-email', input.token);
     await this.deliver({
       to: input.email,
-      subject: 'Verify your TextShop email',
-      text: `Hi ${input.firstName}, verify your TextShop email: ${url}`,
+      subject: 'Verify your Elvane email',
+      text: `Hi ${input.firstName}, verify your Elvane email: ${url}`,
       developmentUrl: url,
     });
   }
@@ -30,8 +30,8 @@ export class AccountEmailService {
     const url = this.accountUrl('/account/reset-password', input.token);
     await this.deliver({
       to: input.email,
-      subject: 'Reset your TextShop password',
-      text: `Hi ${input.firstName}, reset your TextShop password: ${url}`,
+      subject: 'Reset your Elvane password',
+      text: `Hi ${input.firstName}, reset your Elvane password: ${url}`,
       developmentUrl: url,
     });
   }

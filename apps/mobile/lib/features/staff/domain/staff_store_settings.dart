@@ -40,7 +40,7 @@ class StaffStoreSettings {
     int number(String key) => json[key] is num ? (json[key] as num).toInt() : 0;
 
     return StaffStoreSettings(
-      storeName: text('storeName', 'TextShop'),
+      storeName: text('storeName', 'Elvane'),
       logoUrl: text('logoUrl'),
       storeCoverUrl: text('storeCoverUrl'),
       storeGalleryUrls:

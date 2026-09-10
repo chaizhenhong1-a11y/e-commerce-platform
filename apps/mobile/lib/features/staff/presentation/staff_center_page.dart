@@ -400,7 +400,7 @@ class _Hero extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 const Text(
-                  'TEXTSHOP OWNER',
+                  'ELVANE OWNER',
                   style: TextStyle(
                     color: _StaffCenterPageState._lime,
                     fontSize: 11,

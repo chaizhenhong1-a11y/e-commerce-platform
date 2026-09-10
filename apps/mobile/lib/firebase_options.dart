@@ -63,6 +63,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '250370743243',
     projectId: 'honggeaixuexidaima',
     storageBucket: 'honggeaixuexidaima.firebasestorage.app',
-    iosBundleId: 'com.example.textshop',
+    iosBundleId: 'com.example.elvane',
   );
 }

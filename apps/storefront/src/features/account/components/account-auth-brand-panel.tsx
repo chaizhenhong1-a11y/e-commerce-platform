@@ -1,7 +1,7 @@
 export function AccountAuthBrandPanel() {
   return (
     <aside className="account-auth-brand-panel" aria-hidden="true">
-      <span className="account-auth-brand-panel__pill">TEXTSHOP</span>
+      <span className="account-auth-brand-panel__pill">ELVANE</span>
 
       <div className="account-auth-brand-panel__copy">
         <h2>

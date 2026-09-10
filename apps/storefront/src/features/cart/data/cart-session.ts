@@ -1,4 +1,4 @@
-const CART_SESSION_KEY = "textshop.cart.session";
+const CART_SESSION_KEY = "elvane.cart.session";
 
 export function getCartSessionId(): string {
   const existing = window.localStorage.getItem(CART_SESSION_KEY);

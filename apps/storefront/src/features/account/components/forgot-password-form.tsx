@@ -26,7 +26,7 @@ export function ForgotPasswordForm() {
     return <div className="account-form-card account-result-card">
       <span className="section-kicker">CHECK YOUR EMAIL</span>
       <h1>Reset link requested</h1>
-      <p>If an active TextShop account exists for that email, a password reset link has been sent.</p>
+      <p>If an active Elvane account exists for that email, a password reset link has been sent.</p>
       <Link className="button button--primary" href="/account/sign-in">Back to sign in</Link>
     </div>;
   }

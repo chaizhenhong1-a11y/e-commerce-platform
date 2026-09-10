@@ -1,7 +1,7 @@
 import type { StoreInfo } from "../domain/store-info";
 
 const apiBaseUrl =
-  process.env.TEXTSHOP_API_BASE_URL?.replace(/\/$/, "") ??
+  process.env.ELVANE_API_BASE_URL?.replace(/\/$/, "") ??
   "http://localhost:3001";
 
 export async function getStoreInfo(): Promise<StoreInfo> {

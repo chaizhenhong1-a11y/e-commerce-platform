@@ -50,7 +50,7 @@ export class StripePaymentProvider implements PaymentProviderAdapter {
             currency: request.currency.toLowerCase(),
             unit_amount: request.amountCents,
             product_data: {
-              name: `TextShop order ${request.orderNumber}`,
+              name: `Elvane order ${request.orderNumber}`,
             },
           },
         },

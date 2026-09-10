@@ -30,9 +30,9 @@ export function ProductCard({
           href={`/products/${product.slug}`}
           aria-label={`View ${product.name}`}
         >
-          <span className="market-product-card__badge">
-            {product.badge ?? "New"}
-          </span>
+          {product.badge ? (
+            <span className="market-product-card__badge">{product.badge}</span>
+          ) : null}
 
           {primaryImage ? (
             <img
@@ -74,7 +74,8 @@ export function ProductCard({
             href={`/products/${product.slug}`}
             aria-label={`View ${product.name}`}
           >
-            +
+            <span>View</span>
+            <b aria-hidden="true">→</b>
           </Link>
         </div>
       </div>

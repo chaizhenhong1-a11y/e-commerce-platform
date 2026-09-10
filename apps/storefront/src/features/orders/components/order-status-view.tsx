@@ -29,7 +29,7 @@ type TimelineStep = {
 function buildTimeline(order: PublicOrderStatus): TimelineStep[] {
   if (order.status === "CANCELLED") {
     return [
-      { key: "created", label: "Order created", description: "Your order was received by TextShop.", state: "complete" },
+      { key: "created", label: "Order created", description: "Your order was received by Elvane.", state: "complete" },
       { key: "cancelled", label: "Order cancelled", description: "This order will not continue to fulfilment.", state: "stopped" },
     ];
   }
@@ -55,7 +55,7 @@ function buildTimeline(order: PublicOrderStatus): TimelineStep[] {
     current > step ? "complete" : current === step ? "current" : "pending";
 
   return [
-    { key: "created", label: "Order created", description: "Your order was received by TextShop.", state: "complete" },
+    { key: "created", label: "Order created", description: "Your order was received by Elvane.", state: "complete" },
     { key: "payment", label: "Payment confirmed", description: "Payment has been accepted and the order is confirmed.", state: stateFor(1) },
     { key: "processing", label: "Processing", description: "Your order is being prepared for dispatch.", state: stateFor(2) },
     { key: "shipped", label: "Shipped", description: "The parcel has left the warehouse and tracking is available when provided.", state: stateFor(3) },

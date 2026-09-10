@@ -19,6 +19,32 @@ const STATUSES = [
 ] as const;
 const PAYMENTS = ["ALL", "PENDING", "PAID", "PARTIALLY_REFUNDED", "REFUNDED", "FAILED"] as const;
 
+type OrderPreset =
+  | "ALL"
+  | "AWAITING_PAYMENT"
+  | "READY_TO_FULFILL"
+  | "PROCESSING"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "FULFILLED"
+  | "CANCELLED";
+
+const ORDER_PRESETS: Array<{ key: OrderPreset; label: string }> = [
+  { key: "ALL", label: "All orders" },
+  { key: "AWAITING_PAYMENT", label: "Awaiting payment" },
+  { key: "READY_TO_FULFILL", label: "Ready to fulfill" },
+  { key: "PROCESSING", label: "Processing" },
+  { key: "SHIPPED", label: "Shipped" },
+  { key: "DELIVERED", label: "Delivered" },
+  { key: "FULFILLED", label: "Fulfilled" },
+  { key: "CANCELLED", label: "Cancelled" },
+];
+
+function statusLabel(value: string) {
+  return value.replaceAll("_", " ").toLowerCase().replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
+}
+
+
 function money(cents: number, currency: string) {
   return new Intl.NumberFormat("en-MY", { style: "currency", currency }).format(cents / 100);
 }
@@ -31,6 +57,7 @@ type ShippingDraft = {
 };
 
 export function OrdersConsole() {
+  const [preset, setPreset] = useState<OrderPreset>("ALL");
   const [status, setStatus] = useState("ALL");
   const [payment, setPayment] = useState("ALL");
   const [query, setQuery] = useState("");
@@ -68,6 +95,30 @@ export function OrdersConsole() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  function applyPreset(nextPreset: OrderPreset) {
+    setPreset(nextPreset);
+    if (nextPreset === "ALL") {
+      setStatus("ALL");
+      setPayment("ALL");
+      return;
+    }
+    if (nextPreset === "READY_TO_FULFILL") {
+      setStatus("CONFIRMED");
+      setPayment("PAID");
+      return;
+    }
+    setStatus(nextPreset);
+    setPayment("ALL");
+  }
+
+  function clearFilters() {
+    setPreset("ALL");
+    setStatus("ALL");
+    setPayment("ALL");
+    setQuery("");
+    setAppliedQuery("");
+  }
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -136,29 +187,92 @@ export function OrdersConsole() {
   return (
     <main className={styles.shell}>
       <StaffNav active="orders" />
+      <section className={styles.staffWorkspace}>
       <header className={styles.header}>
         <div>
           <span className={styles.eyebrow}>ORDER OPERATIONS</span>
-          <h1>Orders & delivery</h1>
-          <p>Advance paid orders from confirmed to processing, shipped and delivered.</p>
+          <h1>Orders</h1>
+          <p>Review, fulfill, ship, and track customer orders from one operational queue.</p>
+        </div>
+        <div className={styles.headerActions}>
+          <button className={styles.secondaryButton} type="button" onClick={() => void load()}>
+            Refresh
+          </button>
         </div>
       </header>
 
-      <form className={styles.toolbar} onSubmit={submit}>
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Order, customer, product or SKU" />
-        <select value={status} onChange={(event) => setStatus(event.target.value)}>
-          {STATUSES.map((item) => <option key={item}>{item}</option>)}
-        </select>
-        <select value={payment} onChange={(event) => setPayment(event.target.value)}>
-          {PAYMENTS.map((item) => <option key={item}>{item}</option>)}
-        </select>
-        <button type="submit">Search</button>
-        <button type="button" onClick={() => void load()}>Refresh</button>
+      <nav className={styles.orderPresetTabs} aria-label="Order workflow">
+        {ORDER_PRESETS.map((item) => (
+          <button
+            className={preset === item.key ? styles.orderPresetActive : ""}
+            key={item.key}
+            type="button"
+            onClick={() => applyPreset(item.key)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
+      <form className={`${styles.toolbar} ${styles.operationsToolbar} ${styles.ordersToolbar}`} onSubmit={submit}>
+        <label className={styles.orderSearchField}>
+          <span>Search orders</span>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Order number, customer, product or SKU"
+          />
+        </label>
+        <label>
+          <span>Order status</span>
+          <select
+            value={status}
+            onChange={(event) => {
+              setPreset("ALL");
+              setStatus(event.target.value);
+            }}
+          >
+            {STATUSES.map((item) => <option key={item}>{statusLabel(item)}</option>)}
+          </select>
+        </label>
+        <label>
+          <span>Payment status</span>
+          <select
+            value={payment}
+            onChange={(event) => {
+              setPreset("ALL");
+              setPayment(event.target.value);
+            }}
+          >
+            {PAYMENTS.map((item) => <option key={item}>{statusLabel(item)}</option>)}
+          </select>
+        </label>
+        <button type="submit">Apply</button>
+        <button className={styles.secondaryButton} type="button" onClick={clearFilters}>Clear</button>
       </form>
+
+      <div className={styles.orderResultsBar}>
+        <div>
+          <strong>{loading ? "Loading…" : `${orders.length} order${orders.length === 1 ? "" : "s"}`}</strong>
+          <span>
+            {preset === "ALL"
+              ? "Current search and filters"
+              : ORDER_PRESETS.find((item) => item.key === preset)?.label}
+          </span>
+        </div>
+        {(status !== "ALL" || payment !== "ALL" || appliedQuery) ? (
+          <button type="button" onClick={clearFilters}>Reset filters</button>
+        ) : null}
+      </div>
 
       {error ? <div className={styles.error}>{error}</div> : null}
       {loading ? <div className={styles.empty}>Loading orders…</div> : null}
-      {!loading && !orders.length ? <div className={styles.empty}>No orders match these filters.</div> : null}
+      {!loading && !orders.length ? (
+        <div className={styles.empty}>
+          <strong>No orders found.</strong>
+          <span>Try another workflow tab, clear the filters, or search with a different term.</span>
+        </div>
+      ) : null}
 
       <div className={styles.list}>
         {orders.map((order) => (
@@ -168,14 +282,38 @@ export function OrdersConsole() {
                 <h2>{order.orderNumber}</h2>
                 <p>{order.customerName} · {order.email} · {new Date(order.createdAt).toLocaleString("en-MY")}</p>
               </div>
-              <div className={styles.badges}><span>{order.status}</span><span>{order.paymentStatus}</span></div>
+              <div className={styles.orderStatusStack}>
+                <span className={styles.orderStatusLabel}>Order</span>
+                <div className={styles.badges}><span>{statusLabel(order.status)}</span></div>
+                <span className={styles.orderStatusLabel}>Payment</span>
+                <div className={styles.badges}><span>{statusLabel(order.paymentStatus)}</span></div>
+              </div>
             </div>
             <div className={styles.orderBody}>
               <div>
                 <strong>{order.itemCount} item{order.itemCount === 1 ? "" : "s"}</strong>
-                {order.items.slice(0, 3).map((item) => (
-                  <p key={item.id}>{item.productName} · {item.variantName} · {item.sku} × {item.quantity}</p>
-                ))}
+                <div className={styles.orderItemPreviewList}>
+                  {order.items.slice(0, 3).map((item) => (
+                    <div className={styles.orderItemPreview} key={item.id}>
+                      <div className={styles.orderItemPhoto}>
+                        {item.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={item.imageUrl}
+                            alt={item.imageAltText || item.productName}
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span>No image</span>
+                        )}
+                      </div>
+                      <div>
+                        <strong>{item.productName}</strong>
+                        <span>{item.variantName} · {item.sku} × {item.quantity}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
               <strong className={styles.total}>{money(order.totalCents, order.currency)}</strong>
             </div>
@@ -218,6 +356,8 @@ export function OrdersConsole() {
           </article>
         ))}
       </div>
+
+      </section>
 
       {shipping ? (
         <div className={styles.modalBackdrop} role="presentation" onMouseDown={() => setShipping(null)}>

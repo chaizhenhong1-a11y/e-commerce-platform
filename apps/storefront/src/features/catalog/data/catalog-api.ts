@@ -40,7 +40,7 @@ type ApiProduct = {
 };
 
 const apiBaseUrl =
-  process.env.TEXTSHOP_API_BASE_URL?.replace(/\/$/, "") ??
+  process.env.ELVANE_API_BASE_URL?.replace(/\/$/, "") ??
   "http://localhost:3001";
 
 function toVariant(variant: ApiVariant): ProductVariant {
@@ -99,7 +99,7 @@ async function request<T>(path: string): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`TextShop API request failed with ${response.status}.`);
+    throw new Error(`Elvane API request failed with ${response.status}.`);
   }
 
   return response.json() as Promise<T>;
@@ -156,7 +156,7 @@ export async function getProductBySlug(
   }
 
   if (!response.ok) {
-    throw new Error(`TextShop API request failed with ${response.status}.`);
+    throw new Error(`Elvane API request failed with ${response.status}.`);
   }
 
   return toProduct((await response.json()) as ApiProduct);

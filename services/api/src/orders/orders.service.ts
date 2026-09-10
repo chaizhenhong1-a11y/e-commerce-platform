@@ -346,6 +346,74 @@ export class OrdersService {
       },
     });
 
+    const variantIds = [...new Set(
+      orders.flatMap((order) => order.items.map((item) => item.variantId)),
+    )];
+    const skus = [...new Set(
+      orders.flatMap((order) => order.items.map((item) => item.sku)),
+    )];
+
+    const catalogVariants = variantIds.length || skus.length
+      ? await this.prisma.productVariant.findMany({
+          where: {
+            OR: [
+              ...(variantIds.length ? [{ id: { in: variantIds } }] : []),
+              ...(skus.length ? [{ sku: { in: skus } }] : []),
+            ],
+          },
+          select: {
+            id: true,
+            sku: true,
+            product: {
+              select: {
+                images: {
+                  orderBy: [
+                    { isPrimary: 'desc' },
+                    { sortOrder: 'asc' },
+                    { createdAt: 'asc' },
+                  ],
+                  select: {
+                    url: true,
+                    altText: true,
+                    variantId: true,
+                    isPrimary: true,
+                    sortOrder: true,
+                  },
+                },
+              },
+            },
+          },
+        })
+      : [];
+
+    const pickCatalogImage = (
+      variant: (typeof catalogVariants)[number],
+    ) => {
+      const images = variant.product.images;
+      return (
+        images.find((image) => image.variantId === variant.id && image.isPrimary) ??
+        images.find((image) => image.variantId === variant.id) ??
+        images.find((image) => image.variantId === null && image.isPrimary) ??
+        images.find((image) => image.isPrimary) ??
+        images.find((image) => image.variantId === null) ??
+        images[0] ??
+        null
+      );
+    };
+
+    const catalogByVariantId = new Map(
+      catalogVariants.map((variant) => [
+        variant.id,
+        pickCatalogImage(variant),
+      ] as const),
+    );
+    const catalogBySku = new Map(
+      catalogVariants.map((variant) => [
+        variant.sku,
+        pickCatalogImage(variant),
+      ] as const),
+    );
+
     return orders.map((order) => ({
       orderNumber: order.orderNumber,
       status: order.status,
@@ -361,8 +429,19 @@ export class OrdersService {
       deliveredAt: order.deliveredAt,
       itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
       items: order.items.map((item) => ({
-        id: item.id, sku: item.sku, productName: item.productName,
-        variantName: item.variantName, quantity: item.quantity,
+        id: item.id,
+        sku: item.sku,
+        productName: item.productName,
+        variantName: item.variantName,
+        quantity: item.quantity,
+        imageUrl:
+          catalogByVariantId.get(item.variantId)?.url ??
+          catalogBySku.get(item.sku)?.url ??
+          null,
+        imageAltText:
+          catalogByVariantId.get(item.variantId)?.altText ??
+          catalogBySku.get(item.sku)?.altText ??
+          null,
       })),
       latestRefund: order.refunds[0]
         ? { status: order.refunds[0].status, amountCents: order.refunds[0].amountCents }

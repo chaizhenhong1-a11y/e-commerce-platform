@@ -5,7 +5,7 @@ export class HealthController {
   @Get()
   root() {
     return {
-      service: 'TextShop API',
+      service: 'Elvane API',
       status: 'ok',
     };
   }

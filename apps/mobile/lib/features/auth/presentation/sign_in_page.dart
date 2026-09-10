@@ -137,7 +137,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                 foregroundColor: const Color(0xFF171717),
               ),
               onPressed: () => context.push(_registerLocation()),
-              child: const Text('Create a TextShop account'),
+              child: const Text('Create a Elvane account'),
             ),
           ],
         ),

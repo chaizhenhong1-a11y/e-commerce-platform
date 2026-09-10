@@ -280,7 +280,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: SizedBox(width: 12, height: 12),
             ),
             SizedBox(width: 8),
-            Text('TextShop', style: TextStyle(fontWeight: FontWeight.w900)),
+            Text('Elvane', style: TextStyle(fontWeight: FontWeight.w900)),
           ],
         ),
         actions: <Widget>[

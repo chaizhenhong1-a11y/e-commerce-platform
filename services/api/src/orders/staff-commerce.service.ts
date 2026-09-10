@@ -34,6 +34,10 @@ export class StaffCommerceService {
       activeReturns,
       refundProcessing,
       lowStockVariants,
+      outOfStockVariants,
+      pendingRefundRequests,
+      recentOrders,
+      topProducts,
       salesRows,
       refundRows,
     ] = await Promise.all([
@@ -54,6 +58,38 @@ export class StaffCommerceService {
         where: { status: { in: ['REQUESTED', 'PROCESSING'] } },
       }),
       this.prisma.inventory.count({ where: { quantity: { lte: 5 } } }),
+      this.prisma.inventory.count({ where: { quantity: { lte: 0 } } }),
+      this.prisma.refund.count({ where: { status: 'REQUESTED' } }),
+      this.prisma.order.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 6,
+        select: {
+          orderNumber: true,
+          status: true,
+          paymentStatus: true,
+          shippingName: true,
+          totalCents: true,
+          currency: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.orderItem.groupBy({
+        by: ['productName'],
+        where: {
+          order: {
+            paymentStatus: {
+              in: [
+                PaymentStatus.PAID,
+                PaymentStatus.PARTIALLY_REFUNDED,
+                PaymentStatus.REFUNDED,
+              ],
+            },
+          },
+        },
+        _sum: { quantity: true, lineTotalCents: true },
+        orderBy: { _sum: { quantity: 'desc' } },
+        take: 5,
+      }),
       this.prisma.$queryRaw<SalesAggregate[]>(Prisma.sql`
         SELECT
           COUNT(*) FILTER (
@@ -105,6 +141,22 @@ export class StaffCommerceService {
       activeReturns,
       refundProcessing,
       lowStockVariants,
+      outOfStockVariants,
+      pendingRefundRequests,
+      recentOrders: recentOrders.map((order) => ({
+        orderNumber: order.orderNumber,
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+        customerName: order.shippingName,
+        totalCents: order.totalCents,
+        currency: order.currency,
+        createdAt: order.createdAt,
+      })),
+      topProducts: topProducts.map((product) => ({
+        productName: product.productName,
+        quantity: product._sum.quantity ?? 0,
+        salesCents: product._sum.lineTotalCents ?? 0,
+      })),
       todayOrders,
       todayGrossSalesCents,
       todayRefundsCents,

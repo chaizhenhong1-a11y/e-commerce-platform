@@ -1,4 +1,4 @@
-# TextShop Architecture
+# Elvane Architecture
 
 ## Responsibilities
 

@@ -47,7 +47,7 @@ export function RegisterForm() {
 
   return (
     <form className="account-form-card" onSubmit={submit}>
-      <span className="section-kicker">JOIN TEXTSHOP</span>
+      <span className="section-kicker">JOIN ELVANE</span>
       <h1>Create your account</h1>
       <p>Keep your future orders together in one secure account.</p>
 

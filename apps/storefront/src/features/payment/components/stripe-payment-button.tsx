@@ -12,7 +12,7 @@ export function StripePaymentButton({ orderNumber }: { orderNumber: string }) {
 
     const stripeWindow = window.open("", "_blank");
     if (stripeWindow) {
-      stripeWindow.document.title = "TextShop secure payment";
+      stripeWindow.document.title = "Elvane secure payment";
       stripeWindow.document.body.innerHTML =
         '<p style="font-family:system-ui;padding:32px">Preparing secure Stripe Checkout…</p>';
     }

@@ -7,11 +7,11 @@ let authState: "unknown" | "signed-in" | "signed-out" = "unknown";
 function installResetListener() {
   if (resetListenerInstalled || typeof window === "undefined") return;
   resetListenerInstalled = true;
-  window.addEventListener("textshop:auth-signed-out", () => {
+  window.addEventListener("elvane:auth-signed-out", () => {
     authState = "signed-out";
     clearAccountRouteCache();
   });
-  window.addEventListener("textshop:auth-signed-in", () => {
+  window.addEventListener("elvane:auth-signed-in", () => {
     authState = "signed-in";
   });
 }

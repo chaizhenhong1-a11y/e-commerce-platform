@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-const ORDER_ACCESS_COOKIE = "textshop_order_access";
+const ORDER_ACCESS_COOKIE = "elvane_order_access";
 const ORDER_ACCESS_MAX_AGE = 30 * 24 * 60 * 60;
 const MAX_STORED_ORDERS = 8;
 

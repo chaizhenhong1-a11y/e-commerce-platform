@@ -10,14 +10,14 @@ import '../features/notifications/presentation/notification_providers.dart';
 import '../features/wishlist/presentation/wishlist_providers.dart';
 import 'router/app_router.dart';
 
-class TextShopApp extends ConsumerStatefulWidget {
-  const TextShopApp({super.key});
+class ElvaneApp extends ConsumerStatefulWidget {
+  const ElvaneApp({super.key});
 
   @override
-  ConsumerState<TextShopApp> createState() => _TextShopAppState();
+  ConsumerState<ElvaneApp> createState() => _ElvaneAppState();
 }
 
-class _TextShopAppState extends ConsumerState<TextShopApp>
+class _ElvaneAppState extends ConsumerState<ElvaneApp>
     with WidgetsBindingObserver {
   @override
   void initState() {
@@ -66,7 +66,7 @@ class _TextShopAppState extends ConsumerState<TextShopApp>
         ? body!
         : title?.isNotEmpty == true
             ? title!
-            : 'You have a new TextShop update.';
+            : 'You have a new Elvane update.';
     final actionPath =
         ref.read(pushRegistrationServiceProvider).actionPathFor(message);
 
@@ -117,7 +117,7 @@ class _TextShopAppState extends ConsumerState<TextShopApp>
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'TextShop',
+      title: 'Elvane',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: appRouter,

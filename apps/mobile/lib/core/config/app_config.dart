@@ -1,5 +1,5 @@
 abstract final class AppConfig {
-  static const String appName = 'TextShop';
+  static const String appName = 'Elvane';
 
   /// Android Emulator reaches the host machine through 10.0.2.2.
   ///

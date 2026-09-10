@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:textshop/app/app.dart';
+import 'package:elvane/app/app.dart';
 
 void main() {
-  testWidgets('renders TextShop home', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: TextShopApp()));
+  testWidgets('renders Elvane home', (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: ElvaneApp()));
     await tester.pumpAndSettle();
 
-    expect(find.text('TextShop'), findsOneWidget);
+    expect(find.text('Elvane'), findsOneWidget);
     expect(find.text('Featured products'), findsOneWidget);
   });
 }

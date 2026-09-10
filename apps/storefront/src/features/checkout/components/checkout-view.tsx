@@ -697,7 +697,7 @@ export function CheckoutView() {
 
         <p className="checkout-reprice-note">
           Final price, product availability, and inventory are revalidated by
-          TextShop when this order is submitted.
+          Elvane when this order is submitted.
         </p>
 
         {error ? <p className="form-error">{error}</p> : null}

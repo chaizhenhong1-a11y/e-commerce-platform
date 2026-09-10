@@ -37,14 +37,14 @@ export function NotificationHeaderLink() {
     };
 
     window.addEventListener("focus", handleFocus);
-    window.addEventListener("textshop:auth-signed-out", handleSignedOut);
+    window.addEventListener("elvane:auth-signed-out", handleSignedOut);
 
     return () => {
       live = false;
       unsubscribe();
       window.clearInterval(intervalId);
       window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("textshop:auth-signed-out", handleSignedOut);
+      window.removeEventListener("elvane:auth-signed-out", handleSignedOut);
     };
   }, []);
 

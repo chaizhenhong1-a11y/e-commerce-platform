@@ -1,4 +1,4 @@
-# TextShop PostgreSQL setup
+# Elvane PostgreSQL setup
 
 This increment does not store real database passwords.
 
@@ -10,21 +10,21 @@ Open pgAdmin Query Tool for the local PostgreSQL 17 server and run:
 ALTER USER postgres WITH PASSWORD 'YOUR_NEW_PASSWORD';
 ```
 
-## 2. Create the TextShop database if it does not exist
+## 2. Create the Elvane database if it does not exist
 
 In the same Query Tool, run:
 
 ```sql
-SELECT 'CREATE DATABASE textshop'
+SELECT 'CREATE DATABASE elvane'
 WHERE NOT EXISTS (
-  SELECT FROM pg_database WHERE datname = 'textshop'
+  SELECT FROM pg_database WHERE datname = 'elvane'
 )\gexec
 ```
 
 If `\gexec` is not supported in your pgAdmin Query Tool, use:
 
 ```sql
-CREATE DATABASE textshop;
+CREATE DATABASE elvane;
 ```
 
 and ignore the "already exists" error if the database is already present.
@@ -34,7 +34,7 @@ and ignore the "already exists" error if the database is already present.
 Copy `.env.example` to `.env` and set:
 
 ```env
-DATABASE_URL="postgresql://postgres:YOUR_NEW_PASSWORD@localhost:5432/textshop?schema=public"
+DATABASE_URL="postgresql://postgres:YOUR_NEW_PASSWORD@localhost:5432/elvane?schema=public"
 PORT=3001
 ```
 

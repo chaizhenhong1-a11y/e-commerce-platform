@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { StaffReturnCase } from "../domain/return-case";
 import styles from "./returns-console.module.css";
+import staffStyles from "./staff-console.module.css";
 import { StaffNav } from "./staff-nav";
 
 const STATUSES = [
@@ -111,8 +112,9 @@ export function ReturnsConsole() {
   }
 
   return (
-    <main className={styles.shell}>
+    <main className={staffStyles.shell}>
       <StaffNav active="returns" />
+      <section className={styles.workspace}>
       <div className={styles.header}>
         <div>
           <h1>Returns operations</h1>
@@ -195,6 +197,7 @@ export function ReturnsConsole() {
           );
         })}
       </div>
+      </section>
     </main>
   );
 }

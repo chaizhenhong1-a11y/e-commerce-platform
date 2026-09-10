@@ -245,6 +245,13 @@ export class ProductsService {
       },
       include: {
         category: true,
+        images: {
+          orderBy: [
+            { isPrimary: 'desc' },
+            { sortOrder: 'asc' },
+            { createdAt: 'asc' },
+          ],
+        },
         variants: { orderBy: { createdAt: 'asc' }, include: { inventory: true } },
       },
       orderBy: { updatedAt: 'desc' },

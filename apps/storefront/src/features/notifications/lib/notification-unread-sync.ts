@@ -1,6 +1,6 @@
 "use client";
 
-const NOTIFICATION_UNREAD_COUNT_EVENT = "textshop:notifications:unread-count";
+const NOTIFICATION_UNREAD_COUNT_EVENT = "elvane:notifications:unread-count";
 
 export function publishNotificationUnreadCount(count: number) {
   if (typeof window === "undefined") return;

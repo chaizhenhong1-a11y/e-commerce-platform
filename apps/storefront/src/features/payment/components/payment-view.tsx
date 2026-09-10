@@ -185,7 +185,7 @@ export function PaymentView({
 
       <p>
         Continue an existing gateway session when possible. If you switch
-        providers, TextShop closes the previous open session before creating
+        providers, Elvane closes the previous open session before creating
         another one.
       </p>
 

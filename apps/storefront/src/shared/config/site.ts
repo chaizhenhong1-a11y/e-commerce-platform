@@ -1,4 +1,4 @@
 export const siteConfig = {
-  name: "TextShop",
+  name: "Elvane",
   description: "A modern independent online store.",
 };

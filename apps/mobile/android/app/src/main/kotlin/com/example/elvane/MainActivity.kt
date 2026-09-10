@@ -1,4 +1,4 @@
-package com.example.textshop
+package com.example.elvane
 
 import io.flutter.embedding.android.FlutterActivity
 

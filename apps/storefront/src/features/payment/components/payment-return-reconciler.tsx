@@ -50,7 +50,7 @@ export function PaymentReturnReconciler({ orderNumber, paymentReturn }: { orderN
       if (event.origin !== window.location.origin) return;
       const data = event.data as { type?: string; orderNumber?: string; payment?: string } | null;
       if (
-        data?.type === "textshop:payment-return" &&
+        data?.type === "elvane:payment-return" &&
         data.orderNumber === orderNumber &&
         data.payment === "success"
       ) {
@@ -75,7 +75,7 @@ export function PaymentReturnReconciler({ orderNumber, paymentReturn }: { orderN
   return (
     <div className="payment-return-status" role="status" aria-live="polite">
       <strong>Confirming payment…</strong>
-      <span>Stripe returned successfully. TextShop is confirming the provider state. Do not pay again.</span>
+      <span>Stripe returned successfully. Elvane is confirming the provider state. Do not pay again.</span>
     </div>
   );
 }

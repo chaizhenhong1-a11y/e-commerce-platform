@@ -23,7 +23,7 @@ export function WishlistView({ products }: { products: Product[] }) {
         <span className="section-kicker">YOUR WISHLIST</span>
         <h2>Sign in to see saved products.</h2>
         <p>
-          Your account wishlist is synchronized through the same TextShop
+          Your account wishlist is synchronized through the same Elvane
           backend used by the mobile app.
         </p>
         <Link className="button button--primary" href="/account/sign-in">
@@ -39,7 +39,7 @@ export function WishlistView({ products }: { products: Product[] }) {
         <span className="section-kicker">YOUR WISHLIST</span>
         <h2>Nothing saved yet.</h2>
         <p>
-          Save products from the storefront or the TextShop mobile app and
+          Save products from the storefront or the Elvane mobile app and
           they will appear here under the same account.
         </p>
         <div className="wishlist-state-actions">

@@ -40,3 +40,66 @@
 .kicker { font-size: .7rem; font-weight: 900; letter-spacing: .12em; color: #6b6b65; }
 .hint { color: #73736c; font-size: .76rem; line-height: 1.4; }
 @media (max-width: 720px) { .sectionHeading { flex-direction: column; gap: 8px; } }
+
+
+/* Phase 055.38 — Staff settings workspace normalization */
+.page{
+  width:min(100%,1240px);
+  min-width:0;
+}
+.section{
+  border-color:#E5E5DF;
+  border-radius:16px;
+  box-shadow:0 6px 20px rgba(23,23,23,.03);
+}
+.sectionHeader{
+  padding-bottom:14px;
+  margin-bottom:18px;
+  border-bottom:1px solid #EEEEEA;
+}
+.field input,.field textarea,.field select{
+  transition:border-color .15s ease,box-shadow .15s ease;
+}
+.field input:focus,.field textarea:focus,.field select:focus{
+  outline:none;
+  border-color:#171717;
+  box-shadow:0 0 0 3px rgba(219,255,75,.42);
+}
+
+
+/* Phase 055.45 — professional Staff Store Settings workspace */
+.workspace{max-width:1320px}
+.headerStatus{display:grid;justify-items:end;gap:6px;text-align:right}
+.headerStatus>span{color:#777771;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+.headerStatus>strong{display:inline-flex;padding:6px 9px;border-radius:999px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+.saved{background:#DBFF4B;color:#171717}
+.unsaved{background:#FFF0C7;color:#8B5A00}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;align-items:start}
+.sectionNav{position:sticky;top:16px;display:grid;gap:4px;padding:10px;border:1px solid #E5E5DF;border-radius:14px;background:#fff}
+.navTitle{padding:6px 8px 8px;color:#777771;font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.sectionNav a{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 8px;border-radius:9px;color:#31312E;text-decoration:none;font-size:11px;font-weight:800}
+.sectionNav a:hover{background:#F5F5F0}
+.sectionNav b{flex:0 0 auto;padding:4px 6px;border-radius:999px;font-size:8px;text-transform:uppercase;letter-spacing:.04em}
+.navComplete{background:#EAF7AF;color:#384000}
+.navIncomplete{background:#F0F0EB;color:#777771}
+.form{max-width:none}
+.section{scroll-margin-top:16px}
+.section>h2{padding-bottom:12px;border-bottom:1px solid #EEEEEA}
+.logoManager{padding:14px;border:1px solid #E8E8E2;border-radius:13px;background:#FAFAF7}
+.actions{position:sticky;bottom:12px;z-index:5;padding:13px 14px;border:1px solid #DADAD3;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 12px 32px rgba(23,23,23,.1);backdrop-filter:blur(12px)}
+.actions>div{display:grid;gap:3px;margin-right:auto}
+.actions>div strong{font-size:11px}
+.actions>div span{color:#777771;font-size:9px}
+.actions button:disabled{cursor:not-allowed;opacity:.48}
+@media(max-width:980px){
+  .layout{grid-template-columns:1fr}
+  .sectionNav{position:static;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .navTitle{grid-column:1/-1}
+  .sectionNav a{display:grid;justify-items:start}
+}
+@media(max-width:680px){
+  .headerStatus{justify-items:start;text-align:left}
+  .sectionNav{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .actions{align-items:flex-start;flex-direction:column;bottom:6px}
+  .actions button{width:100%}
+}

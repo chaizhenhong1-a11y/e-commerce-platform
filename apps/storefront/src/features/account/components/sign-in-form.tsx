@@ -45,7 +45,7 @@ export function SignInForm({ returnTo }: { returnTo?: string }) {
   return (
     <form className="account-form-card" onSubmit={submit}>
       <span className="section-kicker">WELCOME BACK</span>
-      <h1>Sign in to TextShop</h1>
+      <h1>Sign in to Elvane</h1>
       <p>View your orders and continue checkout with your account.</p>
 
       <label className="checkout-field">

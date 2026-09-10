@@ -6,7 +6,7 @@ import { CheckoutService } from '../../src/checkout/checkout.service';
 const checkoutInput = {
   sessionId: 'session-1',
   email: 'buyer@example.com',
-  fullName: 'TextShop Buyer',
+  fullName: 'Elvane Buyer',
   phone: '+60123456789',
   addressLine1: '1 Test Street',
   city: 'Kuala Lumpur',

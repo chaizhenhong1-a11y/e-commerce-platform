@@ -6,8 +6,8 @@ import 'web_session_storage.dart';
 class AuthStorage {
   AuthStorage(this._storage);
 
-  static const _accessTokenKey = 'textshop_access_token';
-  static const _refreshTokenKey = 'textshop_refresh_token';
+  static const _accessTokenKey = 'elvane_access_token';
+  static const _refreshTokenKey = 'elvane_refresh_token';
 
   // Flutter Web keeps the development session in browser sessionStorage so
   // a full-page Stripe redirect can return to the same tab without losing the

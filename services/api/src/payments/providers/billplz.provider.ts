@@ -44,7 +44,7 @@ export class BillplzPaymentProvider implements PaymentProviderAdapter {
       email: request.customerEmail,
       name: request.customerName,
       amount: String(request.amountCents),
-      description: `TextShop order ${request.orderNumber}`,
+      description: `Elvane order ${request.orderNumber}`,
       callback_url: `${callbackBaseUrl}/payments/webhooks/billplz`,
       redirect_url: `${storefrontUrl}/orders/${encodeURIComponent(request.orderNumber)}?payment=return`,
       reference_1_label: 'Order',
@@ -109,7 +109,7 @@ export class BillplzPaymentProvider implements PaymentProviderAdapter {
   }
 
   async refund(_request: PaymentRefundRequest): Promise<PaymentRefundResult> {
-    throw new NotImplementedException('Billplz refunds are not enabled in TextShop yet.');
+    throw new NotImplementedException('Billplz refunds are not enabled in Elvane yet.');
   }
 
   getXSignatureKey(): string {

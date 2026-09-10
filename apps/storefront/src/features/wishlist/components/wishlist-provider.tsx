@@ -108,8 +108,8 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     };
 
-    window.addEventListener("textshop:auth-signed-out", handleSignedOut);
-    return () => window.removeEventListener("textshop:auth-signed-out", handleSignedOut);
+    window.addEventListener("elvane:auth-signed-out", handleSignedOut);
+    return () => window.removeEventListener("elvane:auth-signed-out", handleSignedOut);
   }, []);
 
   useEffect(() => {

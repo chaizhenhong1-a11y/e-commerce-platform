@@ -26,8 +26,23 @@ function normalizeGallery(value: unknown): string[] {
   return [];
 }
 
-const EMPTY: UpdateStoreSettingsInput = {
-  storeName: "TextShop",
+type SettingsForm = Omit<UpdateStoreSettingsInput, "standardShippingCents" | "freeShippingThresholdCents"> & {
+  standardShippingMyr: string;
+  freeShippingFromMyr: string;
+};
+
+function shippingCents(value: string): number {
+  if (!/^\d+(?:\.\d{1,2})?$/.test(value)) {
+    throw new Error("Enter a non-negative shipping amount in MYR with at most two decimal places.");
+  }
+  const [whole, fraction = ""] = value.split(".");
+  const cents = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
+  if (!Number.isSafeInteger(cents)) throw new Error("Shipping amount is too large.");
+  return cents;
+}
+
+const EMPTY: SettingsForm = {
+  storeName: "Elvane",
   logoUrl: "",
   storeCoverUrl: "",
   storeGalleryUrls: [],
@@ -44,8 +59,8 @@ const EMPTY: UpdateStoreSettingsInput = {
   countryCode: "MY",
   currency: "MYR",
   timeZone: "Asia/Kuala_Lumpur",
-  standardShippingCents: 0,
-  freeShippingThresholdCents: 0,
+  standardShippingMyr: "0.00",
+  freeShippingFromMyr: "0.00",
   estimatedDelivery: "",
   deliveryPolicy: "",
   returnWindowDays: 0,
@@ -62,30 +77,35 @@ const EMPTY: UpdateStoreSettingsInput = {
 };
 
 export function StoreSettingsManager() {
-  const [form, setForm] = useState<UpdateStoreSettingsInput>(EMPTY);
+  const [form, setForm] = useState<SettingsForm>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [initialForm, setInitialForm] = useState<SettingsForm | null>(null);
 
   useEffect(() => {
     void fetch("/api/staff/settings", { cache: "no-store" })
       .then(async (response) => {
         const payload = (await response.json().catch(() => null)) as StoreSettings | null;
         if (!response.ok || !payload) throw new Error((payload as { message?: string } | null)?.message ?? "Unable to load store settings.");
-        const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...editable } = payload;
-        setForm({
+        const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, standardShippingCents, freeShippingThresholdCents, ...editable } = payload;
+        const nextForm = {
           ...EMPTY,
           ...editable,
+          standardShippingMyr: (standardShippingCents / 100).toFixed(2),
+          freeShippingFromMyr: (freeShippingThresholdCents / 100).toFixed(2),
           storeGalleryUrls: normalizeGallery(editable.storeGalleryUrls),
-        });
+        };
+        setForm(nextForm);
+        setInitialForm(nextForm);
       })
       .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Unable to load store settings."))
       .finally(() => setLoading(false));
   }, []);
 
-  function set<K extends keyof UpdateStoreSettingsInput>(key: K, value: UpdateStoreSettingsInput[K]) {
+  function set<K extends keyof SettingsForm>(key: K, value: SettingsForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
@@ -115,13 +135,20 @@ export function StoreSettingsManager() {
     setMessage(null);
     setError(null);
     try {
+      const { standardShippingMyr, freeShippingFromMyr, ...settings } = form;
+      const body: UpdateStoreSettingsInput = {
+        ...settings,
+        standardShippingCents: shippingCents(standardShippingMyr),
+        freeShippingThresholdCents: shippingCents(freeShippingFromMyr),
+      };
       const response = await fetch("/api/staff/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) throw new Error(payload?.message ?? "Unable to save store settings.");
+      setInitialForm(form);
       setMessage("Store settings saved. Customer information is now shared by Web and Flutter.");
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : "Unable to save store settings.");
@@ -130,7 +157,22 @@ export function StoreSettingsManager() {
     }
   }
 
-  const input = (label: string, key: keyof UpdateStoreSettingsInput, options?: { type?: string; required?: boolean; maxLength?: number; hint?: string }) => (
+  const isDirty = initialForm !== null && JSON.stringify(initialForm) !== JSON.stringify(form);
+
+  const completion = {
+    brand: Boolean(form.storeName.trim() && form.storeDescription.trim()),
+    contact: Boolean(form.contactEmail.trim()),
+    commerce: Boolean(form.currency.trim() && form.timeZone.trim()),
+    delivery: Boolean(form.estimatedDelivery.trim() || form.deliveryPolicy.trim()),
+    returns: Boolean(Number(form.returnWindowDays) > 0 || form.returnsPolicy.trim()),
+    content: Boolean(form.faqContent.trim() || form.termsContent.trim() || form.privacyContent.trim()),
+    social: Boolean(form.instagramUrl.trim() || form.facebookUrl.trim() || form.tiktokUrl.trim()),
+  };
+
+  const completeCount = Object.values(completion).filter(Boolean).length;
+  const totalSections = Object.keys(completion).length;
+
+  const input = (label: string, key: keyof SettingsForm, options?: { type?: string; required?: boolean; maxLength?: number; hint?: string }) => (
     <label className={styles.field}>
       <span>{label}</span>
       <input
@@ -151,7 +193,26 @@ export function StoreSettingsManager() {
     </label>
   );
 
-  const textarea = (label: string, key: keyof UpdateStoreSettingsInput, rows = 5) => (
+  const shippingInput = (label: string, key: "standardShippingMyr" | "freeShippingFromMyr", hint: string) => (
+    <label className={styles.field}>
+      <span>{label}</span>
+      <input
+        type="number"
+        inputMode="decimal"
+        min="0"
+        step="0.01"
+        required
+        value={form[key]}
+        onChange={(event) => set(key, event.target.value)}
+        onBlur={() => {
+          if (/^\d+(?:\.\d{1,2})?$/.test(form[key])) set(key, Number(form[key]).toFixed(2));
+        }}
+      />
+      <small className={styles.hint}>{hint}</small>
+    </label>
+  );
+
+  const textarea = (label: string, key: keyof SettingsForm, rows = 5) => (
     <label className={`${styles.field} ${styles.full}`}>
       <span>{label}</span>
       <textarea rows={rows} value={String(form[key])} onChange={(e) => set(key, e.target.value as never)} />
@@ -161,24 +222,52 @@ export function StoreSettingsManager() {
   return (
     <main className={consoleStyles.shell}>
       <StaffNav active="settings" />
-      <header className={consoleStyles.header}>
-        <div>
-          <span className={consoleStyles.eyebrow}>STORE SETTINGS</span>
-          <h1>Shop configuration</h1>
-          <p>Manage public store details, customer support content, commerce defaults, and contact information from one place.</p>
-        </div>
-      </header>
+      <div className={`${consoleStyles.staffWorkspace} ${styles.workspace}`}>
+        <header className={consoleStyles.header}>
+          <div>
+            <span className={consoleStyles.eyebrow}>STORE SETTINGS</span>
+            <h1>Store configuration</h1>
+            <p>One source of truth for your public brand, support details, commerce defaults, delivery, returns, and customer information.</p>
+          </div>
+          <div className={styles.headerStatus}>
+            <span>{completeCount}/{totalSections} sections configured</span>
+            <strong className={isDirty ? styles.unsaved : styles.saved}>
+              {isDirty ? "Unsaved changes" : "Up to date"}
+            </strong>
+          </div>
+        </header>
 
-      {loading ? <div className={consoleStyles.empty}>Loading settings…</div> : null}
-      {!loading ? (
-        <form className={styles.form} onSubmit={submit}>
-          <section className={styles.section}>
+        {loading ? <div className={consoleStyles.empty}>Loading settings…</div> : null}
+        {!loading ? (
+          <div className={styles.layout}>
+            <aside className={styles.sectionNav}>
+              <span className={styles.navTitle}>Settings</span>
+              {[
+                ["brand", "Brand & profile", completion.brand],
+                ["contact", "Contact", completion.contact],
+                ["commerce", "Commerce", completion.commerce],
+                ["delivery", "Delivery", completion.delivery],
+                ["returns", "Returns", completion.returns],
+                ["content", "Customer pages", completion.content],
+                ["social", "Social links", completion.social],
+              ].map(([id, label, complete]) => (
+                <a href={`#settings-${id}`} key={String(id)}>
+                  <span>{String(label)}</span>
+                  <b className={complete ? styles.navComplete : styles.navIncomplete}>
+                    {complete ? "Ready" : "Review"}
+                  </b>
+                </a>
+              ))}
+            </aside>
+
+            <form className={styles.form} onSubmit={submit}>
+          <section id="settings-brand" className={styles.section}>
             <h2>Brand & public store profile</h2>
             <div className={styles.grid}>
               {input("Store name", "storeName", { required: true })}
               <div className={`${styles.full} ${styles.logoManager}`}>
                 <span className={styles.photoLabel}>Store logo</span>
-                <p>Upload the logo customers should see across TextShop. The image URL is managed automatically.</p>
+                <p>Upload the logo customers should see across Elvane. The image URL is managed automatically.</p>
                 {form.logoUrl ? (
                   <div className={styles.logoPreview}>
                     <img src={form.logoUrl} alt="Current store logo" />
@@ -204,7 +293,7 @@ export function StoreSettingsManager() {
             </div>
           </section>
 
-          <section className={styles.section}>
+          <section id="settings-contact" className={styles.section}>
             <h2>Contact</h2>
             <div className={styles.grid}>
               {input("Contact email", "contactEmail", { type: "email", required: true })}
@@ -212,7 +301,7 @@ export function StoreSettingsManager() {
             </div>
           </section>
 
-          <section className={styles.section}>
+          <section id="settings-commerce" className={styles.section}>
             <div className={styles.sectionHeading}>
               <div><span className={styles.kicker}>COMMERCE</span><h2>Commerce defaults</h2></div>
               <p>System-level defaults used by pricing, checkout, and store operations.</p>
@@ -223,20 +312,20 @@ export function StoreSettingsManager() {
             </div>
           </section>
 
-          <section className={styles.section}>
+          <section id="settings-delivery" className={styles.section}>
             <div className={styles.sectionHeading}>
               <div><span className={styles.kicker}>DELIVERY</span><h2>Delivery settings</h2></div>
               <p>Configure customer-facing shipping prices, eligibility, timing, and delivery guidance.</p>
             </div>
             <div className={styles.grid}>
-              {input("Standard shipping (cents)", "standardShippingCents", { type: "number", required: true, hint: `Customer sees ${form.currency || "MYR"} ${(Number(form.standardShippingCents || 0) / 100).toFixed(2)}.` })}
-              {input("Free shipping threshold (cents)", "freeShippingThresholdCents", { type: "number", required: true, hint: Number(form.freeShippingThresholdCents || 0) > 0 ? `Free delivery from ${form.currency || "MYR"} ${(Number(form.freeShippingThresholdCents) / 100).toFixed(2)}.` : "Set 0 to hide the free-delivery threshold." })}
+              {shippingInput("Standard shipping fee (MYR)", "standardShippingMyr", "Enter the shipping fee in RM, for example 8.00.")}
+              {shippingInput("Free shipping from (MYR)", "freeShippingFromMyr", "Enter the order amount in RM, for example 150.00. Set 0.00 to hide the free-delivery threshold.")}
               {input("Estimated delivery", "estimatedDelivery", { maxLength: 120, hint: "Example: 2–5 business days after dispatch." })}
               {textarea("Delivery information", "deliveryPolicy", 6)}
             </div>
           </section>
 
-          <section className={styles.section}>
+          <section id="settings-returns" className={styles.section}>
             <div className={styles.sectionHeading}>
               <div><span className={styles.kicker}>RETURNS</span><h2>Returns settings</h2></div>
               <p>Define the structured rules customers see before reading the full returns information.</p>
@@ -249,7 +338,7 @@ export function StoreSettingsManager() {
             </div>
           </section>
 
-          <section className={styles.section}>
+          <section id="settings-content" className={styles.section}>
             <h2>Customer information pages</h2>
             <div className={styles.grid}>
               {textarea("FAQ", "faqContent", 8)}
@@ -259,7 +348,7 @@ export function StoreSettingsManager() {
             </div>
           </section>
 
-          <section className={styles.section}>
+          <section id="settings-social" className={styles.section}>
             <h2>Social links</h2>
             <div className={styles.grid}>
               {input("Instagram URL", "instagramUrl")}
@@ -269,12 +358,18 @@ export function StoreSettingsManager() {
           </section>
 
           <div className={styles.actions}>
-            <button type="submit" disabled={saving}>{saving ? "Saving…" : "Save settings"}</button>
+            <div>
+              <strong>{isDirty ? "You have unsaved changes." : "All store settings are saved."}</strong>
+              <span>Updates are shared with customer-facing Web and Flutter where applicable.</span>
+            </div>
+            <button type="submit" disabled={saving || !isDirty}>{saving ? "Saving…" : "Save settings"}</button>
             {message ? <span className={styles.success}>{message}</span> : null}
             {error ? <span className={styles.error}>{error}</span> : null}
           </div>
-        </form>
-      ) : null}
+            </form>
+          </div>
+        ) : null}
+      </div>
     </main>
   );
 }

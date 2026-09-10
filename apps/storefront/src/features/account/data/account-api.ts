@@ -73,8 +73,8 @@ export async function logoutCustomer() {
   });
 
   if (typeof window !== "undefined") {
-    window.localStorage.removeItem("textshop.cart.session");
-    window.dispatchEvent(new CustomEvent("textshop:auth-signed-out"));
+    window.localStorage.removeItem("elvane.cart.session");
+    window.dispatchEvent(new CustomEvent("elvane:auth-signed-out"));
   }
 }
 

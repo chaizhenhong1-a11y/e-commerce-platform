@@ -1,3 +1,243 @@
+## 0.52.63 - Fix active Staff Delivery currency inputs
+
+- Fixed the Store Settings component actually imported by `/staff/settings` (`src/features/staff/components/store-settings.tsx`); the earlier currency-input change was in an unused duplicate.
+- Delivery now shows `Standard shipping fee (MYR)` and `Free shipping from (MYR)`, with two-decimal RM inputs such as `8.00` and `150.00`.
+- Convert API cents to RM on load and convert RM to integer cents only on PATCH submission (`8.00` to `800`, `150.00` to `15000`). Reject blank, negative, or over-precision amounts; preserve zero-threshold behavior and unsaved-change tracking.
+- No database schema, Stripe, checkout, payment return, refund, or payment reconciliation changes.
+
+## 0.52.62 - Phase 055.47.3: Merchant-friendly Delivery & Returns settings
+
+- Reworked Staff → Store Settings → Delivery so merchants enter normal currency amounts instead of raw cents.
+- `Standard shipping fee` now displays values such as `8.00` while preserving the existing integer-cents API/database contract internally.
+- `Free shipping from` now displays values such as `150.00`; the UI converts them to cents only when updating the existing settings state.
+- Kept `Return window (days)` clearly visible in the Returns section for the dynamic storefront announcement bar.
+- Added clearer merchant-facing delivery guidance without changing the underlying Store Settings schema.
+- No Prisma migration, API schema change, Stripe, checkout, payment-return, reconciliation, refund processing, or Flutter payment changes.
+
+## 0.52.61 - Phase 055.47.2: Dynamic Storefront Announcement Bar
+
+- Removed the hardcoded `Free delivery over RM150` and `Easy 14-day returns` messages from the customer Web announcement bar.
+- The free-delivery message now reads the live `freeShippingThresholdCents` and `currency` values from the existing public Store Settings source.
+- The returns message now reads the live `returnWindowDays` value from the same Store Settings source.
+- Added safe fallback announcement copy when Store Settings cannot be loaded or the corresponding threshold/window is not configured.
+- `Secure checkout` remains a fixed system message.
+- Staff changes to shipping threshold or return window now flow through to the Web announcement bar without another storefront code edit.
+- Reused the existing `getStoreInfo()` contract; no API, Prisma, database, Stripe, checkout, payment-return, reconciliation, refund, return-processing, or Flutter payment code changed.
+
+## 0.52.60 - Phase 055.47.1: Customer Hero Palette Hotfix
+
+- Removed the brown/chocolate palette introduced in the 055.47 homepage hero visual.
+- Restored the storefront's established black / charcoal / white / neon-lime visual language.
+- Kept the existing hero layout and copy while changing only the visual palette and glass-card accents.
+- No photos or image assets were added or generated for the project.
+- No Staff, API, Prisma, database, Stripe, checkout, payment-return, reconciliation, refund, return, or Flutter payment code changed.
+
+## 0.52.59 - Phase 055.47: Customer Web Storefront Professionalization
+
+- Refined the customer-facing Web storefront using the current local storefront as the authoritative baseline.
+- Reworked the homepage hero into a cleaner commerce-first editorial composition and removed decorative fake product-number objects.
+- Replaced unsupported promotional promises in homepage cards and trust messaging with durable catalog, store-information, inventory, checkout, and support messaging.
+- Improved catalog filter presentation, mobile behavior, product-card hierarchy, image treatment, category labeling, and explicit `View` product actions.
+- Product cards no longer invent a `New` badge when the catalog has no real badge value.
+- Removed hardcoded product-detail brand, free-shipping threshold, delivery estimate, and 14-day return promises; product pages now route customers to the store's real Delivery and Returns information instead.
+- Improved product-page delivery/returns information cards and retained the existing live variants, stock, wishlist, cart, and review flows.
+- No API schema, Prisma migration, database, Staff workflow, Stripe, checkout, payment-return, reconciliation, refund-provider, return-processing, or Flutter payment code changed.
+
+## 0.52.58 - Phase 055.46: Web Staff Console Final UI Unification
+
+- Finalized the shared Web Staff Console presentation using the current post-055.45 codebase as the authoritative source, avoiding rollback of Catalog, Inventory, Categories, Promotions, Orders, Returns, Refunds, and Store Settings work.
+- Standardized Staff page headers, descriptions, primary/secondary header actions, spacing, focus states, form-control interaction states, empty states, success/error presentation, and mobile behavior.
+- Improved desktop and mobile navigation feedback and added `aria-current="page"` to the active Staff destination for clearer accessibility semantics.
+- Added consistent keyboard focus treatment across Staff links, buttons, inputs, selects, and text areas, plus reduced-motion support.
+- Preserved the dedicated Staff shell and existing route-marker architecture; customer storefront chrome remains isolated from `/staff`.
+- This phase is shared Staff UI polish only: no API schema, Prisma migration, database, Stripe, checkout, payment-return, reconciliation, refund-provider, return-processing, or Flutter payment code changed.
+
+## 0.52.57 - Phase 055.45: Professional Web Staff Store Settings Workspace
+
+- Reworked Store Settings into a structured professional workspace while preserving the existing settings API and StoreSettings data model.
+- Added a sticky section navigator for Brand & Profile, Contact, Commerce, Delivery, Returns, Customer Pages, and Social Links.
+- Added per-section readiness indicators and an overall configuration progress summary so staff can quickly spot incomplete public-store information.
+- Added explicit dirty-state tracking with `Unsaved changes` / `Up to date` status and disabled unnecessary saves when nothing changed.
+- Replaced the plain footer action row with a persistent save bar that clearly communicates whether changes still need to be saved.
+- Preserved real logo upload, multi-location management, shipping amounts, delivery guidance, structured returns settings, customer information pages, and social links.
+- Store Settings remains the single source of truth shared by the Staff API/PostgreSQL and customer-facing Web/Flutter where applicable.
+- No API schema, Prisma migration, database, Stripe, checkout, payment-return, reconciliation, refund-provider, return-processing, or Flutter payment code changed.
+
+## 0.52.56 - Phase 055.44: Professional Web Staff Promotions Workspace
+
+- Reworked coupon and automatic-discount management into a unified professional Staff Promotions workspace while preserving the existing promotion APIs and checkout rules.
+- Added operational summary metrics, lifecycle separation, clearer campaign switching, and a dedicated coupon campaign directory.
+- Coupon campaigns now expose discount value, redemption usage, minimum subtotal, catalog scope, schedule, and current lifecycle state at a glance.
+- Added coupon search and Active / Inactive / All views so retired campaigns no longer clutter normal promotion operations.
+- Automatic discounts now use the same lifecycle structure and expose active, inactive, catalog-wide, and scoped campaign counts.
+- Preserved existing server-authoritative discount evaluation, coupon/automatic best-discount selection, usage limits, schedules, product/category scopes, historical order snapshots, and deactivation behavior.
+- No API schema, Prisma migration, database, Stripe, checkout, payment-return, reconciliation, refund-provider, return-processing, or Flutter payment code changed.
+
+## 0.52.55 - Phase 055.43: Professional Web Staff Categories Workspace
+
+- Rebuilt Web Staff Categories into a structured category-management workspace using the existing real category API.
+- Added live category summary metrics for total, active, inactive, product assignments, and empty categories.
+- Added dedicated Active, Inactive, and All lifecycle views so retired categories do not clutter the normal operating view.
+- Added name/slug search, explicit storefront sort priority, customer-visibility status, and one-click activate/deactivate controls.
+- Improved category creation/editing with automatic slug generation, clearer storefront visibility language, and sort-order guidance.
+- Strengthened deletion safety in the UI: categories containing products cannot be deleted and are directed to deactivation instead; only empty categories expose permanent deletion.
+- Preserved the existing `/api/staff/categories` create/update/delete contract and existing product/category relationships.
+- No API schema, Prisma migration, database, Stripe, checkout, payment-return, reconciliation, refund-provider, return-processing, or Flutter payment code changed.
+
+## 0.52.54 - Phase 055.42.2: Catalog Lifecycle Separation
+
+- Separated Active Catalog, Drafts, Archived, and All Products into explicit lifecycle views in the Web Staff Catalog.
+- The Catalog now opens on `Active catalog` by default so archived products are no longer mixed into the merchant's normal product-management view.
+- Archived products remain fully accessible under the dedicated `Archived` view, while Draft products stay separate from live products.
+- The existing search, low-stock filter, product photos, publish/unpublish, featured state, variant controls, and inventory adjustments are preserved.
+- Web Staff UI-only change; no API, Prisma, database, Stripe, checkout, payment-return, reconciliation, refund-provider, return-processing, or Flutter code changed.
+
+## 0.52.53 - Phase 055.42.1: Catalog CSS Restore Hotfix
+
+- Restored the Phase 055.42 Staff Catalog layout styles after the later 055.41.3 Orders hotfix overwrote the shared `staff-console.module.css` with an older copy.
+- Restores the Catalog summary cards, filter toolbar, two-column product cards, constrained product media, variant panels, and responsive layout.
+- Keeps the Orders photo UI styles from the current shared stylesheet baseline.
+- No API, Prisma, database, Stripe, checkout, payment-return, reconciliation, refund-provider, return-processing, or Flutter code changed.
+
+## 0.52.52 - Phase 055.41.3: Staff Orders Product Photo Scope Hotfix
+
+- Fixed the Staff Orders image resolver so its lookup maps are created inside `getStaffOrders`, the same method that consumes them.
+- Resolved the TypeScript `Cannot find name 'imageByVariantId'` / `imageBySku` build errors from the previous image patch.
+- Product photo lookup now uses valid OrderItem `variantId` first, falls back by SKU, and then selects variant-specific or product-level primary/default ProductImage records.
+- Added `imageUrl` and `imageAltText` to the Staff Orders response and renders the existing real catalog image beside each order item.
+- No Prisma migration and no Stripe, checkout, payment-return, reconciliation, refund-provider, return-processing, or Flutter payment code changed.
+
+## 0.52.51 - Phase 055.42: Professional Web Staff Catalog Workspace
+
+- Rebuilt the Web Staff Catalog into a product-focused operational workspace with real product photos, product status, featured state, pricing, SKU counts, availability, and reserved stock visible at a glance.
+- Added catalog summary metrics for products, active products, SKUs, available units, and low-stock SKUs using the existing staff catalog response.
+- Added clearer search/status/low-stock filtering and a compact result header.
+- Product cards now use the existing ProductImage primary/default photo, with a `No image` fallback only when the catalog has no image.
+- Moved variant and stock detail into expandable per-product sections while preserving the existing SKU enable/disable and audited inventory adjustment workflows.
+- Preserved existing product create/edit, publish/unpublish, featured-product, inventory history, and adjustment endpoints.
+- Web Staff UI only: no Prisma migration and no Stripe, checkout, payment-return, reconciliation, refund-provider, return-processing, or Flutter payment code changed.
+
+## 0.52.50 - Phase 055.41.2: Staff Order Photo Resolution Hotfix
+
+- Fixed Staff Orders product thumbnails against the confirmed database shape: OrderItem has valid `variantId` and SKU snapshots while most ProductImage rows are product-level with a null `variantId`.
+- Staff order image resolution now matches by current variant ID first, falls back by SKU, then selects a variant image or the product primary/default image.
+- Existing ProductImage URLs are reused directly; no image re-upload and no Prisma migration are required.
+- No Stripe, checkout, payment-return, payment reconciliation, refund-provider, return-processing, or Flutter payment code changed.
+
+## 0.52.48 - Phase 055.41: Professional Web Staff Orders Console
+
+- Reorganized the Web Staff Orders workspace around the actual fulfillment workflow with dedicated views for All Orders, Awaiting Payment, Ready to Fulfill, Processing, Shipped, Delivered, Fulfilled, and Cancelled.
+- Added a one-click `Ready to fulfill` operational preset that combines `CONFIRMED` order status with `PAID` payment status without changing any payment logic.
+- Separated order status and payment status visually on every order card so fulfillment state can no longer be confused with financial state.
+- Improved order search and advanced filters, added clear/reset behavior, visible result counts, and a more useful empty state.
+- Preserved the existing process, ship, tracking, deliver, order-detail, return, and refund signals and actions.
+- This phase is Web Staff UI-only: no API, Prisma, database, Stripe, checkout, payment-return, reconciliation, refund-provider, return-processing, or Flutter code changed.
+
+## 0.52.47 - Phase 055.40: Operational Staff Overview Dashboard
+
+- Rebuilt the Web Staff Overview into a real operating dashboard backed by the existing PostgreSQL commerce data.
+- Added a focused sales snapshot for today and the current month, including net sales, paid-order counts, average order value, and completed refunds.
+- Added actionable operations queues for paid orders ready to fulfill, active returns, refund requests awaiting staff review, low-stock variants, and out-of-stock variants.
+- Added recent orders with direct order-detail links and a top-selling products panel based on paid-order item quantities and sales value.
+- Added store-management shortcuts for Orders, Inventory, Catalog, and Store Settings while keeping Overview as the Staff Console landing page.
+- Extended the existing staff order summary response only; no new database table or Prisma migration is required.
+- No checkout, Stripe launch/return, payment reconciliation, payment state machine, refund provider execution, return processing, or Flutter code changed.
+
+## 0.52.46 - Phase 055.39.4: Staff Console entry route fix
+
+- Fixed the Web account `Staff operations` entry so opening Staff Console now lands on `/staff` Overview instead of `/staff/returns`.
+- Returns remains available only when staff deliberately selects Returns from the Staff navigation.
+- Preserved the existing `/staff` StaffDashboard, sidebar navigation, Inventory work, orders, returns, refunds, catalog, and settings behavior.
+- No API, Prisma, database, payment, Stripe, reconciliation, refund-processing, return-processing, order-state, or Flutter code changed.
+
+## 0.52.45 - Phase 055.39.3: Separate Active and Archived inventory
+
+- Split the Web Staff Inventory workspace into dedicated `Active Inventory` and `Archived` views instead of mixing archived products into the operating inventory list.
+- `Active Inventory` is now the default operational view; archived product SKUs are visible only after switching to `Archived`.
+- Inventory summary cards and stock-state filters now calculate against the selected lifecycle view so archived stock cannot distort active operating totals.
+- Added lifecycle SKU counts to the two inventory tabs while preserving product thumbnails, SKU search, stock-state filters, adjustment history, and manual stock corrections.
+- Draft products remain outside both operational inventory views; their product setup continues to be managed from Catalog.
+- No API, Prisma, database migration, payment, Stripe, reconciliation, refund, return, order-state, or Flutter code changed.
+
+## 0.52.44 - Phase 055.39.2: Inventory image data hotfix
+
+- Fixed the Staff catalog list source used by `/staff/inventory` so it now includes each product's existing image records.
+- Inventory thumbnails can now resolve variant-specific images first and fall back to the product primary image using the existing Phase 055.39.1 presentation logic.
+- Reused existing ProductImage records and media URLs; no image re-upload, new endpoint, Prisma migration, or database schema change is required.
+- Kept inventory quantities, adjustment history, stock filters, and manual stock adjustment behavior unchanged.
+- No payment, Stripe, reconciliation, refund, return, order-state, or Flutter code changed.
+
+## 0.52.43 - Phase 055.39.1: Inventory product thumbnail hotfix
+
+- Added product thumbnails to every Web Staff Inventory SKU row.
+- Inventory now prefers a variant-specific primary image, then any variant-specific image, then the product primary image, with a clean no-image fallback.
+- Reused the existing Staff catalog `images` data; no media upload, API, database, or Prisma changes are required.
+- Kept all inventory quantities, adjustment history, stock filtering, and manual adjustment behavior unchanged.
+- No payment, Stripe, reconciliation, refund, return, order-state, or Flutter code changed.
+
+## 0.52.42 - Phase 055.39: Web Staff Inventory Console
+
+- Added a dedicated `/staff/inventory` workspace and Inventory navigation under Products.
+- Added live SKU-level on-hand, reserved, available, low-stock and out-of-stock visibility using the existing catalog inventory data.
+- Added product/SKU search, stock-state filters, manual positive/negative stock adjustment with reasons, and per-SKU inventory history.
+- Reused the existing Staff inventory adjustment/history APIs and PostgreSQL inventory records; no Prisma migration was required.
+- No payment, Stripe, reconciliation, refund, return, order-state, or Flutter code changed.
+
+## 0.52.41 - Phase 055.38: Web Staff operations UI normalization
+
+- Unified Web Staff Orders and Refunds around the same constrained admin workspace used by the repaired Returns console.
+- Rebuilt the Refund approvals filter/action presentation into a clear review toolbar and explicit approve/reject action area without changing refund request or provider behavior.
+- Tightened Orders search/status/payment filters and responsive layout while preserving all existing order transitions and shipping actions.
+- Polished Store Settings panels and form focus states so Settings visually belongs to the same Staff Console system.
+- Preserved the current Staff sidebar, Returns layout baseline, and all existing Staff routes.
+- No API, Prisma, payment, Stripe, reconciliation, refund state-machine, return state-machine, or Flutter code changed.
+
+## 0.52.40 - Phase 055.37.4: Staff Returns layout and Storefront chrome hotfix
+
+- Fixed `/staff/returns` so it uses the same shared Staff two-column shell as the rest of the Web admin instead of placing the Staff sidebar inside the Returns page's old standalone max-width container.
+- Returns content now stays entirely in the Staff content column; long order numbers and metadata can no longer push or overlap the sidebar.
+- Restored the customer Storefront visual order so the footer remains after page content instead of streaming above the header/content.
+- `/staff/**` continues to hide customer announcement, header, category navigation, and footer while keeping the dedicated Staff sidebar.
+- Preserved the Phase 055.37.1 sidebar viewport containment behavior.
+- No return-state transitions, refund provider calls, payment flow, Stripe return handling, reconciliation, API payment logic, Prisma schema, or Flutter code changed.
+
+## 0.52.38 - Phase 055.37.2: Async StorefrontFooter boundary hotfix
+
+- Fixed the Next.js runtime error reporting `<StorefrontFooter>` as an async Client Component after the dedicated Staff shell refactor.
+- `StorefrontFooter` is now rendered by the server `RootLayout` and passed into the client-side route chrome as an already-rendered React node.
+- `AppChrome` no longer imports the async server footer, preserving the `/staff/**` route split without crossing the Server/Client Component boundary.
+- Preserved the dedicated Staff shell, sidebar containment fix, Returns workflow behavior, Web/Flutter payments, Stripe return handling, reconciliation, API payment logic, and Flutter code.
+
+## 0.52.37 - Phase 055.37.1: Staff sidebar viewport containment hotfix
+
+- Fixed the desktop Staff sidebar being taller than the usable browser viewport and clipping the bottom `View store` / merchant workspace area.
+- Sidebar height now uses `100dvh` with border-box sizing, while only the navigation list scrolls when the browser window is short.
+- Kept the Staff brand and footer pinned inside the sidebar instead of allowing them to be pushed outside the visible panel.
+- Preserved the dedicated `/staff/**` shell introduced in Phase 055.37 and did not change Returns workflow behavior, Web/Flutter payments, Stripe return handling, reconciliation, API payment logic, or Flutter code.
+
+## 0.52.36 - Phase 055.37: Dedicated Web Staff application shell
+
+- Separated every `/staff` route from the customer Storefront chrome so Staff pages no longer render the announcement bar, product search, account/cart actions, category navigation, or customer footer.
+- Added a route-aware Web application chrome that preserves the existing customer Storefront exactly outside `/staff` while giving Staff Console its own independent workspace surface.
+- Kept the Phase 055.36.1 contained sticky Staff sidebar and responsive mobile Staff navigation as the dedicated admin navigation system.
+- `View store` remains the explicit path back to the customer Storefront.
+- Web Staff layout only: no Flutter, API, Prisma, checkout, Stripe, payment-return, payment reconciliation, provider, refund-processing, or order-payment state logic changed.
+
+## 0.52.35 - Phase 055.36.1: Staff sidebar layout containment hotfix
+
+- Changed the Web Staff sidebar from viewport-fixed positioning to a sticky sidebar contained inside the Staff workspace.
+- The customer Storefront header and navigation now keep their full width and are no longer covered by the Staff sidebar.
+- Staff content now uses a two-column workspace grid with a responsive mobile fallback, preserving all existing Staff routes and actions.
+- No Flutter, API, database, checkout, Stripe, payment reconciliation, refund processing, or payment-return behavior changed.
+
+## 0.52.34 - Phase 055.36: Web Staff Console navigation architecture
+
+- Reorganized the Web Staff Console from a flat eight-link navigation bar into a persistent professional sidebar grouped by Workspace, Commerce, Products, and Store.
+- Added clear TextShop Staff Console identity, compact section markers, active navigation treatment, and a dedicated `View store` exit action.
+- Added a responsive mobile Staff bar so the same information architecture remains usable on narrow screens without consuming permanent sidebar width.
+- Preserved every existing Staff route and feature: Overview, Orders, Returns, Refunds, Catalog, Categories, Promotions, and Store Settings.
+- This phase is Web Staff UI/navigation only. Flutter, Stripe checkout, payment return, payment reconciliation, payment provider/API behavior, refund processing logic, Prisma, and customer-facing payment flows are untouched.
+
 ## 0.52.33 - Phase 055.35.3: Web Stripe return parity hotfix
 
 - Fixed the Web Stripe success redirect 404 by adding a Storefront-owned lightweight `/payment-return.html`; this is a Web asset and does not modify Flutter.

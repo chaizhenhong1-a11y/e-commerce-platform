@@ -74,6 +74,8 @@ export function PromotionsManager() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [lifecycle, setLifecycle] = useState<"ACTIVE" | "INACTIVE" | "ALL">("ACTIVE");
 
   const load = useCallback(async () => {
     const [couponResponse, productResponse, categoryResponse] = await Promise.all([
@@ -93,6 +95,32 @@ export function PromotionsManager() {
   useEffect(() => {
     void load().catch((cause) => setError(cause instanceof Error ? cause.message : "Unable to load promotions."));
   }, [load]);
+
+  const now = Date.now();
+  const couponSummary = useMemo(() => ({
+    total: coupons.length,
+    active: coupons.filter((item) => item.isActive).length,
+    inactive: coupons.filter((item) => !item.isActive).length,
+    scheduled: coupons.filter((item) => item.isActive && item.startsAt && new Date(item.startsAt).getTime() > now).length,
+    redemptions: coupons.reduce((sum, item) => sum + item._count.redemptions, 0),
+  }), [coupons, now]);
+
+  const visibleCoupons = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return coupons.filter((item) => {
+      if (lifecycle === "ACTIVE" && !item.isActive) return false;
+      if (lifecycle === "INACTIVE" && item.isActive) return false;
+      return !needle || item.code.toLowerCase().includes(needle) || item.name.toLowerCase().includes(needle);
+    });
+  }, [coupons, lifecycle, query]);
+
+  const couponState = (item: Coupon) => {
+    if (!item.isActive) return "Inactive";
+    const current = Date.now();
+    if (item.startsAt && new Date(item.startsAt).getTime() > current) return "Scheduled";
+    if (item.endsAt && new Date(item.endsAt).getTime() < current) return "Expired";
+    return "Active";
+  };
 
   const scopeLabel = useMemo(() => {
     if (draft.productIds.length === 0 && draft.categoryIds.length === 0) return "All products";
@@ -181,7 +209,15 @@ export function PromotionsManager() {
 
   return <main className={styles.shell}>
     <StaffNav active="promotions" />
-    <header className={styles.header}><div><span className={styles.eyebrow}>PROMOTIONS</span><h1>Coupons</h1><p>Create server-authoritative checkout discounts with usage limits, schedules, and catalog scopes.</p><Link href="/staff/promotions/automatic">Manage automatic discounts</Link></div></header>
+    <div className={`${styles.staffWorkspace} ${styles.promotionWorkspace}`}>
+    <header className={styles.header}><div><span className={styles.eyebrow}>PROMOTIONS</span><h1>Coupons</h1><p>Create controlled coupon campaigns with schedules, usage limits, and catalog scopes.</p></div><Link className={styles.promotionSwitch} href="/staff/promotions/automatic">Automatic discounts →</Link></header>
+    <section className={styles.promotionSummary} aria-label="Coupon summary">
+      <div><span>Total coupons</span><strong>{couponSummary.total}</strong></div>
+      <div><span>Active</span><strong>{couponSummary.active}</strong></div>
+      <div><span>Inactive</span><strong>{couponSummary.inactive}</strong></div>
+      <div><span>Scheduled</span><strong>{couponSummary.scheduled}</strong></div>
+      <div><span>Redemptions</span><strong>{couponSummary.redemptions}</strong></div>
+    </section>
     {error ? <div className={styles.error}>{error}</div> : null}
     {success ? <div className={styles.success}>{success}</div> : null}
 
@@ -217,10 +253,30 @@ export function PromotionsManager() {
       <aside className={styles.panel}><h2>Commercial safety</h2><p className={styles.muted}>Coupon discounts are snapshotted onto the order. Changing or deactivating a coupon never rewrites historical orders. Cancelled and expired orders do not permanently consume usage limits.</p></aside>
     </section>
 
-    <section className={styles.panelSection}>
-      <div className={styles.panelHeading}><div><h2>Configured coupons</h2><p>{coupons.length} promotions</p></div></div>
-      <div className={styles.categoryRows}>{coupons.map((item)=><article className={styles.categoryRow} key={item.id}><div><strong>{item.code}</strong><span>{item.name} · {item.discountType === "PERCENTAGE" ? `${item.value}%` : `RM ${(item.value/100).toFixed(2)}`}</span></div><div><strong>{item.isActive ? "ACTIVE" : "INACTIVE"}</strong><span>{item._count.redemptions} redemption record{item._count.redemptions===1?"":"s"}</span></div><div className={styles.actions}><button type="button" onClick={()=>edit(item)}>Edit</button>{item.isActive ? <button type="button" disabled={busy} onClick={()=>void deactivate(item.id)}>Deactivate</button> : null}</div></article>)}</div>
-      {!coupons.length ? <div className={styles.empty}>No coupons configured yet.</div> : null}
+    <section className={`${styles.panelSection} ${styles.promotionDirectory}`}>
+      <div className={styles.promotionDirectoryHeader}><div><span className={styles.eyebrow}>CAMPAIGN DIRECTORY</span><h2>Configured coupons</h2><p>{visibleCoupons.length} shown from {coupons.length} coupons</p></div><button className={styles.secondaryButton} type="button" onClick={()=>void load()}>Refresh</button></div>
+      <div className={styles.promotionLifecycleTabs}>
+        {([["ACTIVE",`Active (${couponSummary.active})`],["INACTIVE",`Inactive (${couponSummary.inactive})`],["ALL",`All (${couponSummary.total})`]] as const).map(([value,label])=><button type="button" key={value} className={lifecycle===value?styles.promotionLifecycleActive:""} onClick={()=>setLifecycle(value)}>{label}</button>)}
+      </div>
+      <label className={styles.promotionSearch}><span>Search coupons</span><input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Coupon code or campaign name" /></label>
+      <div className={styles.promotionCards}>
+        {visibleCoupons.map((item)=>{
+          const state=couponState(item);
+          const scope=item.productIds.length||item.categoryIds.length?`${item.productIds.length} products · ${item.categoryIds.length} categories`:"Entire catalog";
+          return <article className={styles.promotionCard} key={item.id}>
+            <div className={styles.promotionCardTop}><div><span className={styles.promotionCode}>{item.code}</span><h3>{item.name}</h3><p>{item.description||"No campaign description."}</p></div><span className={`${styles.promotionState} ${state==="Active"?styles.promotionStateActive:""}`}>{state}</span></div>
+            <div className={styles.promotionFacts}>
+              <div><span>Discount</span><strong>{item.discountType==="PERCENTAGE"?`${item.value}%`:`RM ${(item.value/100).toFixed(2)}`}</strong></div>
+              <div><span>Redemptions</span><strong>{item._count.redemptions}{item.usageLimit==null?"":` / ${item.usageLimit}`}</strong></div>
+              <div><span>Minimum</span><strong>RM {(item.minSubtotalCents/100).toFixed(2)}</strong></div>
+              <div><span>Scope</span><strong>{scope}</strong></div>
+            </div>
+            <div className={styles.promotionCardFooter}><span>{item.startsAt?`Starts ${new Date(item.startsAt).toLocaleString("en-MY")}`:"Starts immediately"} · {item.endsAt?`Ends ${new Date(item.endsAt).toLocaleString("en-MY")}`:"No end date"}</span><div className={styles.categoryActions}><button type="button" onClick={()=>edit(item)}>Edit</button>{item.isActive?<button type="button" disabled={busy} onClick={()=>void deactivate(item.id)}>Deactivate</button>:null}</div></div>
+          </article>;
+        })}
+      </div>
+      {!visibleCoupons.length ? <div className={styles.empty}>No coupons match this view.</div> : null}
     </section>
+    </div>
   </main>;
 }
